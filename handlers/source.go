@@ -6,19 +6,17 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func CreateSource(c *gin.Context) {
-	type CreateInput models.Source
-	var input CreateInput
-
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var source models.Source
+	if err := c.ShouldBindJSON(&source); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	source := models.Source(input)
-	if err := config.DB.Create(&source).Error; err != nil {
+	if err := config.DB.Omit("id", "deleted_at").Create(&source).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create source"})
 		return
 	}
@@ -28,62 +26,72 @@ func CreateSource(c *gin.Context) {
 
 func GetSources(c *gin.Context) {
 	var sources []models.Source
-
 	if err := config.DB.Find(&sources).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve sources"})
 		return
 	}
-
 	c.JSON(http.StatusOK, sources)
 }
 
 func GetSource(c *gin.Context) {
-	id := c.Param("id")
-	var source models.Source
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
 
+	var source models.Source
 	if err := config.DB.First(&source, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source not found"})
 		return
 	}
-
 	c.JSON(http.StatusOK, source)
 }
 
 func UpdateSource(c *gin.Context) {
-	id := c.Param("id")
-	var source models.Source
-
-	if err := config.DB.First(&source, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Source not found"})
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
+	var source models.Source
 	if err := c.ShouldBindJSON(&source); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := config.DB.Save(&source).Error; err != nil {
+	result := config.DB.Model(&models.Source{}).Where("id = ?", id).
+		Omit("id", "created_at", "deleted_at").Updates(source)
+
+	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update source"})
 		return
 	}
-
-	c.JSON(http.StatusOK, source)
-}
-
-func DeleteSource(c *gin.Context) {
-	id := c.Param("id")
-	var source models.Source
-
-	if err := config.DB.First(&source, id).Error; err != nil {
+	if result.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source not found"})
 		return
 	}
 
-	if err := config.DB.Delete(&source).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete source"})
+	c.JSON(http.StatusOK, gin.H{"message": "Source updated"})
+}
+
+func DeleteSource(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	result := config.DB.Delete(&models.Source{}, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete source"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Source not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Source deleted"})
 }

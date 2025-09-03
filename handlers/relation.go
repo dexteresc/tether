@@ -2,31 +2,26 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"gorm.io/datatypes"
+	"github.com/google/uuid"
 )
 
 func CreateRelation(c *gin.Context) {
-	type CreateInput models.Relation
-	var input CreateInput
-
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var relation models.Relation
+	if err := c.ShouldBindJSON(&relation); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Additional validation
-	if input.SourceID == input.TargetID {
+	if relation.SourceID == relation.TargetID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot create relation to self"})
 		return
 	}
 
-	relation := models.Relation(input)
-	if err := config.DB.Create(&relation).Error; err != nil {
+	if err := config.DB.Omit("id", "deleted_at").Create(&relation).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create relation"})
 		return
 	}
@@ -36,61 +31,70 @@ func CreateRelation(c *gin.Context) {
 
 func GetRelations(c *gin.Context) {
 	var relations []models.Relation
-
 	if err := config.DB.Find(&relations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve relations"})
 		return
 	}
-
 	c.JSON(http.StatusOK, relations)
 }
 
 func GetRelation(c *gin.Context) {
-	id := c.Param("id")
-	var relation models.Relation
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
 
+	var relation models.Relation
 	if err := config.DB.First(&relation, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Relation not found"})
 		return
 	}
-
 	c.JSON(http.StatusOK, relation)
 }
 
 func UpdateRelation(c *gin.Context) {
-	var input struct {
-		Type      string         `json:"type" binding:"omitempty,oneof=parent child sibling spouse colleague associate friend"`
-		Strength  *int           `json:"strength" binding:"omitempty,min=1,max=10"`
-		ValidFrom *time.Time     `json:"valid_from" binding:"omitempty"`
-		ValidTo   *time.Time     `json:"valid_to" binding:"omitempty"`
-		Data      datatypes.JSON `json:"data" binding:"omitempty"`
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
 	}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var relation models.Relation
+	if err := c.ShouldBindJSON(&relation); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	result := config.DB.Model(&models.Relation{}).Where("id = ?", c.Param("id")).Updates(input)
+	result := config.DB.Model(&models.Relation{}).Where("id = ?", id).
+		Omit("id", "created_at", "deleted_at", "source_id", "target_id").Updates(relation)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update relation"})
+		return
+	}
 	if result.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Relation not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Updated"})
+	c.JSON(http.StatusOK, gin.H{"message": "Relation updated"})
 }
 
 func DeleteRelation(c *gin.Context) {
-	id := c.Param("id")
-	var relation models.Relation
-
-	if err := config.DB.First(&relation, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Relation not found"})
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
-	if err := config.DB.Delete(&relation).Error; err != nil {
+	result := config.DB.Delete(&models.Relation{}, id)
+	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete relation"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Relation not found"})
 		return
 	}
 

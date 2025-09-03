@@ -32,9 +32,17 @@ services:
       - "8080:8080"
     volumes:
       - .:/backend
+      - ./web:/backend/web:ro
     depends_on:
       postgres:
         condition: service_healthy
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
 
 volumes:
   postgres_data:
+  ollama_data:

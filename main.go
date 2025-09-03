@@ -2,10 +2,13 @@ package main
 
 import (
 	"log"
+	"time"
 
+	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/handlers"
 	"github.com/dexteresc/tether/models"
+	"github.com/dexteresc/tether/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,63 +21,171 @@ func main() {
 		&models.Identifier{},
 		&models.Intel{},
 		&models.IntelEntity{},
+		&models.User{},
 	)
 
 	if err != nil {
 		log.Panic("Failed to auto migrate database: " + err.Error())
 	}
 
-	r := gin.Default()
+	// JWT middleware
+	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
+		Realm:       "tether",
+		Key:         []byte("secret"),
+		Timeout:     24 * time.Hour,
+		MaxRefresh:  24 * time.Hour,
+		IdentityKey: "email",
 
-	api := r.Group("/api")
-	{
+		Authenticator: func(c *gin.Context) (interface{}, error) {
+			var login models.Login
+			if err := c.ShouldBindJSON(&login); err != nil {
+				return nil, jwt.ErrMissingLoginValues
+			}
+			user, err := services.AuthenticateUser(login.Email, login.Password)
+			if err != nil {
+				return nil, jwt.ErrFailedAuthentication
+			}
+			return user, nil
+		},
 
-		api.POST("/users", handlers.CreateUser)
-		api.GET("/users/:id", handlers.GetUser)
-		api.PUT("/users/:id", handlers.UpdateUser)
-		api.DELETE("/users/:id", handlers.DeleteUser)
+		Authorizator: func(data interface{}, c *gin.Context) bool {
 
-		api.GET("/sources", handlers.GetSources)
-		api.POST("/sources", handlers.CreateSource)
-		api.GET("/sources/:id", handlers.GetSource)
-		api.PUT("/sources/:id", handlers.UpdateSource)
-		api.DELETE("/sources/:id", handlers.DeleteSource)
+			if user, ok := data.(*models.User); ok {
+				isAuthorized := user != nil
+				return isAuthorized
+			}
+			return false
+		},
 
-		api.GET("/entities", handlers.GetEntities)
-		api.POST("/entities", handlers.CreateEntity)
-		api.GET("/entities/:id", handlers.GetEntity)
-		api.PUT("/entities/:id", handlers.UpdateEntity)
-		api.DELETE("/entities/:id", handlers.DeleteEntity)
+		PayloadFunc: func(data interface{}) jwt.MapClaims {
+			if user, ok := data.(*models.User); ok {
+				claims := jwt.MapClaims{
+					"email": user.Email,
+					"id":    user.ID,
+				}
+				return claims
+			}
+			return jwt.MapClaims{}
+		},
 
-		api.GET("/relations", handlers.GetRelations)
-		api.POST("/relations", handlers.CreateRelation)
-		api.GET("/relations/:id", handlers.GetRelation)
-		api.PUT("/relations/:id", handlers.UpdateRelation)
-		api.DELETE("/relations/:id", handlers.DeleteRelation)
+		IdentityHandler: func(c *gin.Context) interface{} {
+			claims := jwt.ExtractClaims(c)
 
-		api.GET("/identifiers", handlers.GetIdentifiers)
-		api.POST("/identifiers", handlers.CreateIdentifier)
-		api.GET("/identifiers/:id", handlers.GetIdentifier)
-		api.PUT("/identifiers/:id", handlers.UpdateIdentifier)
-		api.DELETE("/identifiers/:id", handlers.DeleteIdentifier)
+			email, ok := claims["email"].(string)
+			if !ok {
+				return nil
+			}
 
-		api.GET("/intel", handlers.GetIntel)
-		api.POST("/intel", handlers.CreateIntel)
-		api.GET("/intel/:id", handlers.GetIntelByID)
-		api.PUT("/intel/:id", handlers.UpdateIntel)
-		api.DELETE("/intel/:id", handlers.DeleteIntel)
+			user, err := services.GetUserByEmail(email)
+			if err != nil {
+				return nil
+			}
 
-		api.GET("/intel-entities", handlers.GetIntelEntities)
-		api.POST("/intel-entities", handlers.CreateIntelEntity)
-		api.GET("/intel-entities/:id", handlers.GetIntelEntity)
-		api.PUT("/intel-entities/:id", handlers.UpdateIntelEntity)
-		api.DELETE("/intel-entities/:id", handlers.DeleteIntelEntity)
+			return user
+		},
+
+		Unauthorized: func(c *gin.Context, code int, message string) {
+			c.JSON(code, gin.H{"error": message})
+		},
+
+		TokenLookup:   "header: Authorization, query: token, cookie: jwt",
+		TokenHeadName: "Bearer",
+		TimeFunc:      time.Now,
+	})
+	if err != nil {
+		log.Panic("JWT Error: " + err.Error())
 	}
 
-	// Health check
+	r := gin.Default()
+	// Public routes
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	auth := r.Group("/api/auth")
+	{
+		auth.POST("/login", authMiddleware.LoginHandler)
+		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
+		auth.POST("/register", handlers.CreateUser)
+		// auth.POST("/forgot_password", handlers.ForgotPassword)
+	}
+
+	// JWT-protected routes
+
+	api := r.Group("/api")
+	api.Use(authMiddleware.MiddlewareFunc())
+	{
+		api.GET("/auth/me", handlers.GetCurrentUser)
+		users := api.Group("/users")
+		{
+			// TODO: Elevate users endpoints to admin or superuser roles
+			users.GET("/:id", handlers.GetUser)
+			users.PUT("/:id", handlers.UpdateUser)
+			users.DELETE("/:id", handlers.DeleteUser)
+		}
+
+		sources := api.Group("/sources")
+		{
+			sources.GET("/", handlers.GetSources)
+			sources.POST("/", handlers.CreateSource)
+			sources.GET("/:id", handlers.GetSource)
+			sources.PUT("/:id", handlers.UpdateSource)
+			sources.DELETE("/:id", handlers.DeleteSource)
+		}
+
+		entities := api.Group("/entities")
+		{
+			entities.GET("/", handlers.GetEntities)
+			entities.POST("/", handlers.CreateEntity)
+			entities.GET("/:id", handlers.GetEntity)
+			entities.PUT("/:id", handlers.UpdateEntity)
+			entities.DELETE("/:id", handlers.DeleteEntity)
+		}
+
+		relations := api.Group("/relations")
+		{
+			relations.GET("/", handlers.GetRelations)
+			relations.POST("/", handlers.CreateRelation)
+			relations.GET("/:id", handlers.GetRelation)
+			relations.PUT("/:id", handlers.UpdateRelation)
+			relations.DELETE("/:id", handlers.DeleteRelation)
+		}
+
+		identifiers := api.Group("/identifiers")
+		{
+			identifiers.GET("/", handlers.GetIdentifiers)
+			identifiers.POST("/", handlers.CreateIdentifier)
+			identifiers.GET("/:id", handlers.GetIdentifier)
+			identifiers.PUT("/:id", handlers.UpdateIdentifier)
+			identifiers.DELETE("/:id", handlers.DeleteIdentifier)
+		}
+
+		intel := api.Group("/intel")
+		{
+			intel.GET("/", handlers.GetIntel)
+			intel.POST("/", handlers.CreateIntel)
+			intel.GET("/:id", handlers.GetIntelByID)
+			intel.PUT("/:id", handlers.UpdateIntel)
+			intel.DELETE("/:id", handlers.DeleteIntel)
+		}
+		intelEntities := api.Group("/intel-entities")
+		{
+			intelEntities.GET("/", handlers.GetIntelEntities)
+			intelEntities.POST("/", handlers.CreateIntelEntity)
+			intelEntities.GET("/:id", handlers.GetIntelEntity)
+			intelEntities.PUT("/:id", handlers.UpdateIntelEntity)
+			intelEntities.DELETE("/:id", handlers.DeleteIntelEntity)
+		}
+
+		processor := services.NewIntelligenceProcessor(config.DB)
+		llmHandler := handlers.NewLLMHandler(processor)
+
+		llm := api.Group("/llm")
+		{
+			llm.POST("/process", llmHandler.ProcessIntelligence)
+			llm.POST("/preview", llmHandler.PreviewExtraction)
+		}
+	}
 
 	// Start server
 	log.Println("Server starting on :8080")

@@ -6,7 +6,7 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"gorm.io/datatypes"
+	"github.com/google/uuid"
 )
 
 func CreateEntity(c *gin.Context) {
@@ -15,10 +15,12 @@ func CreateEntity(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := config.DB.Create(&entity).Error; err != nil {
+
+	if err := config.DB.Omit("id", "deleted_at").Create(&entity).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create entity"})
 		return
 	}
+
 	c.JSON(http.StatusCreated, entity)
 }
 
@@ -32,9 +34,14 @@ func GetEntities(c *gin.Context) {
 }
 
 func GetEntity(c *gin.Context) {
-	id := c.Param("id")
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
+
 	var entity models.Entity
-	if err := config.DB.First(&entity, "id = ?", id).Error; err != nil {
+	if err := config.DB.First(&entity, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Entity not found"})
 		return
 	}
@@ -42,19 +49,23 @@ func GetEntity(c *gin.Context) {
 }
 
 func UpdateEntity(c *gin.Context) {
-	var input struct {
-		Type string         `json:"type" binding:"omitempty,oneof=person organization group vehicle location"`
-		Data datatypes.JSON `json:"data" binding:"omitempty"`
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
 	}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var entity models.Entity
+	if err := c.ShouldBindJSON(&entity); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	result := config.DB.Model(&models.Entity{}).Where("id = ?", c.Param("id")).Updates(input)
+	result := config.DB.Model(&models.Entity{}).Where("id = ?", id).
+		Omit("id", "created_at", "deleted_at").Updates(entity)
+
 	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update entity"})
 		return
 	}
 	if result.RowsAffected == 0 {
@@ -62,22 +73,25 @@ func UpdateEntity(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Updated"})
+	c.JSON(http.StatusOK, gin.H{"message": "Entity updated"})
 }
 
 func DeleteEntity(c *gin.Context) {
-	id := c.Param("id")
-	var entity models.Entity
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
 
-	if err := config.DB.First(&entity, "id = ?", id).Error; err != nil {
+	result := config.DB.Delete(&models.Entity{}, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete entity"})
+		return
+	}
+	if result.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Entity not found"})
 		return
 	}
 
-	if err := config.DB.Delete(&entity).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete entity"})
-		return
-	}
-
-	c.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusOK, gin.H{"message": "Entity deleted"})
 }

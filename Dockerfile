@@ -7,4 +7,4 @@ RUN go install github.com/air-verse/air@latest
 EXPOSE 8080
 EXPOSE 2345
 
-ENTRYPOINT ["air"]
+ENTRYPOINT ["air", "-c", ".air.toml"]

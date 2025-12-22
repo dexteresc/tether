@@ -31,7 +31,13 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with [Tether Constitution](../../.specify/memory/constitution.md):
+
+- [ ] **Type-First Development**: All components use strict type checking (Pydantic/TypeScript strict/Go stdlib types)
+- [ ] **Minimal Dependencies**: New dependencies justified and pinned to specific versions
+- [ ] **Test Coverage**: Critical paths have tests (LLM extraction, DB sync, API contracts, auth flows)
+- [ ] **Architecture Boundaries**: No cross-service imports, services communicate via API contracts
+- [ ] **Environment Configuration**: All runtime config uses environment variables, no hardcoded secrets
 
 ## Project Structure
 

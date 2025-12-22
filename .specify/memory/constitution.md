@@ -1,50 +1,120 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version: 1.0.0 (Initial ratification)
+- Principles established:
+  1. Type-First Development
+  2. Minimal Dependencies
+  3. Test Coverage for Critical Paths
+  4. Clear Architecture Boundaries
+  5. Configuration via Environment
+- Templates status: ✅ All templates reviewed and aligned
+- Follow-up: None - all placeholders resolved
+-->
+
+# Tether Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Type-First Development
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Every component MUST use strict type checking. Python code requires Pydantic models for data validation and type hints for all function signatures. TypeScript code requires strict mode enabled. Go code follows standard library type conventions. No implicit type coercion or untyped data structures permitted in production code.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: Type safety prevents runtime errors in intelligence extraction where incorrect data types could corrupt the knowledge graph. The LLM service demonstrates this - Pydantic validates every extraction before database sync, preventing malformed entities from entering the system.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Minimal Dependencies
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+Prefer standard library and established frameworks over third-party utilities. New dependencies require explicit justification. Dependencies MUST be pinned to specific versions in requirements files.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: The project already spans Python (FastAPI, Instructor), Go (stdlib), TypeScript (React, Vite), and Supabase. Each additional dependency increases maintenance burden and potential security vulnerabilities. The LLM service uses only essential packages: FastAPI for routing, Instructor for structured extraction, Pydantic for validation.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Test Coverage for Critical Paths
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Tests are MANDATORY for:
+- LLM extraction logic and classification
+- Database synchronization operations
+- API contract endpoints
+- Authentication and authorization flows
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Tests use VCR cassettes for LLM interactions to ensure fast, deterministic test execution without requiring live LLM calls.
+
+**Rationale**: Intelligence extraction is non-deterministic by nature. VCR cassettes enable fast regression testing (80 seconds for 20 tests) while maintaining confidence in extraction quality. Contract tests prevent breaking changes to API interfaces used by multiple services.
+
+### IV. Clear Architecture Boundaries
+
+Each service maintains clear separation:
+- **llm-service/**: Python NLP extraction service (FastAPI + Instructor + Supabase)
+- **frontend/**: React + TypeScript + Vite UI
+- **handlers/**, **models/**, **services/**: Go backend API
+- **supabase/**: Database migrations and RLS policies
+
+Services communicate via well-defined API contracts. Database access follows Row Level Security (RLS) policies. No cross-service module imports permitted.
+
+**Rationale**: Multi-language architecture requires strict boundaries to prevent coupling. The LLM service exposes REST endpoints consumed by the Go backend - they share only the database schema, not code. This enables independent deployment and technology choices per service.
+
+### V. Configuration via Environment
+
+All runtime configuration MUST use environment variables. No hardcoded URLs, API keys, or provider settings in code. Support for multiple deployment environments (development, staging, production) through .env files.
+
+**Rationale**: The LLM service switches between OpenAI and Ollama providers purely through LLM_PROVIDER environment variable. This enables local development with Ollama (free, private) and production with OpenAI (faster, more capable) without code changes.
+
+## Development Workflow
+
+### Code Review Requirements
+
+All changes MUST:
+- Pass type checking (mypy for Python, tsc for TypeScript, go build for Go)
+- Pass linting (ruff for Python, ESLint for TypeScript)
+- Include tests for new critical paths (see Principle III)
+- Update relevant spec.md and tasks.md in /specs/ directory
+
+### Testing Gates
+
+Before merging:
+- Unit tests pass locally
+- Integration tests pass against local Supabase instance
+- VCR cassettes recorded for any new LLM interactions
+- Contract tests validate API endpoint schemas
+
+### Deployment Approval
+
+Production deployments require:
+- All tests passing in CI
+- Database migrations reviewed and tested
+- Environment variables documented in .env.example
+- Feature specification complete in /specs/
+
+## Security Requirements
+
+### Authentication
+
+All API endpoints requiring user context MUST:
+- Accept Supabase JWT token via Authorization header
+- Validate token using Supabase Auth
+- Extract user_id from validated token
+- Apply Row Level Security via user_id context
+
+### Data Validation
+
+User input MUST:
+- Be validated using Pydantic schemas (Python) or type guards (TypeScript)
+- Sanitize against SQL injection via parameterized queries
+- Reject malformed requests with 400 Bad Request and clear error messages
+
+### Environment Secrets
+
+Secrets MUST:
+- Never be committed to version control
+- Be documented in .env.example with placeholder values
+- Use SUPABASE_SERVICE_KEY only in backend services, never exposed to frontend
+- Rotate regularly for production environments
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other development practices. Changes to principles require:
+1. Documented rationale for the change
+2. Review of impact on existing specs and templates
+3. Migration plan if existing code violates new principle
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+All code reviews MUST verify compliance with these principles. Violations require explicit justification or rejection of PR.
+
+**Version**: 1.0.0 | **Ratified**: 2024-12-22 | **Last Amended**: 2024-12-22

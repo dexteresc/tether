@@ -225,6 +225,39 @@ Response:
 }
 ```
 
+### Extract Intelligence (User-Centric)
+
+The service automatically recognizes user-centric language when authenticated:
+
+```bash
+# Get your auth token from Supabase
+TOKEN="your-supabase-jwt-token"
+
+# Example 1: First-person pronouns
+curl -X POST http://localhost:8000/api/extract \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "text": "My friend Lukas and I went to the conference yesterday",
+    "sync_to_db": false
+  }'
+
+# Example 2: Explicit user reference
+curl -X POST http://localhost:8000/api/extract \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "text": "Lukas is a friend of John Smith (the user)",
+    "sync_to_db": false
+  }'
+```
+
+The LLM will:
+- Recognize "I", "me", "my" as referring to the authenticated user
+- Recognize "(the user)" as referring to the authenticated user
+- Extract relationships from the user's perspective
+- Create a user entity with your name from your Supabase profile
+
 ### Extract Intelligence (With Database Sync)
 
 Requires authentication token:

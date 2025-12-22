@@ -42,7 +42,7 @@ class OpenAIProvider(LLMProvider):
         self.client = instructor.from_openai(openai_client)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3
+        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using OpenAI with instructor."""
 
@@ -62,10 +62,21 @@ IMPORTANT:
 - For relationships, determine the correct type (parent, spouse, colleague, member, owner, etc.)
 - For intel, categorize correctly (event, communication, sighting, report, document, media, financial)
 - Always provide your reasoning FIRST in the reasoning field
-- Be thorough - extract ALL information present in the text"""
+- Be thorough - extract ALL information present in the text
 
-        # Build user prompt
+USER-CENTRIC TEXT HANDLING:
+- When text uses first-person pronouns (I, me, my, mine), these refer to the authenticated user
+- When text mentions "the user" explicitly, this also refers to the authenticated user
+- Extract relationships from the user's perspective (e.g., "my friend John" = user has friend relation to John)
+- Create entities for people mentioned in relation to the user
+- Ensure the user entity is properly identified in relationships"""
+
+        # Build user prompt with user context
         user_prompt = f"Extract structured intelligence from the following text:\n\n{text}"
+
+        if user_name:
+            user_prompt = f"The authenticated user is: {user_name}\n\n{user_prompt}"
+
         if context:
             user_prompt = f"Context: {context}\n\n{user_prompt}"
 
@@ -101,7 +112,7 @@ class OllamaProvider(LLMProvider):
         self.client = instructor.from_openai(openai_client, mode=instructor.Mode.MD_JSON)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3
+        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using Ollama with instructor."""
 
@@ -123,6 +134,13 @@ CRITICAL RULES:
 3. OUTPUT ONLY VALID JSON. DO NOT include any comments or explanations.
 4. Provide reasoning in the 'reasoning' field first.
 
+USER-CENTRIC TEXT HANDLING:
+- When text uses first-person pronouns (I, me, my, mine), these refer to the authenticated user
+- When text mentions "the user" explicitly, this also refers to the authenticated user
+- Extract relationships from the user's perspective (e.g., "my friend John" = user has friend relation to John)
+- Create entities for people mentioned in relation to the user
+- Ensure the user entity is properly identified in relationships
+
 EXAMPLE OUTPUT:
 {
   "reasoning": { "entities_identified": "John (person)...", ... },
@@ -138,8 +156,12 @@ EXAMPLE OUTPUT:
   "intel": []
 }"""
 
-        # Build user prompt
+        # Build user prompt with user context
         user_prompt = f"Extract structured intelligence from the following text:\n\n{text}"
+
+        if user_name:
+            user_prompt = f"The authenticated user is: {user_name}\n\n{user_prompt}"
+
         if context:
             user_prompt = f"Context: {context}\n\n{user_prompt}"
 

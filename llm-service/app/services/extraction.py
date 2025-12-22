@@ -51,7 +51,7 @@ class ExtractionService:
         self.llm_provider = get_llm_provider(provider, model)
 
     def extract_intelligence(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3
+        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
     ) -> IntelligenceExtraction:
         """
         Extract structured intelligence from text.
@@ -60,14 +60,15 @@ class ExtractionService:
             text: Text to extract from
             context: Optional context to help with extraction
             max_retries: Number of retries for validation errors (default: 3)
+            user_name: Optional name of the authenticated user for user-centric extractions
 
         Returns:
             IntelligenceExtraction with entities, relations, and intel
         """
-        return self.llm_provider.extract(text, context, max_retries=max_retries)
+        return self.llm_provider.extract(text, context, max_retries=max_retries, user_name=user_name)
 
     def extract_and_classify(
-        self, text: str, context: Optional[str] = None
+        self, text: str, context: Optional[str] = None, user_name: Optional[str] = None
     ) -> ClassifiedExtraction:
         """
         Extract structured intelligence and classify the result.
@@ -75,12 +76,13 @@ class ExtractionService:
         Args:
             text: Text to extract from
             context: Optional context to help with extraction
+            user_name: Optional name of the authenticated user for user-centric extractions
 
         Returns:
             ClassifiedExtraction with classification, chain_of_thought, and extraction
         """
         # Perform extraction
-        extraction = self.extract_intelligence(text, context)
+        extraction = self.extract_intelligence(text, context, user_name=user_name)
 
         # Derive classification from content
         classification = classify_extraction(extraction)

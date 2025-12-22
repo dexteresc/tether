@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.services.extraction import get_extraction_service
 from app.services.supabase_sync import SupabaseSyncService
-from app.services.auth import verify_supabase_jwt, create_service_role_client
+from app.services.auth import verify_supabase_jwt, create_service_role_client, get_user_info
 from app.models.extraction import (
     IntelligenceExtraction,
     SyncResults,
@@ -79,16 +79,23 @@ async def extract_intelligence(
     """
     # Verify authentication
     user_id = None
+    user_name = None
     if authorization:
         token = authorization.replace("Bearer ", "")
         user_id = verify_supabase_jwt(token)
         if not user_id and request.sync_to_db:
             raise HTTPException(status_code=401, detail="Invalid authentication token")
 
-    # Extract and classify intelligence
+        # Get user information for context
+        if user_id:
+            user_info = get_user_info(user_id)
+            if user_info:
+                user_name = user_info.get("name")
+
+    # Extract and classify intelligence with user context
     extraction_service = get_extraction_service()
     classified_result = extraction_service.extract_and_classify(
-        request.text, request.context
+        request.text, request.context, user_name=user_name
     )
 
     # Sync to database if requested

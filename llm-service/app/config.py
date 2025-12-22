@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     )
 
     # LLM Configuration
-    llm_provider: Literal["openai", "ollama"] = "openai"
-    llm_model: str = "gpt-4o"
+    llm_provider: Literal["openai", "ollama"] = "ollama"
+    llm_model: str = "qwen2.5:7b"
 
     # OpenAI
     openai_api_key: str = ""

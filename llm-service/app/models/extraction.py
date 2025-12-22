@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, AliasChoices, ConfigDict, model_validator
 from typing import List, Optional, Dict, Any
 from enum import Enum
 
@@ -10,6 +10,7 @@ class EntityType(str, Enum):
     GROUP = "group"
     VEHICLE = "vehicle"
     LOCATION = "location"
+    EVENT = "event"
 
 
 class IdentifierType(str, Enum):
@@ -35,6 +36,9 @@ class RelationType(str, Enum):
     MEMBER = "member"
     OWNER = "owner"
     FOUNDER = "founder"
+    CO_FOUNDER = "co-founder"
+    VISITED = "visited"
+    EMPLOYEE = "employee"
 
 
 class IntelType(str, Enum):
@@ -64,6 +68,8 @@ class ExtractionClassification(str, Enum):
 
 # Chain-of-thought reasoning model (MUST be first field in IntelligenceExtraction)
 class Reasoning(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     entities_identified: str = Field(
         default="",
         description="List all entities found in the text with their types (e.g., 'John (person), Acme Corp (organization)')"
@@ -92,6 +98,8 @@ class Reasoning(BaseModel):
 
 # Extraction models
 class IdentifierExtraction(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     identifier_type: IdentifierType = Field(
         description="Type of identifier (name, email, phone, document, etc.)"
     )
@@ -105,6 +113,8 @@ class IdentifierExtraction(BaseModel):
 
 
 class EntityExtraction(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     name: str = Field(
         description="Primary name/identifier for the entity"
     )
@@ -126,8 +136,21 @@ class EntityExtraction(BaseModel):
         description="Who reported this information (e.g., 'Jonas', 'direct observation')"
     )
 
+    @model_validator(mode='after')
+    def check_name_identifier(self) -> 'EntityExtraction':
+        has_name = any(i.identifier_type == IdentifierType.NAME for i in self.identifiers)
+        if not has_name:
+            # Auto-add the missing name identifier to improve consistency
+            self.identifiers.insert(0, IdentifierExtraction(
+                identifier_type=IdentifierType.NAME,
+                value=self.name
+            ))
+        return self
+
 
 class RelationExtraction(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     source_entity_name: str = Field(
         description="Name of the source entity in the relationship"
     )
@@ -165,13 +188,16 @@ class RelationExtraction(BaseModel):
 
 
 class IntelExtraction(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     intel_type: IntelType = Field(
         description="Type of intelligence (event, communication, sighting, report, document, media, financial)"
     )
     description: str = Field(
         description="Clear description of what happened (e.g., 'Lukas went to the store', 'Conference in New York')"
     )
-    occurred_at: str = Field(
+    occurred_at: Optional[str] = Field(
+        default=None,
         description="When this happened (natural language date/time like 'today', 'yesterday', 'March 31', 'last Friday')"
     )
     entities_involved: List[str] = Field(
@@ -196,8 +222,11 @@ class IntelExtraction(BaseModel):
 
 # Main extraction result
 class IntelligenceExtraction(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     reasoning: Reasoning = Field(
-        description="Step-by-step reasoning about the extraction (REQUIRED FIRST - forces LLM to think before extracting)"
+        description="Step-by-step reasoning about the extraction (REQUIRED FIRST - forces LLM to think before extracting)",
+        validation_alias=AliasChoices('reasoning', 'Reasoning')
     )
     entities: List[EntityExtraction] = Field(
         default_factory=list,

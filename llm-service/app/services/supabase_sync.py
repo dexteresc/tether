@@ -173,7 +173,7 @@ class SupabaseSyncService:
             .insert(
                 {
                     "type": entity.entity_type.value,
-                    "data": json.dumps(entity_data),
+                    "data": entity_data,
                 }
             )
             .execute()
@@ -220,7 +220,7 @@ class SupabaseSyncService:
 
         # Update entity
         self.supabase.table("entities").update(
-            {"data": json.dumps(updated_data)}
+            {"data": updated_data}
         ).eq("id", entity_id).execute()
 
         # Add new identifiers (skip duplicates)
@@ -334,7 +334,7 @@ class SupabaseSyncService:
                     "strength": relation.strength,
                     "valid_from": valid_from,
                     "valid_to": valid_to,
-                    "data": json.dumps(relation_data),
+                    "data": relation_data,
                 }
             )
             .execute()
@@ -373,7 +373,7 @@ class SupabaseSyncService:
                 {
                     "type": intel.intel_type.value,
                     "occurred_at": occurred_at,
-                    "data": json.dumps(intel_data),
+                    "data": intel_data,
                     "source_id": source_id,
                     "confidence": intel.confidence.value,
                 }
@@ -428,7 +428,7 @@ class SupabaseSyncService:
                     "code": source_code,
                     "type": "human",
                     "reliability": "C",  # Fairly reliable by default
-                    "data": json.dumps({}),
+                    "data": {},
                     "active": True,
                 }
             )

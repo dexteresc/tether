@@ -12,7 +12,7 @@ class LLMProvider:
         self.client = None
 
     def extract(
-        self, text: str, context: Optional[str] = None
+        self, text: str, context: Optional[str] = None, max_retries: int = 3
     ) -> IntelligenceExtraction:
         """
         Extract structured intelligence from text.
@@ -20,6 +20,7 @@ class LLMProvider:
         Args:
             text: Text to extract from
             context: Optional context to help with extraction
+            max_retries: Number of retries for validation errors
 
         Returns:
             IntelligenceExtraction object with entities, relations, and intel
@@ -41,7 +42,7 @@ class OpenAIProvider(LLMProvider):
         self.client = instructor.from_openai(openai_client)
 
     def extract(
-        self, text: str, context: Optional[str] = None
+        self, text: str, context: Optional[str] = None, max_retries: int = 3
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using OpenAI with instructor."""
 
@@ -76,6 +77,7 @@ IMPORTANT:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
+            max_retries=max_retries,
         )
 
         return extraction
@@ -84,7 +86,7 @@ IMPORTANT:
 class OllamaProvider(LLMProvider):
     """Ollama provider with instructor integration."""
 
-    def __init__(self, model: str = "llama3.2", base_url: Optional[str] = None):
+    def __init__(self, model: str = "qwen2.5:7b", base_url: Optional[str] = None):
         super().__init__()
         self.model = model
 
@@ -95,47 +97,46 @@ class OllamaProvider(LLMProvider):
         )
 
         # Patch with instructor for structured outputs
-        # Using JSON mode for Ollama compatibility
-        self.client = instructor.from_openai(openai_client, mode=instructor.Mode.JSON)
+        # Using MD_JSON mode for better Ollama compatibility with complex schemas
+        self.client = instructor.from_openai(openai_client, mode=instructor.Mode.MD_JSON)
 
     def extract(
-        self, text: str, context: Optional[str] = None
+        self, text: str, context: Optional[str] = None, max_retries: int = 3
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using Ollama with instructor."""
 
         # Build enhanced system prompt with explicit structure requirements
-        system_prompt = """You are an intelligence analyst extracting structured information from text.
+        system_prompt = """You are an expert intelligence analyst. Extract structured data from text into JSON.
 
-Your task is to:
-1. Identify ALL entities (people, organizations, groups, vehicles, locations)
-2. Extract ALL factual attributes (birthdays, addresses, positions, etc.)
-3. Identify ALL relationships between entities
-4. Identify ALL events/intelligence (meetings, communications, sightings, etc.)
-5. Track information sources (who reported this?)
-6. Assess confidence levels
+CRITICAL RULES:
+1. For every entity, you MUST provide:
+   - 'name': The primary name string.
+   - 'entity_type': One of [person, organization, group, vehicle, location].
+   - 'identifiers': A list containing at least one entry with identifier_type='name'.
+   - 'confidence': One of [confirmed, high, medium, low, unconfirmed].
+2. Use ONLY these exact ENUM values:
+   - IDENTIFIER TYPES: name, email, phone, address, document, biometric, handle, registration, domain
+   - RELATION TYPES: parent, child, sibling, spouse, colleague, associate, friend, member, owner, founder, co-founder, visited, employee
+   - ENTITY TYPES: person, organization, group, vehicle, location
+   - INTEL TYPES: event, communication, sighting, report, document, media, financial
+   - CONFIDENCE: confirmed, high, medium, low, unconfirmed
+3. OUTPUT ONLY VALID JSON. DO NOT include any comments or explanations.
+4. Provide reasoning in the 'reasoning' field first.
 
-CRITICAL RULES FOR IDENTIFIERS:
-- ALWAYS create a "name" identifier for every entity as the first identifier
-- Then add additional identifiers (email, phone, address, etc.) if present
-- Every entity MUST have at least a name identifier
-
-IDENTIFIER TYPES (use exact values):
-- name, email, phone, address, document, biometric, handle, registration, domain
-
-RELATION TYPES (use exact values):
-- parent, child, sibling, spouse, colleague, associate, friend, member, owner, founder
-
-INTEL TYPES (use exact values):
-- event, communication, sighting, report, document, media, financial
-
-CONFIDENCE LEVELS (use exact values):
-- confirmed, high, medium, low, unconfirmed
-
-IMPORTANT:
-- Extract multiple identifiers per entity when possible
-- Always provide your reasoning FIRST in the reasoning field
-- Be thorough - extract ALL information present in the text
-- Use only the exact enum values listed above"""
+EXAMPLE OUTPUT:
+{
+  "reasoning": { "entities_identified": "John (person)...", ... },
+  "entities": [
+    {
+      "name": "John Smith",
+      "entity_type": "person",
+      "identifiers": [{"identifier_type": "name", "value": "John Smith"}],
+      "confidence": "confirmed"
+    }
+  ],
+  "relations": [],
+  "intel": []
+}"""
 
         # Build user prompt
         user_prompt = f"Extract structured intelligence from the following text:\n\n{text}"
@@ -151,7 +152,7 @@ IMPORTANT:
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0,  # More deterministic outputs
-            max_retries=3,  # Retry on validation errors
+            max_retries=max_retries,  # Retry on validation errors
         )
 
         return extraction

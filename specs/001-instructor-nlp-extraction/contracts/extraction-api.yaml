@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: Tether NLP Extraction API
+  description: |
+    API for extracting structured intelligence from natural language text.
+    Supports automatic classification of Fact Updates vs Event Logs.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+
+paths:
+  /extract:
+    post:
+      summary: Extract and classify intelligence from text
+      description: |
+        Processes natural language text and extracts:
+        - Entities (persons, organizations, etc.) → Fact Updates
+        - Events/Intel (interactions, sightings, etc.) → Event Logs
+
+        Automatically classifies the extraction and syncs to database.
+      operationId: extractIntelligence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractionRequest'
+            examples:
+              factUpdate:
+                summary: Person fact update
+                value:
+                  text: "John's email is john@example.com and he works at Acme Corp"
+                  sync_to_db: true
+              eventLog:
+                summary: Interaction event
+                value:
+                  text: "Called John yesterday to discuss the project proposal"
+                  sync_to_db: true
+              mixed:
+                summary: Mixed content
+                value:
+                  text: "Met with Sarah (sarah@tech.co) at the conference yesterday"
+                  sync_to_db: true
+      responses:
+        '200':
+          description: Successful extraction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassifiedExtractionResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Extraction or sync error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  provider:
+                    type: string
+                    example: openai
+                  model:
+                    type: string
+                    example: gpt-4o
+
+components:
+  schemas:
+    ExtractionRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Natural language text to extract from
+          minLength: 1
+          example: "John's email is john@example.com and he works at Acme Corp"
+        context:
+          type: string
+          description: Optional context to help with extraction
+        sync_to_db:
+          type: boolean
+          default: true
+          description: Whether to sync extracted data to database
+
+    ClassifiedExtractionResponse:
+      type: object
+      required:
+        - classification
+        - chain_of_thought
+        - extraction
+      properties:
+        classification:
+          $ref: '#/components/schemas/ExtractionClassification'
+        chain_of_thought:
+          type: string
+          description: Reasoning summary explaining the extraction
+          example: "Identified John (person) with email identifier and employer relationship to Acme Corp (organization)"
+        extraction:
+          $ref: '#/components/schemas/IntelligenceExtraction'
+        sync_results:
+          $ref: '#/components/schemas/SyncResults'
+
+    ExtractionClassification:
+      type: string
+      enum:
+        - fact_update
+        - event_log
+        - mixed
+      description: |
+        Classification of the extraction:
+        - fact_update: Primarily entity/attribute data (upserts)
+        - event_log: Primarily temporal events (inserts)
+        - mixed: Contains both types
+
+    IntelligenceExtraction:
+      type: object
+      properties:
+        reasoning:
+          $ref: '#/components/schemas/Reasoning'
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityExtraction'
+        relations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelationExtraction'
+        intel:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntelExtraction'
+
+    Reasoning:
+      type: object
+      description: Chain-of-thought reasoning (required first for LLM accuracy)
+      properties:
+        entities_identified:
+          type: string
+        relationships_identified:
+          type: string
+        facts_identified:
+          type: string
+        events_identified:
+          type: string
+        sources_identified:
+          type: string
+        confidence_rationale:
+          type: string
+
+    EntityExtraction:
+      type: object
+      required:
+        - name
+        - entity_type
+        - identifiers
+        - confidence
+      properties:
+        name:
+          type: string
+        entity_type:
+          type: string
+          enum: [person, organization, group, vehicle, location]
+        identifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/IdentifierExtraction'
+        attributes:
+          type: object
+          additionalProperties: true
+        confidence:
+          type: string
+          enum: [confirmed, high, medium, low, unconfirmed]
+        source_reference:
+          type: string
+
+    IdentifierExtraction:
+      type: object
+      required:
+        - identifier_type
+        - value
+      properties:
+        identifier_type:
+          type: string
+          enum: [name, document, biometric, phone, email, handle, address, registration, domain]
+        value:
+          type: string
+        metadata:
+          type: object
+
+    RelationExtraction:
+      type: object
+      required:
+        - source_entity_name
+        - target_entity_name
+        - relation_type
+        - confidence
+      properties:
+        source_entity_name:
+          type: string
+        target_entity_name:
+          type: string
+        relation_type:
+          type: string
+          enum: [parent, child, sibling, spouse, colleague, associate, friend, member, owner, founder]
+        strength:
+          type: integer
+          minimum: 1
+          maximum: 10
+        valid_from:
+          type: string
+        valid_to:
+          type: string
+        description:
+          type: string
+        confidence:
+          type: string
+          enum: [confirmed, high, medium, low, unconfirmed]
+
+    IntelExtraction:
+      type: object
+      required:
+        - intel_type
+        - description
+        - occurred_at
+        - entities_involved
+        - confidence
+      properties:
+        intel_type:
+          type: string
+          enum: [event, communication, sighting, report, document, media, financial]
+        description:
+          type: string
+        occurred_at:
+          type: string
+          description: Natural language date/time
+        entities_involved:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        confidence:
+          type: string
+          enum: [confirmed, high, medium, low, unconfirmed]
+
+    SyncResults:
+      type: object
+      properties:
+        entities_created:
+          type: array
+          items:
+            type: object
+        entities_updated:
+          type: array
+          items:
+            type: object
+        relations_created:
+          type: array
+          items:
+            type: object
+        intel_created:
+          type: array
+          items:
+            type: object
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              message:
+                type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error context

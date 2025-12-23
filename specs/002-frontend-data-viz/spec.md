@@ -14,13 +14,13 @@
 - Q: Should the application block user interaction until initial sync completes, or allow immediate use while syncing in the background? → A: Progressive sync with immediate access - App usable immediately with any cached data, new/updated records sync in background with progress indicator, users see data populate incrementally
 - Q: How much information should users see about queued natural language inputs waiting for processing? → A: Full queue visibility with status - List showing all queued inputs with status (pending, processing, completed, failed), position in queue, estimated wait, and ability to cancel queued items
 - Q: How should the application handle IndexedDB storage quota exhaustion? → A: Auto-evict oldest synced data - Automatically remove oldest successfully synced records when quota reached using LRU cache strategy, always keeping all unsynced changes and recent data, seamless operation without user intervention
-- Q: What is the detailed sync flow architecture for local-first operations? → A: Five-phase sync flow: (1) Instant Local Commit - immediate UI update and IndexedDB save on user action, (2) Transaction Queue - action wrapped in transaction object placed in ordered outbox queue, (3) Upstream Sync - background process sends queued transactions to server via GraphQL mutations when network available, (4) Downstream Broadcast - server generates lightweight delta packet with diffs and pushes via WebSocket to all connected clients, (5) Confirmation Loop - client receives WebSocket message, acknowledges queued action success, reconciles any conflicts with server state
+- Q: What is the detailed sync flow architecture for local-first operations? → A: Five-phase sync flow: (1) Instant Local Commit - immediate UI update and IndexedDB save on user action, (2) Transaction Queue - action wrapped in transaction object placed in ordered outbox queue, (3) Upstream Sync - background process sends queued transactions to Supabase via authenticated API writes (PostgREST upsert/update) when network available, (4) Downstream Broadcast - Supabase Realtime pushes row-change events via WebSocket to all connected clients, (5) Confirmation Loop - client correlates server changes with queued outbox actions, marks them synced, and reconciles conflicts with server state
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View All Intelligence Data with Instant Local Access (Priority: P1)
 
-A user opens the application and immediately sees all their intelligence data loaded from the local IndexedDB cache, regardless of network connectivity. The system displays all tables (entities, intel, relations, identifiers, sources) instantly from the local replica while syncing updates from Supabase in the background without blocking interaction. The sync status indicator shows connection state and any pending updates. Even first-time users with empty cache can start interacting immediately as data progressively loads in the background.
+A user opens the application and immediately sees all their intelligence data loaded from the local IndexedDB cache, regardless of network connectivity. The system displays all tables (entities, intel, relations, identifiers, sources, intel_entities) instantly from the local replica while syncing updates from Supabase in the background without blocking interaction. The sync status indicator shows connection state and any pending updates. Even first-time users with empty cache can start interacting immediately as data progressively loads in the background.
 
 **Why this priority**: Instant access to intelligence data is critical for field operations. Local-first architecture eliminates network latency and enables offline access. Field operatives in areas with poor connectivity (remote locations, secure facilities) can access their full database without network dependency.
 
@@ -155,7 +155,7 @@ A user managing a large intelligence database needs to find specific records qui
   - Prevent commit until all fields pass validation
 
 - What happens when the user closes the browser with uncommitted chained inputs?
-  - Store chained input state in browser localStorage
+  - Store chained input state in IndexedDB (optionally store a small restore pointer in localStorage)
   - On page reload, offer to restore the previous session: "You have uncommitted inputs from your last session. Restore them?"
 
 - What happens when displaying a table with 10,000+ records?
@@ -206,7 +206,7 @@ A user managing a large intelligence database needs to find specific records qui
 - **FR-010**: System MUST display sync status (pending, syncing, synced, error) for all queued changes with details of what was created/updated
 - **FR-011**: System MUST require user authentication via Supabase Auth before accessing any data views or input pages
 - **FR-012**: System MUST apply Row Level Security (RLS) so users only see data they own or have permission to access
-- **FR-013**: System MUST validate all edited fields against database constraints (e.g., entity type must be person/organization/group/vehicle/location)
+- **FR-013**: System MUST validate all edited fields against database constraints (e.g., entity type must be person/organization/group/vehicle/location/event)
 - **FR-014**: System MUST handle LLM service errors gracefully with user-friendly error messages, retry options, and maintain queue position for failed extractions
 - **FR-015**: System MUST preserve user input text if extraction fails, allowing correction without re-typing, stored in local queue
 - **FR-016**: System MUST support filtering entities by type, intel by confidence level and date range, and relations by relationship type, executing filters against local IndexedDB cache
@@ -224,9 +224,9 @@ A user managing a large intelligence database needs to find specific records qui
 - **FR-029**: System MUST never evict unsynced changes from IndexedDB regardless of storage quota, prioritizing data integrity over cache size
 - **FR-030**: System MUST implement Instant Local Commit pattern - immediately update UI and save changes to IndexedDB on user action without waiting for network, ensuring instant feedback
 - **FR-031**: System MUST wrap each user action in a transaction object and place it in an ordered outbox queue, allowing multiple changes to accumulate safely even when offline
-- **FR-032**: System MUST implement Upstream Sync - background process detects network availability and sends queued transactions to Supabase via GraphQL mutations to update the central database
-- **FR-033**: System MUST implement Downstream Broadcast - server generates lightweight delta packets containing only diffs and pushes them via WebSocket (Supabase Realtime) to all connected clients
-- **FR-034**: System MUST implement Confirmation Loop - client receives WebSocket delta messages, acknowledges that its local queued action was successful, and reconciles any potential conflicts with server state using last-write-wins strategy
+- **FR-032**: System MUST implement Upstream Sync - background process detects network availability and sends queued transactions to Supabase via authenticated API writes (PostgREST upsert/update) to update the central database
+- **FR-033**: System MUST implement Downstream Broadcast - Supabase Realtime pushes row-change events via WebSocket to all connected clients
+- **FR-034**: System MUST implement Confirmation Loop - client correlates incoming Realtime row-change events with local queued actions, marks them successful when confirmed on the server, and reconciles conflicts using last-write-wins strategy
 
 ### Key Entities *(include if feature involves data)*
 

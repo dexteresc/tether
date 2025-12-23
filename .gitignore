@@ -25,7 +25,8 @@ go.work
 go.work.sum
 
 # env file
-.env
+.env*
+!.env.example
 
 # Editor/IDE
 .idea/
@@ -33,3 +34,29 @@ go.work.sum
 
 # Temporary files
 tmp/
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+dist/
+*.egg-info/
+
+# Node / Frontend builds
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+*.log
+
+# Swap/Temp
+*.swp
+*.swo
+*.tmp

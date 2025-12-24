@@ -30,7 +30,8 @@ export function useRelationGraph(entityId: string | undefined, depth: number = 2
     queryFn: async () => {
       if (!entityId) throw new Error('Entity ID is required');
 
-      const { data, error } = await supabase.rpc('get_entity_graph', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('get_entity_graph', {
         p_entity_id: entityId,
         p_depth: depth,
       });
@@ -55,8 +56,8 @@ export function useCreateRelation() {
       valid_to?: string;
       data?: any;
     }) => {
-      const { data, error } = await supabase
-        .from('relations')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from('relations') as any)
         .insert(relation)
         .select()
         .single();
@@ -79,8 +80,8 @@ export function useUpdateRelation() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Relation> }) => {
-      const { data, error } = await supabase
-        .from('relations')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from('relations') as any)
         .update(updates)
         .eq('id', id)
         .select()
@@ -102,8 +103,8 @@ export function useDeleteRelation() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('relations')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from('relations') as any)
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
         .select()

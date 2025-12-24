@@ -1,5 +1,9 @@
 # React + TypeScript + Vite
 
+This directory (`/Users/dexteresc/Dev/tether/frontend/`) is the canonical frontend workspace for Tether.
+
+Legacy/abandoned scaffolding has been archived to `/Users/dexteresc/Dev/tether/frontend/_legacy_scaffold/`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

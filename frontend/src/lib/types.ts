@@ -49,7 +49,7 @@ export interface Database {
       entities: {
         Row: {
           id: string
-          type: 'person' | 'organization' | 'group' | 'vehicle' | 'location'
+          type: 'person' | 'organization' | 'group' | 'vehicle' | 'location' | 'event'
           data: Json
           created_at: string
           updated_at: string
@@ -57,7 +57,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          type: 'person' | 'organization' | 'group' | 'vehicle' | 'location'
+          type: 'person' | 'organization' | 'group' | 'vehicle' | 'location' | 'event'
           data?: Json
           created_at?: string
           updated_at?: string
@@ -65,7 +65,7 @@ export interface Database {
         }
         Update: {
           id?: string
-          type?: 'person' | 'organization' | 'group' | 'vehicle' | 'location'
+          type?: 'person' | 'organization' | 'group' | 'vehicle' | 'location' | 'event'
           data?: Json
           created_at?: string
           updated_at?: string
@@ -109,7 +109,20 @@ export interface Database {
           id: string
           source_id: string
           target_id: string
-          type: 'parent' | 'child' | 'sibling' | 'spouse' | 'colleague' | 'associate' | 'friend' | 'member' | 'owner'
+          type:
+            | 'parent'
+            | 'child'
+            | 'sibling'
+            | 'spouse'
+            | 'colleague'
+            | 'associate'
+            | 'friend'
+            | 'member'
+            | 'owner'
+            | 'founder'
+            | 'co-founder'
+            | 'visited'
+            | 'employee'
           strength: number | null
           valid_from: string | null
           valid_to: string | null
@@ -122,7 +135,20 @@ export interface Database {
           id?: string
           source_id: string
           target_id: string
-          type: 'parent' | 'child' | 'sibling' | 'spouse' | 'colleague' | 'associate' | 'friend' | 'member' | 'owner'
+          type:
+            | 'parent'
+            | 'child'
+            | 'sibling'
+            | 'spouse'
+            | 'colleague'
+            | 'associate'
+            | 'friend'
+            | 'member'
+            | 'owner'
+            | 'founder'
+            | 'co-founder'
+            | 'visited'
+            | 'employee'
           strength?: number | null
           valid_from?: string | null
           valid_to?: string | null
@@ -135,7 +161,20 @@ export interface Database {
           id?: string
           source_id?: string
           target_id?: string
-          type?: 'parent' | 'child' | 'sibling' | 'spouse' | 'colleague' | 'associate' | 'friend' | 'member' | 'owner'
+          type?:
+            | 'parent'
+            | 'child'
+            | 'sibling'
+            | 'spouse'
+            | 'colleague'
+            | 'associate'
+            | 'friend'
+            | 'member'
+            | 'owner'
+            | 'founder'
+            | 'co-founder'
+            | 'visited'
+            | 'employee'
           strength?: number | null
           valid_from?: string | null
           valid_to?: string | null

@@ -1,0 +1,36 @@
+.git/
+.github/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets / env
+.env*
+
+# Local tooling
+.specify/
+.codex/
+.claude/
+.gemini/
+
+# Node / frontend artifacts
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/build/
+**/coverage/
+**/.vite/
+
+# Python artifacts
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.venv/
+**/venv/
+**/*.egg-info/
+
+# Go artifacts
+**/*.test
+**/*.out
+

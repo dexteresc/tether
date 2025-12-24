@@ -102,8 +102,8 @@ export function useCreateIntel() {
       const { entity_ids, ...intelData } = intel;
 
       // Create the intel record
-      const { data: createdIntel, error: intelError } = await supabase
-        .from('intel')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: createdIntel, error: intelError } = await (supabase.from('intel') as any)
         .insert(intelData)
         .select()
         .single();
@@ -117,8 +117,8 @@ export function useCreateIntel() {
           entity_id,
         }));
 
-        const { error: linkError } = await supabase
-          .from('intel_entities')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: linkError } = await (supabase.from('intel_entities') as any)
           .insert(intelEntities);
 
         if (linkError) throw linkError;
@@ -138,8 +138,8 @@ export function useUpdateIntel() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Intel> }) => {
-      const { data, error } = await supabase
-        .from('intel')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from('intel') as any)
         .update(updates)
         .eq('id', id)
         .select()
@@ -161,8 +161,8 @@ export function useDeleteIntel() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('intel')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from('intel') as any)
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
         .select()

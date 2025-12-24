@@ -21,40 +21,24 @@ export function IdentifierGroups({ identifiers }: IdentifierGroupsProps) {
 
   if (types.length === 0) {
     return (
-      <div style={{ padding: 12, color: '#6b7280', fontStyle: 'italic' }}>
+      <div className="p-3 text-gray-500 italic">
         No identifiers
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="flex flex-col gap-4">
       {types.map((type) => (
         <div key={type}>
-          <h4
-            style={{
-              margin: 0,
-              marginBottom: 8,
-              fontSize: 14,
-              fontWeight: 600,
-              textTransform: 'capitalize',
-              color: '#374151',
-            }}
-          >
+          <h4 className="m-0 mb-2 text-sm font-semibold capitalize text-gray-700">
             {type}
           </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="flex flex-col gap-1">
             {grouped[type].map((id) => (
               <div
                 key={id.id}
-                style={{
-                  padding: '6px 10px',
-                  backgroundColor: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: 4,
-                  fontSize: 13,
-                  fontFamily: 'monospace',
-                }}
+                className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded text-[13px] font-mono"
               >
                 {id.value}
               </div>

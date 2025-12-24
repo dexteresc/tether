@@ -32,7 +32,7 @@ export const SourcesPage = observer(function SourcesPage() {
       label: 'Code',
       width: '120px',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{row.code}</span>
+        <span className="font-mono font-semibold">{row.code}</span>
       ),
     },
     {
@@ -40,7 +40,7 @@ export const SourcesPage = observer(function SourcesPage() {
       label: 'Type',
       width: '140px',
       render: (row) => (
-        <span style={{ textTransform: 'capitalize' }}>{row.type}</span>
+        <span className="capitalize">{row.type}</span>
       ),
     },
     {
@@ -49,20 +49,16 @@ export const SourcesPage = observer(function SourcesPage() {
       width: '120px',
       render: (row) => {
         const colors: Record<string, string> = {
-          A: '#059669',
-          B: '#10b981',
-          C: '#84cc16',
-          D: '#f59e0b',
-          E: '#f97316',
-          F: '#dc2626',
+          A: 'text-emerald-600',
+          B: 'text-emerald-500',
+          C: 'text-lime-500',
+          D: 'text-amber-500',
+          E: 'text-orange-500',
+          F: 'text-red-600',
         }
         return (
           <span
-            style={{
-              color: colors[row.reliability] || '#374151',
-              fontWeight: 600,
-              fontSize: 16,
-            }}
+            className={`${colors[row.reliability] || 'text-gray-700'} font-semibold text-base`}
           >
             {row.reliability}
           </span>
@@ -74,7 +70,7 @@ export const SourcesPage = observer(function SourcesPage() {
       label: 'Active',
       width: '100px',
       render: (row) => (
-        <span style={{ color: row.active ? '#059669' : '#9ca3af' }}>
+        <span className={row.active ? 'text-emerald-600' : 'text-gray-400'}>
           {row.active ? 'Yes' : 'No'}
         </span>
       ),
@@ -89,8 +85,8 @@ export const SourcesPage = observer(function SourcesPage() {
 
   return (
     <div>
-      <div style={{ padding: '16px 16px 0 16px', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: 0, marginBottom: 16 }}>Sources</h2>
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="m-0 mb-4 text-xl font-bold">Sources</h2>
       </div>
       <TableView
         columns={columns}

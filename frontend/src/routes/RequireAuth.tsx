@@ -6,7 +6,7 @@ export const RequireAuth = observer(function RequireAuth() {
   const { auth } = useRootStore()
   const location = useLocation()
 
-  if (auth.loading) return <div style={{ padding: 24 }}>Loading…</div>
+  if (auth.loading) return <div className="p-6">Loading...</div>
 
   if (!auth.isAuthenticated) {
     return <Navigate to="/auth" replace state={{ from: location }} />

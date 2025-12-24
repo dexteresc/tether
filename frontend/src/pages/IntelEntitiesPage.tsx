@@ -32,7 +32,7 @@ export const IntelEntitiesPage = observer(function IntelEntitiesPage() {
       label: 'Intel',
       width: '160px',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+        <span className="font-mono text-xs">
           {row.intel_id.slice(0, 8)}...
         </span>
       ),
@@ -42,7 +42,7 @@ export const IntelEntitiesPage = observer(function IntelEntitiesPage() {
       label: 'Entity',
       width: '160px',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+        <span className="font-mono text-xs">
           {row.entity_id.slice(0, 8)}...
         </span>
       ),
@@ -51,7 +51,7 @@ export const IntelEntitiesPage = observer(function IntelEntitiesPage() {
       key: 'role',
       label: 'Role',
       render: (row) => (
-        <span style={{ textTransform: 'capitalize' }}>
+        <span className="capitalize">
           {row.role || 'N/A'}
         </span>
       ),
@@ -66,8 +66,8 @@ export const IntelEntitiesPage = observer(function IntelEntitiesPage() {
 
   return (
     <div>
-      <div style={{ padding: '16px 16px 0 16px', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: 0, marginBottom: 16 }}>Intel-Entity Relationships</h2>
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="m-0 mb-4 text-xl font-bold">Intel-Entity Relationships</h2>
       </div>
       <TableView
         columns={columns}

@@ -35,41 +35,41 @@ export const AuthPage = observer(function AuthPage() {
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: '40px auto', padding: 16 }}>
-      <h1 style={{ marginBottom: 8 }}>Tether</h1>
-      <p style={{ marginTop: 0, color: '#6b7280' }}>{mode === 'signup' ? 'Create an account' : 'Sign in'}</p>
+    <div className="max-w-[420px] mx-auto my-10 p-4">
+      <h1 className="text-3xl font-bold mb-2">Tether</h1>
+      <p className="mt-0 text-gray-500">{mode === 'signup' ? 'Create an account' : 'Sign in'}</p>
 
-      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span>Email</span>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
+      <form onSubmit={onSubmit} className="flex flex-col gap-3 mt-4">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">Email</span>
+          <input className="border border-gray-300 rounded p-2" value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
         </label>
 
         {mode === 'signup' ? (
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span>Name</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} type="text" required />
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Name</span>
+            <input className="border border-gray-300 rounded p-2" value={name} onChange={(e) => setName(e.target.value)} type="text" required />
           </label>
         ) : null}
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span>Password</span>
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">Password</span>
+          <input className="border border-gray-300 rounded p-2" value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
         </label>
 
-        <button disabled={submitting || auth.loading} type="submit">
+        <button className="bg-black text-white p-2 rounded hover:bg-gray-800 disabled:opacity-50 cursor-pointer" disabled={submitting || auth.loading} type="submit">
           {submitting ? 'Working…' : mode === 'signup' ? 'Sign up' : 'Sign in'}
         </button>
 
         <button
           type="button"
           onClick={() => setMode((m) => (m === 'signin' ? 'signup' : 'signin'))}
-          style={{ background: 'transparent', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}
+          className="bg-transparent border-none underline cursor-pointer text-sm text-gray-600 hover:text-black"
         >
           {mode === 'signup' ? 'Have an account? Sign in' : 'Need an account? Sign up'}
         </button>
 
-        {auth.lastError ? <div style={{ color: '#b91c1c' }}>{auth.lastError}</div> : null}
+        {auth.lastError ? <div className="text-red-700 text-sm">{auth.lastError}</div> : null}
       </form>
     </div>
   )

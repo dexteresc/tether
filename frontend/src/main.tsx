@@ -14,7 +14,7 @@ function AppWithStore() {
   }, [store])
 
   if (!ready) {
-    return <div style={{ padding: 24 }}>Initializing...</div>
+    return <div className="p-6">Initializing...</div>
   }
 
   return (

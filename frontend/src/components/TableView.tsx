@@ -40,7 +40,7 @@ export const TableView = observer(function TableView<T>({
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: 'center' }}>
+      <div className="p-6 text-center">
         <p>Loading...</p>
       </div>
     )
@@ -48,27 +48,23 @@ export const TableView = observer(function TableView<T>({
 
   if (data.length === 0) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>
+      <div className="p-6 text-center text-gray-500">
         <p>{emptyMessage}</p>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+    <div className="p-4">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+            <tr className="border-b-2 border-gray-200 bg-gray-50">
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  style={{
-                    padding: '12px 8px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    width: col.width,
-                  }}
+                  className="p-3 text-left font-semibold"
+                  style={{ width: col.width }}
                 >
                   {col.label}
                 </th>
@@ -80,22 +76,12 @@ export const TableView = observer(function TableView<T>({
               <tr
                 key={idx}
                 onClick={() => onRowClick?.(row)}
-                style={{
-                  borderBottom: '1px solid #e5e7eb',
-                  cursor: onRowClick ? 'pointer' : 'default',
-                  backgroundColor: 'white',
-                }}
-                onMouseEnter={(e) => {
-                  if (onRowClick) {
-                    e.currentTarget.style.backgroundColor = '#f9fafb'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white'
-                }}
+                className={`border-b border-gray-200 bg-white ${
+                  onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''
+                }`}
               >
                 {columns.map((col) => (
-                  <td key={col.key} style={{ padding: '12px 8px' }}>
+                  <td key={col.key} className="p-3">
                     {col.render(row)}
                   </td>
                 ))}
@@ -106,32 +92,40 @@ export const TableView = observer(function TableView<T>({
       </div>
 
       {totalPages > 1 && (
-        <div
-          style={{
-            marginTop: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <div style={{ fontSize: 14, color: '#6b7280' }}>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="text-sm text-gray-500">
             Showing {startIndex + 1}-{endIndex} of {data.length}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => goToPage(0)} disabled={currentPage === 0}>
+          <div className="flex gap-2">
+            <button
+              onClick={() => goToPage(0)}
+              disabled={currentPage === 0}
+              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
+            >
               First
             </button>
-            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0}>
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 0}
+              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
+            >
               Previous
             </button>
-            <span style={{ padding: '0 8px', fontSize: 14, color: '#374151' }}>
+            <span className="px-2 text-sm text-gray-700 flex items-center">
               Page {currentPage + 1} of {totalPages}
             </span>
-            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages - 1}>
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages - 1}
+              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
+            >
               Next
             </button>
-            <button onClick={() => goToPage(totalPages - 1)} disabled={currentPage === totalPages - 1}>
+            <button
+              onClick={() => goToPage(totalPages - 1)}
+              disabled={currentPage === totalPages - 1}
+              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
+            >
               Last
             </button>
           </div>

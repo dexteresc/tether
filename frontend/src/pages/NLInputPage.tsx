@@ -95,115 +95,87 @@ export const NLInputPage = observer(function NLInputPage() {
   const failed = nlQueue.failed
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <h1 style={{ marginBottom: 24 }}>Natural Language Input</h1>
+    <div className="p-6 max-w-[1200px] mx-auto">
+      <h1 className="mb-6 text-3xl font-bold">Natural Language Input</h1>
 
       {/* Input Form */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: 32 }}>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Enter intelligence text:</label>
+      <form onSubmit={handleSubmit} className="mb-8">
+        <div className="mb-3">
+          <label className="block mb-2 font-semibold">Enter intelligence text:</label>
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Example: John Doe met Jane Smith at the Hilton Hotel on March 15, 2024..."
-            style={{
-              width: '100%',
-              minHeight: 120,
-              padding: 12,
-              fontSize: 14,
-              border: '1px solid #d1d5db',
-              borderRadius: 4,
-            }}
+            className="w-full min-h-[120px] p-3 text-sm border border-gray-300 rounded"
           />
         </div>
         <button
           type="submit"
           disabled={!inputText.trim() || nlQueue.isProcessing}
-          style={{
-            padding: '8px 24px',
-            backgroundColor: inputText.trim() ? '#2563eb' : '#d1d5db',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            cursor: inputText.trim() ? 'pointer' : 'not-allowed',
-            fontSize: 14,
-            fontWeight: 600,
-          }}
+          className={`px-6 py-2 text-white border-none rounded text-sm font-semibold ${
+            inputText.trim() ? 'bg-blue-600 cursor-pointer hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'
+          }`}
         >
           Submit
         </button>
       </form>
 
       {/* Queue Status */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <div style={{ padding: 16, backgroundColor: '#f9fafb', borderRadius: 8 }}>
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Processing</div>
-          <div style={{ fontSize: 24, fontWeight: 600 }}>{currentlyProcessing ? 1 : 0}</div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-8">
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="text-xs text-gray-500 mb-1">Processing</div>
+          <div className="text-2xl font-semibold">{currentlyProcessing ? 1 : 0}</div>
         </div>
-        <div style={{ padding: 16, backgroundColor: '#f9fafb', borderRadius: 8 }}>
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Pending</div>
-          <div style={{ fontSize: 24, fontWeight: 600 }}>{pendingQueue.length}</div>
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="text-xs text-gray-500 mb-1">Pending</div>
+          <div className="text-2xl font-semibold">{pendingQueue.length}</div>
         </div>
-        <div style={{ padding: 16, backgroundColor: '#f9fafb', borderRadius: 8 }}>
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Completed</div>
-          <div style={{ fontSize: 24, fontWeight: 600 }}>{completed.length}</div>
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="text-xs text-gray-500 mb-1">Completed</div>
+          <div className="text-2xl font-semibold">{completed.length}</div>
         </div>
-        <div style={{ padding: 16, backgroundColor: '#f9fafb', borderRadius: 8 }}>
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Failed</div>
-          <div style={{ fontSize: 24, fontWeight: 600 }}>{failed.length}</div>
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="text-xs text-gray-500 mb-1">Failed</div>
+          <div className="text-2xl font-semibold">{failed.length}</div>
         </div>
       </div>
 
       {/* Currently Processing */}
       {currentlyProcessing && (
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, marginBottom: 12 }}>Currently Processing</h2>
-          <div style={{ padding: 16, backgroundColor: '#eff6ff', borderRadius: 8, border: '1px solid #2563eb' }}>
-            <div style={{ fontSize: 14, marginBottom: 8 }}>
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-3">Currently Processing</h2>
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-600">
+            <div className="text-sm mb-2">
               <strong>Text:</strong> {currentlyProcessing.text.substring(0, 100)}
               {currentlyProcessing.text.length > 100 ? '...' : ''}
             </div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>Processing...</div>
+            <div className="text-xs text-gray-500">Processing...</div>
           </div>
         </div>
       )}
 
       {/* Pending Queue */}
       {pendingQueue.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, marginBottom: 12 }}>Pending Queue</h2>
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-3">Pending Queue</h2>
           {pendingQueue.map((item) => (
             <div
               key={item.input_id}
-              style={{
-                padding: 16,
-                backgroundColor: '#f9fafb',
-                borderRadius: 8,
-                marginBottom: 8,
-                border: '1px solid #e5e7eb',
-              }}
+              className="p-4 bg-gray-50 rounded-lg mb-2 border border-gray-200"
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, marginBottom: 4 }}>
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <div className="text-sm mb-1">
                     <strong>Position {item.queuePosition}:</strong> {item.text.substring(0, 80)}
                     {item.text.length > 80 ? '...' : ''}
                   </div>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                  <div className="text-xs text-gray-500">
                     Estimated wait: {formatDuration(item.estimatedWaitSeconds)}
                   </div>
                 </div>
                 <button
                   onClick={() => handleCancel(item.input_id)}
-                  style={{
-                    padding: '4px 12px',
-                    backgroundColor: '#b91c1c',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    fontSize: 12,
-                  }}
+                  className="px-3 py-1 bg-red-700 text-white border-none rounded cursor-pointer text-xs hover:bg-red-800"
                 >
                   Cancel
                 </button>
@@ -215,26 +187,21 @@ export const NLInputPage = observer(function NLInputPage() {
 
       {/* Completed Items */}
       {completed.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, marginBottom: 12 }}>Completed Extractions</h2>
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-3">Completed Extractions</h2>
           {completed.map((item) => (
             <div
               key={item.input_id}
-              style={{
-                padding: 16,
-                backgroundColor: selectedInputId === item.input_id ? '#f0fdf4' : '#fff',
-                borderRadius: 8,
-                marginBottom: 8,
-                border: `1px solid ${selectedInputId === item.input_id ? '#059669' : '#e5e7eb'}`,
-                cursor: 'pointer',
-              }}
+              className={`p-4 rounded-lg mb-2 border cursor-pointer hover:bg-gray-100 ${
+                selectedInputId === item.input_id ? 'bg-green-50 border-emerald-600' : 'bg-white border-gray-200'
+              }`}
               onClick={() => setSelectedInputId(item.input_id)}
             >
-              <div style={{ fontSize: 14, marginBottom: 4 }}>
+              <div className="text-sm mb-1">
                 <strong>Text:</strong> {item.text.substring(0, 100)}
                 {item.text.length > 100 ? '...' : ''}
               </div>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>
+              <div className="text-xs text-gray-500">
                 {new Date(item.created_at).toLocaleString()}
               </div>
             </div>
@@ -244,37 +211,23 @@ export const NLInputPage = observer(function NLInputPage() {
 
       {/* Failed Items */}
       {failed.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, marginBottom: 12 }}>Failed Extractions</h2>
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-3">Failed Extractions</h2>
           {failed.map((item) => (
             <div
               key={item.input_id}
-              style={{
-                padding: 16,
-                backgroundColor: '#fee2e2',
-                borderRadius: 8,
-                marginBottom: 8,
-                border: '1px solid #b91c1c',
-              }}
+              className="p-4 bg-red-100 rounded-lg mb-2 border border-red-700"
             >
-              <div style={{ fontSize: 14, marginBottom: 4 }}>
+              <div className="text-sm mb-1">
                 <strong>Text:</strong> {item.text.substring(0, 100)}
                 {item.text.length > 100 ? '...' : ''}
               </div>
-              <div style={{ fontSize: 12, color: '#b91c1c', marginBottom: 8 }}>
+              <div className="text-xs text-red-700 mb-2">
                 <strong>Error:</strong> {item.error}
               </div>
               <button
                 onClick={() => handleRetry(item.input_id)}
-                style={{
-                  padding: '4px 12px',
-                  backgroundColor: '#2563eb',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 12,
-                }}
+                className="px-3 py-1 bg-blue-600 text-white border-none rounded cursor-pointer text-xs hover:bg-blue-700"
               >
                 Retry
               </button>
@@ -285,44 +238,29 @@ export const NLInputPage = observer(function NLInputPage() {
 
       {/* Staged Rows Review */}
       {selectedInputId && stagedRows.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: 18, margin: 0 }}>Review Extracted Data</h2>
-            <div style={{ display: 'flex', gap: 8 }}>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold m-0">Review Extracted Data</h2>
+            <div className="flex gap-2">
               <button
                 onClick={() => setSelectedInputId(null)}
-                style={{
-                  padding: '6px 16px',
-                  backgroundColor: '#6b7280',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                }}
+                className="px-4 py-1.5 bg-gray-500 text-white border-none rounded cursor-pointer text-sm hover:bg-gray-600"
               >
                 Close
               </button>
               <button
                 onClick={handleCommit}
                 disabled={isCommitting}
-                style={{
-                  padding: '6px 16px',
-                  backgroundColor: '#059669',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: isCommitting ? 'not-allowed' : 'pointer',
-                  fontSize: 14,
-                  fontWeight: 600,
-                }}
+                className={`px-4 py-1.5 bg-emerald-600 text-white border-none rounded text-sm font-semibold ${
+                    isCommitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-emerald-700'
+                }`}
               >
                 {isCommitting ? 'Committing...' : 'Commit to Database'}
               </button>
             </div>
           </div>
 
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>
+          <div className="text-xs text-gray-500 mb-4">
             {stagedRows.filter((r) => r.status === 'accepted' || r.status === 'edited').length} of {stagedRows.length}{' '}
             rows accepted
           </div>

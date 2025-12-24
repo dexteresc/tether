@@ -32,7 +32,7 @@ export const RelationsPage = observer(function RelationsPage() {
       label: 'Source',
       width: '160px',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+        <span className="font-mono text-xs">
           {row.source_id.slice(0, 8)}...
         </span>
       ),
@@ -42,7 +42,7 @@ export const RelationsPage = observer(function RelationsPage() {
       label: 'Type',
       width: '140px',
       render: (row) => (
-        <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{row.type}</span>
+        <span className="capitalize font-medium">{row.type}</span>
       ),
     },
     {
@@ -50,7 +50,7 @@ export const RelationsPage = observer(function RelationsPage() {
       label: 'Target',
       width: '160px',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+        <span className="font-mono text-xs">
           {row.target_id.slice(0, 8)}...
         </span>
       ),
@@ -60,7 +60,7 @@ export const RelationsPage = observer(function RelationsPage() {
       label: 'Strength',
       width: '100px',
       render: (row) => (
-        <span style={{ fontWeight: 500 }}>
+        <span className="font-medium">
           {row.strength !== null ? row.strength : 'N/A'}
         </span>
       ),
@@ -83,8 +83,8 @@ export const RelationsPage = observer(function RelationsPage() {
 
   return (
     <div>
-      <div style={{ padding: '16px 16px 0 16px', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: 0, marginBottom: 16 }}>Relations</h2>
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="m-0 mb-4 text-xl font-bold">Relations</h2>
       </div>
       <TableView
         columns={columns}

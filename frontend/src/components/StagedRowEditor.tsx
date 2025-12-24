@@ -62,17 +62,17 @@ export const StagedRowEditor = observer(function StagedRowEditor({ staged, onSta
     setValidationErrors([])
   }
 
-  const getStatusColor = () => {
+  const getStatusColorClass = () => {
     switch (staged.status) {
       case 'proposed':
-        return '#f59e0b'
+        return 'bg-amber-500'
       case 'accepted':
       case 'edited':
-        return '#059669'
+        return 'bg-emerald-600'
       case 'rejected':
-        return '#b91c1c'
+        return 'bg-red-700'
       default:
-        return '#6b7280'
+        return 'bg-gray-500'
     }
   }
 
@@ -89,77 +89,39 @@ export const StagedRowEditor = observer(function StagedRowEditor({ staged, onSta
   }
 
   return (
-    <div
-      style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 12,
-        backgroundColor: '#fff',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <span style={{ fontWeight: 600, fontSize: 14 }}>{getTableLabel(staged.table)}</span>
+    <div className="border border-gray-200 rounded-lg p-4 mb-3 bg-white">
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex gap-3 items-center">
+          <span className="font-semibold text-sm">{getTableLabel(staged.table)}</span>
           <span
-            style={{
-              fontSize: 12,
-              color: '#fff',
-              backgroundColor: getStatusColor(),
-              padding: '2px 8px',
-              borderRadius: 4,
-            }}
+            className={`text-xs text-white px-2 py-0.5 rounded ${getStatusColorClass()}`}
           >
             {staged.status}
           </span>
           {staged.origin_label && (
-            <span style={{ fontSize: 12, color: '#6b7280' }}>({staged.origin_label})</span>
+            <span className="text-xs text-gray-500">({staged.origin_label})</span>
           )}
         </div>
 
         {!isEditing && (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex gap-2">
             {(staged.status === 'proposed' || staged.status === 'edited') && (
               <>
                 <button
                   onClick={handleAccept}
-                  style={{
-                    padding: '4px 12px',
-                    backgroundColor: '#059669',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    fontSize: 12,
-                  }}
+                  className="px-3 py-1 bg-emerald-600 text-white border-none rounded cursor-pointer text-xs hover:bg-emerald-700"
                 >
                   Accept
                 </button>
                 <button
                   onClick={handleEdit}
-                  style={{
-                    padding: '4px 12px',
-                    backgroundColor: '#2563eb',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    fontSize: 12,
-                  }}
+                  className="px-3 py-1 bg-blue-600 text-white border-none rounded cursor-pointer text-xs hover:bg-blue-700"
                 >
                   Edit
                 </button>
                 <button
                   onClick={handleReject}
-                  style={{
-                    padding: '4px 12px',
-                    backgroundColor: '#b91c1c',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    fontSize: 12,
-                  }}
+                  className="px-3 py-1 bg-red-700 text-white border-none rounded cursor-pointer text-xs hover:bg-red-800"
                 >
                   Reject
                 </button>
@@ -168,15 +130,7 @@ export const StagedRowEditor = observer(function StagedRowEditor({ staged, onSta
             {staged.status === 'accepted' && (
               <button
                 onClick={handleReject}
-                style={{
-                  padding: '4px 12px',
-                  backgroundColor: '#6b7280',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 12,
-                }}
+                className="px-3 py-1 bg-gray-500 text-white border-none rounded cursor-pointer text-xs hover:bg-gray-600"
               >
                 Undo
               </button>
@@ -184,15 +138,7 @@ export const StagedRowEditor = observer(function StagedRowEditor({ staged, onSta
             {staged.status === 'rejected' && (
               <button
                 onClick={handleAccept}
-                style={{
-                  padding: '4px 12px',
-                  backgroundColor: '#6b7280',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 12,
-                }}
+                className="px-3 py-1 bg-gray-500 text-white border-none rounded cursor-pointer text-xs hover:bg-gray-600"
               >
                 Undo
               </button>
@@ -206,20 +152,12 @@ export const StagedRowEditor = observer(function StagedRowEditor({ staged, onSta
           <textarea
             value={editedRow}
             onChange={(e) => setEditedRow(e.target.value)}
-            style={{
-              width: '100%',
-              minHeight: 200,
-              fontFamily: 'monospace',
-              fontSize: 12,
-              padding: 8,
-              border: '1px solid #d1d5db',
-              borderRadius: 4,
-            }}
+            className="w-full min-h-[200px] font-mono text-xs p-2 border border-gray-300 rounded"
           />
           {validationErrors.length > 0 && (
-            <div style={{ marginTop: 8, padding: 8, backgroundColor: '#fee2e2', borderRadius: 4 }}>
-              <strong style={{ color: '#b91c1c', fontSize: 12 }}>Validation errors:</strong>
-              <ul style={{ margin: '4px 0 0 0', paddingLeft: 20, fontSize: 12, color: '#b91c1c' }}>
+            <div className="mt-2 p-2 bg-red-100 rounded">
+              <strong className="text-red-700 text-xs font-bold">Validation errors:</strong>
+              <ul className="m-0 mt-1 pl-5 text-xs text-red-700">
                 {validationErrors.map((err, idx) => (
                   <li key={idx}>
                     {err.field !== '_root' && <strong>{err.field}:</strong>} {err.message}
@@ -228,48 +166,23 @@ export const StagedRowEditor = observer(function StagedRowEditor({ staged, onSta
               </ul>
             </div>
           )}
-          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+          <div className="mt-3 flex gap-2">
             <button
               onClick={handleSaveEdit}
-              style={{
-                padding: '6px 16px',
-                backgroundColor: '#059669',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                fontSize: 14,
-              }}
+              className="px-4 py-1.5 bg-emerald-600 text-white border-none rounded cursor-pointer text-sm hover:bg-emerald-700"
             >
               Save
             </button>
             <button
               onClick={handleCancelEdit}
-              style={{
-                padding: '6px 16px',
-                backgroundColor: '#6b7280',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                fontSize: 14,
-              }}
+              className="px-4 py-1.5 bg-gray-500 text-white border-none rounded cursor-pointer text-sm hover:bg-gray-600"
             >
               Cancel
             </button>
           </div>
         </div>
       ) : (
-        <pre
-          style={{
-            fontSize: 12,
-            backgroundColor: '#f9fafb',
-            padding: 12,
-            borderRadius: 4,
-            overflow: 'auto',
-            margin: 0,
-          }}
-        >
+        <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto m-0">
           {JSON.stringify(staged.proposed_row, null, 2)}
         </pre>
       )}

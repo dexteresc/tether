@@ -32,7 +32,7 @@ export const IdentifiersPage = observer(function IdentifiersPage() {
       label: 'Entity',
       width: '160px',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+        <span className="font-mono text-xs">
           {row.entity_id.slice(0, 8)}...
         </span>
       ),
@@ -42,14 +42,14 @@ export const IdentifiersPage = observer(function IdentifiersPage() {
       label: 'Type',
       width: '140px',
       render: (row) => (
-        <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{row.type}</span>
+        <span className="capitalize font-medium">{row.type}</span>
       ),
     },
     {
       key: 'value',
       label: 'Value',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 500 }}>
+        <span className="font-mono text-[13px] font-medium">
           {row.value}
         </span>
       ),
@@ -64,8 +64,8 @@ export const IdentifiersPage = observer(function IdentifiersPage() {
 
   return (
     <div>
-      <div style={{ padding: '16px 16px 0 16px', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: 0, marginBottom: 16 }}>Identifiers</h2>
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="m-0 mb-4 text-xl font-bold">Identifiers</h2>
       </div>
       <TableView
         columns={columns}

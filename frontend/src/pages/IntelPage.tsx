@@ -38,7 +38,7 @@ export const IntelPage = observer(function IntelPage() {
       label: 'Type',
       width: '140px',
       render: (row) => (
-        <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{row.type}</span>
+        <span className="capitalize font-medium">{row.type}</span>
       ),
     },
     {
@@ -47,19 +47,15 @@ export const IntelPage = observer(function IntelPage() {
       width: '120px',
       render: (row) => {
         const colors: Record<string, string> = {
-          confirmed: '#059669',
-          high: '#10b981',
-          medium: '#f59e0b',
-          low: '#f97316',
-          unconfirmed: '#6b7280',
+          confirmed: 'text-emerald-600',
+          high: 'text-emerald-500',
+          medium: 'text-amber-500',
+          low: 'text-orange-500',
+          unconfirmed: 'text-gray-500',
         }
         return (
           <span
-            style={{
-              color: colors[row.confidence] || '#374151',
-              fontWeight: 500,
-              textTransform: 'capitalize',
-            }}
+            className={`${colors[row.confidence] || 'text-gray-700'} font-medium capitalize`}
           >
             {row.confidence}
           </span>
@@ -71,7 +67,7 @@ export const IntelPage = observer(function IntelPage() {
       label: 'Source',
       width: '200px',
       render: (row) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+        <span className="font-mono text-xs">
           {row.source_id ? row.source_id.slice(0, 8) + '...' : 'N/A'}
         </span>
       ),
@@ -86,8 +82,8 @@ export const IntelPage = observer(function IntelPage() {
 
   return (
     <div>
-      <div style={{ padding: '16px 16px 0 16px', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: 0, marginBottom: 16 }}>Intel</h2>
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="m-0 mb-4 text-xl font-bold">Intel</h2>
       </div>
       <TableView
         columns={columns}

@@ -12,18 +12,9 @@ export const AppShell = observer(function AppShell() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <header
-        style={{
-          borderBottom: '1px solid #e5e7eb',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}
-      >
-        <nav style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 14 }}>
+    <div className="flex flex-col min-h-screen">
+      <header className="border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-3">
+        <nav className="flex gap-3 items-center text-sm">
           <Link to="/">Home</Link>
           <Link to="/nl-input">NL Input</Link>
           <Link to="/entities">Entities</Link>
@@ -35,18 +26,18 @@ export const AppShell = observer(function AppShell() {
           <Link to="/graph">Graph</Link>
         </nav>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="flex gap-3 items-center">
           <SyncIndicator />
           <button onClick={onSignOut}>Sign out</button>
         </div>
       </header>
 
-      <main style={{ flex: 1 }}>
+      <main className="flex-1">
         <Outlet />
       </main>
 
-      <footer style={{ borderTop: '1px solid #e5e7eb', padding: 12, color: '#6b7280' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <footer className="border-t border-gray-200 p-3 text-gray-500">
+        <div className="flex justify-between">
           <span>Connection: {syncStatus.connectionStatus}</span>
           {syncStatus.lastSyncAt ? <span>Last sync: {new Date(syncStatus.lastSyncAt).toLocaleString()}</span> : null}
         </div>
@@ -58,11 +49,11 @@ export const AppShell = observer(function AppShell() {
 const SyncIndicator = observer(function SyncIndicator() {
   const { syncStatus } = useRootStore()
 
-  const getStatusColor = () => {
-    if (syncStatus.lastError) return '#b91c1c'
-    if (syncStatus.connectionStatus === 'offline') return '#f59e0b'
-    if (syncStatus.progress.phase !== 'idle') return '#2563eb'
-    return '#059669'
+  const getStatusColorClass = () => {
+    if (syncStatus.lastError) return 'bg-red-700'
+    if (syncStatus.connectionStatus === 'offline') return 'bg-amber-500'
+    if (syncStatus.progress.phase !== 'idle') return 'bg-blue-600'
+    return 'bg-emerald-600'
   }
 
   const getStatusText = () => {
@@ -76,23 +67,18 @@ const SyncIndicator = observer(function SyncIndicator() {
   }
 
   return (
-    <div style={{ fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div className="text-xs text-gray-700 flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: getStatusColor(),
-          }}
+          className={`w-2 h-2 rounded-full ${getStatusColorClass()}`}
         />
         <span>{getStatusText()}</span>
       </div>
       {syncStatus.pendingOutboxCount > 0 && (
-        <span style={{ color: '#6b7280' }}>• Pending: {syncStatus.pendingOutboxCount}</span>
+        <span className="text-gray-500">• Pending: {syncStatus.pendingOutboxCount}</span>
       )}
       {syncStatus.lastError && (
-        <span style={{ color: '#b91c1c', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className="text-red-700 max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">
           Error: {syncStatus.lastError}
         </span>
       )}

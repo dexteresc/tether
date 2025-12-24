@@ -40,7 +40,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 24 }}>
+      <div className="p-6">
         <p>Loading...</p>
       </div>
     )
@@ -48,57 +48,48 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
 
   if (!entity) {
     return (
-      <div style={{ padding: 24 }}>
+      <div className="p-6">
         <p>Entity not found</p>
-        <Link to="/entities">Back to Entities</Link>
+        <Link to="/entities" className="text-blue-600 hover:underline">Back to Entities</Link>
       </div>
     )
   }
 
   return (
     <div>
-      <div style={{ padding: 16, borderBottom: '1px solid #e5e7eb' }}>
-        <Link to="/entities" style={{ fontSize: 14, color: '#2563eb' }}>
+      <div className="p-4 border-b border-gray-200">
+        <Link to="/entities" className="text-sm text-blue-600 hover:underline">
           ← Back to Entities
         </Link>
-        <h2 style={{ margin: '8px 0 0 0' }}>Entity Detail</h2>
+        <h2 className="m-0 mt-2 text-xl font-bold">Entity Detail</h2>
       </div>
 
-      <div style={{ padding: 24 }}>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
-            <div style={{ fontWeight: 600, color: '#374151' }}>ID:</div>
-            <div style={{ fontFamily: 'monospace', fontSize: 13 }}>{entity.id}</div>
+      <div className="p-6">
+        <div className="mb-6">
+          <div className="grid grid-cols-[120px_1fr] gap-3">
+            <div className="font-semibold text-gray-700">ID:</div>
+            <div className="font-mono text-[13px]">{entity.id}</div>
 
-            <div style={{ fontWeight: 600, color: '#374151' }}>Type:</div>
-            <div style={{ textTransform: 'capitalize' }}>{entity.type}</div>
+            <div className="font-semibold text-gray-700">Type:</div>
+            <div className="capitalize">{entity.type}</div>
 
-            <div style={{ fontWeight: 600, color: '#374151' }}>Created:</div>
+            <div className="font-semibold text-gray-700">Created:</div>
             <div>{new Date(entity.created_at).toLocaleString()}</div>
 
-            <div style={{ fontWeight: 600, color: '#374151' }}>Updated:</div>
+            <div className="font-semibold text-gray-700">Updated:</div>
             <div>{new Date(entity.updated_at).toLocaleString()}</div>
           </div>
         </div>
 
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ marginTop: 0, marginBottom: 12 }}>Identifiers</h3>
+        <div className="mb-6">
+          <h3 className="mt-0 mb-3 text-lg font-bold">Identifiers</h3>
           <IdentifierGroups identifiers={identifiers} />
         </div>
 
         {entity.data && typeof entity.data === 'object' && Object.keys(entity.data).length > 0 && (
           <div>
-            <h3 style={{ marginTop: 0, marginBottom: 12 }}>Additional Data</h3>
-            <pre
-              style={{
-                padding: 12,
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 4,
-                fontSize: 12,
-                overflow: 'auto',
-              }}
-            >
+            <h3 className="mt-0 mb-3 text-lg font-bold">Additional Data</h3>
+            <pre className="p-3 bg-gray-50 border border-gray-200 rounded text-xs overflow-auto">
               {JSON.stringify(entity.data, null, 2)}
             </pre>
           </div>

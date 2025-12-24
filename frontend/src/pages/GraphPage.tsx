@@ -71,8 +71,8 @@ export const GraphPage = observer(function GraphPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 24 }}>
-        <h2>Relationship Graph</h2>
+      <div className="p-6">
+        <h2 className="text-xl font-bold mb-4">Relationship Graph</h2>
         <p>Loading graph data...</p>
       </div>
     )
@@ -80,44 +80,39 @@ export const GraphPage = observer(function GraphPage() {
 
   if (nodes.length === 0) {
     return (
-      <div style={{ padding: 24 }}>
-        <h2>Relationship Graph</h2>
-        <p style={{ color: '#6b7280' }}>No entities or relations to visualize.</p>
+      <div className="p-6">
+        <h2 className="text-xl font-bold mb-4">Relationship Graph</h2>
+        <p className="text-gray-500">No entities or relations to visualize.</p>
       </div>
     )
   }
 
   // Placeholder UI until we add the force graph library
   return (
-    <div style={{ padding: 24 }}>
-      <h2>Relationship Graph</h2>
-      <div style={{ marginBottom: 16, color: '#6b7280' }}>
+    <div className="p-6">
+      <h2 className="text-xl font-bold mb-4">Relationship Graph</h2>
+      <div className="mb-4 text-gray-500">
         <p>Graph visualization ready. Install react-force-graph-2d to enable interactive visualization.</p>
         <p>
           Nodes: {nodes.length} | Links: {links.length}
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <div className="grid grid-cols-2 gap-6">
         <div>
-          <h3 style={{ marginTop: 0 }}>Entities ({nodes.length})</h3>
-          <div style={{ maxHeight: 400, overflowY: 'auto', fontSize: 13 }}>
+          <h3 className="mt-0 text-lg font-bold mb-2">Entities ({nodes.length})</h3>
+          <div className="max-h-[400px] overflow-y-auto text-sm border border-gray-200 rounded">
             {nodes.slice(0, 50).map((node) => (
               <div
                 key={node.id}
-                style={{
-                  padding: '8px 12px',
-                  borderBottom: '1px solid #e5e7eb',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}
+                className="p-2 border-b border-gray-100 flex justify-between items-center"
               >
-                <span style={{ fontFamily: 'monospace' }}>{node.label}</span>
-                <span style={{ color: '#6b7280', textTransform: 'capitalize' }}>{node.type}</span>
+                <span className="font-mono">{node.label}</span>
+                <span className="text-gray-500 capitalize">{node.type}</span>
               </div>
             ))}
             {nodes.length > 50 && (
-              <div style={{ padding: 8, color: '#6b7280', textAlign: 'center' }}>
+              <div className="p-2 text-gray-500 text-center">
                 +{nodes.length - 50} more
               </div>
             )}
@@ -125,28 +120,25 @@ export const GraphPage = observer(function GraphPage() {
         </div>
 
         <div>
-          <h3 style={{ marginTop: 0 }}>Relations ({links.length})</h3>
-          <div style={{ maxHeight: 400, overflowY: 'auto', fontSize: 13 }}>
+          <h3 className="mt-0 text-lg font-bold mb-2">Relations ({links.length})</h3>
+          <div className="max-h-[400px] overflow-y-auto text-sm border border-gray-200 rounded">
             {links.slice(0, 50).map((link, idx) => (
               <div
                 key={idx}
-                style={{
-                  padding: '8px 12px',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
+                className="p-2 border-b border-gray-100"
               >
-                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#6b7280' }}>
+                <div className="font-mono text-xs text-gray-500">
                   {typeof link.source === 'string' ? link.source.slice(0, 8) : ''} →{' '}
                   {typeof link.target === 'string' ? link.target.slice(0, 8) : ''}
                 </div>
-                <div style={{ marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ textTransform: 'capitalize' }}>{link.label}</span>
-                  {link.strength && <span style={{ color: '#6b7280' }}>Strength: {link.strength}</span>}
+                <div className="mt-1 flex justify-between">
+                  <span className="capitalize">{link.label}</span>
+                  {link.strength && <span className="text-gray-500">Strength: {link.strength}</span>}
                 </div>
               </div>
             ))}
             {links.length > 50 && (
-              <div style={{ padding: 8, color: '#6b7280', textAlign: 'center' }}>
+              <div className="p-2 text-gray-500 text-center">
                 +{links.length - 50} more
               </div>
             )}

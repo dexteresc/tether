@@ -49,7 +49,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
       label: 'Type',
       width: '120px',
       render: (row) => (
-        <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{row.type}</span>
+        <span className="capitalize font-medium">{row.type}</span>
       ),
     },
     {
@@ -57,25 +57,19 @@ export const EntitiesPage = observer(function EntitiesPage() {
       label: 'Identifiers',
       render: (row) => {
         const ids = identifiersMap[row.id] || []
-        if (ids.length === 0) return <span style={{ color: '#9ca3af' }}>No identifiers</span>
+        if (ids.length === 0) return <span className="text-gray-400">No identifiers</span>
         return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          <div className="flex flex-wrap gap-1">
             {ids.slice(0, 3).map((id) => (
               <span
                 key={id.id}
-                style={{
-                  padding: '2px 8px',
-                  backgroundColor: '#e5e7eb',
-                  borderRadius: 3,
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                }}
+                className="px-2 py-0.5 bg-gray-200 rounded text-xs font-mono"
               >
                 {id.type}: {id.value}
               </span>
             ))}
             {ids.length > 3 && (
-              <span style={{ fontSize: 12, color: '#6b7280' }}>+{ids.length - 3} more</span>
+              <span className="text-xs text-gray-500">+{ids.length - 3} more</span>
             )}
           </div>
         )
@@ -97,8 +91,8 @@ export const EntitiesPage = observer(function EntitiesPage() {
 
   return (
     <div>
-      <div style={{ padding: '16px 16px 0 16px', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ margin: 0, marginBottom: 16 }}>Entities</h2>
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="m-0 mb-4 text-xl font-bold">Entities</h2>
       </div>
       <TableView
         columns={columns}

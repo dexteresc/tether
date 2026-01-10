@@ -217,6 +217,8 @@ export class NLQueueStore {
           classification: response.classification,
           chain_of_thought: response.chain_of_thought,
           staged_ids: stagedIds,
+          resolutions: response.extraction.resolutions,
+          clarifications: response.extraction.clarifications,
         },
       })
 

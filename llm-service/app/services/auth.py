@@ -1,6 +1,9 @@
 from jose import jwt, JWTError
 from typing import Optional
+import logging
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def verify_supabase_jwt(token: str) -> Optional[str]:
@@ -26,15 +29,15 @@ def verify_supabase_jwt(token: str) -> Optional[str]:
         user_id = payload.get("sub")
 
         if not user_id:
-            print("No user_id found in JWT payload")
+            logger.warning("No user_id found in JWT payload")
             return None
 
         return user_id
     except JWTError as e:
-        print(f"JWT verification failed: {e}")
+        logger.error(f"JWT verification failed: {e}")
         return None
     except Exception as e:
-        print(f"Error verifying JWT: {e}")
+        logger.error(f"Error verifying JWT: {e}")
         return None
 
 
@@ -109,7 +112,7 @@ def get_user_info(user_id: str) -> Optional[dict]:
             }
 
     except Exception as e:
-        print(f"Error fetching user info: {e}")
+        logger.error(f"Error fetching user info: {e}")
         return None
 
     return None

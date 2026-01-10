@@ -19,7 +19,6 @@ import {
   STAGED_INDEXES,
 } from './schema'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface TetherDbSchema {
   sources: {
     key: string

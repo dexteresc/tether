@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { createUserEntity } from '../lib/supabase-helpers';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -50,14 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Create user entity with identifiers using database function
       if (data.user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: entityError } = await (supabase as any).rpc('create_user_entity', {
-          p_email: email,
-          p_name: name,
-          p_user_id: data.user.id,
-        });
-
-        if (entityError) {
+        try {
+          await createUserEntity(email, name, data.user.id);
+        } catch (entityError) {
           console.error('Error creating user entity:', entityError);
           throw entityError;
         }

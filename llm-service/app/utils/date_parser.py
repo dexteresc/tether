@@ -1,6 +1,8 @@
 import dateparser
 from datetime import datetime
-from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def parse_natural_date(date_str: str) -> datetime:
@@ -33,7 +35,7 @@ def parse_natural_date(date_str: str) -> datetime:
 
     # If parsing fails, default to current time
     if parsed_date is None:
-        print(f"Warning: Could not parse date '{date_str}', defaulting to current time")
+        logger.warning(f"Could not parse date '{date_str}', defaulting to current time")
         return datetime.now()
 
     return parsed_date

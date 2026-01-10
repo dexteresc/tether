@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx'
 import type { Session, User } from '@supabase/supabase-js'
+import { createUserEntity } from '../lib/supabase-helpers'
 
 type AuthSubscription = { unsubscribe: () => void }
 
@@ -15,8 +16,6 @@ type SupabaseAuthClient = {
 
 type SupabaseClientLike = {
   auth: SupabaseAuthClient
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  rpc: (fn: string, args?: any) => any
 }
 
 export class AuthStore {
@@ -80,12 +79,9 @@ export class AuthStore {
     }
 
     if (data.user) {
-      const { error: entityError } = await this.client.rpc('create_user_entity', {
-        p_email: email,
-        p_name: name,
-        p_user_id: data.user.id,
-      })
-      if (entityError) {
+      try {
+        await createUserEntity(email, name, data.user.id)
+      } catch (entityError) {
         runInAction(() => {
           this.lastError = String(entityError)
         })

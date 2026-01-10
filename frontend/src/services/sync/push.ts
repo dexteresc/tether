@@ -15,9 +15,8 @@ export interface PushRemote {
 export class SupabasePushRemote implements PushRemote {
   async apply<T extends TableName>(tx: OutboxTransaction<T>): Promise<PushResult<T>> {
     if (tx.op === 'insert') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from(tx.table) as any)
-        .insert({ id: tx.record_id, ...(tx.payload as any) })
+      const { data, error } = await (supabase.from(tx.table) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .insert({ id: tx.record_id, ...(tx.payload as any) }) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('*')
         .single()
       if (error) throw error
@@ -26,9 +25,8 @@ export class SupabasePushRemote implements PushRemote {
     }
 
     if (tx.op === 'update') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from(tx.table) as any)
-        .update(tx.payload as any)
+      const { data, error } = await (supabase.from(tx.table) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .update(tx.payload as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .eq('id', tx.record_id)
         .eq('updated_at', tx.base_updated_at)
         .select('*')

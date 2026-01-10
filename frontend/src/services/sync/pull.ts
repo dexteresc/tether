@@ -55,13 +55,15 @@ export async function applyChangeBatch<T extends TableName>(batch: ChangeBatch<T
     if (existingMeta?.local_dirty) continue
 
     const now = new Date().toISOString()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isDeleted = !!(row as any).deleted_at
     const next = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ...(row as any),
       __meta: {
         local_last_accessed_at: now,
         local_dirty: false,
-        local_deleted: false,
+        local_deleted: isDeleted,
         base_updated_at: null,
         last_pulled_at: batch.server_time,
       },

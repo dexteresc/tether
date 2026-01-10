@@ -1,8 +1,11 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
+import logging
 from app.services.extraction import get_extraction_service
 from app.services.supabase_sync import SupabaseSyncService
 from app.services.auth import verify_supabase_jwt, create_service_role_client
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
@@ -105,10 +108,10 @@ async def websocket_extract(websocket: WebSocket):
                 )
 
     except WebSocketDisconnect:
-        print(f"WebSocket disconnected for user: {user_id}")
+        logger.info(f"WebSocket disconnected for user: {user_id}")
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error: {e}")
         try:
             await websocket.send_json({"error": str(e)})
-        except:
-            pass
+        except Exception as send_error:
+            logger.error(f"Failed to send error to client: {send_error}")

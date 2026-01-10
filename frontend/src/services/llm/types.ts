@@ -1,4 +1,5 @@
 // TypeScript types aligned with /Users/dexteresc/Dev/tether/specs/002-frontend-data-viz/contracts/llm-service.openapi.yaml
+import type { Json } from '../../lib/types'
 
 export type ConfidenceLevel = 'confirmed' | 'high' | 'medium' | 'low' | 'unconfirmed'
 
@@ -35,14 +36,14 @@ export type IntelType = 'event' | 'communication' | 'sighting' | 'report' | 'doc
 export interface IdentifierExtraction {
   identifier_type: IdentifierType
   value: string
-  metadata?: Record<string, unknown> | null
+  metadata?: Record<string, Json> | null
 }
 
 export interface EntityExtraction {
   name: string
   entity_type: EntityType
   identifiers: IdentifierExtraction[]
-  attributes: Record<string, unknown>
+  attributes: Record<string, Json>
   confidence: ConfidenceLevel
   source_reference?: string | null
 }
@@ -65,7 +66,7 @@ export interface IntelExtraction {
   occurred_at?: string | null
   entities_involved: string[]
   location?: string | null
-  details: Record<string, unknown>
+  details: Record<string, Json>
   confidence: ConfidenceLevel
   source_reference?: string | null
 }
@@ -79,11 +80,36 @@ export interface Reasoning {
   confidence_rationale: string
 }
 
+export interface EntityResolutionCandidate {
+  entity_id: string
+  name: string
+  type: EntityType
+  match_score: number
+  reasoning: string
+}
+
+export interface EntityResolution {
+  entity_ref: string // name or temporary ID used in extraction
+  status: 'resolved' | 'new' | 'ambiguous'
+  resolved_entity_id?: string
+  candidates?: EntityResolutionCandidate[]
+  reasoning?: string
+}
+
+export interface ClarificationRequest {
+  question: string
+  context: string
+  options?: string[]
+  related_entities?: string[]
+}
+
 export interface IntelligenceExtraction {
   reasoning: Reasoning
   entities: EntityExtraction[]
   relations: RelationExtraction[]
   intel: IntelExtraction[]
+  resolutions?: EntityResolution[]
+  clarifications?: ClarificationRequest[]
 }
 
 export type Classification = 'fact_update' | 'event_log' | 'mixed'

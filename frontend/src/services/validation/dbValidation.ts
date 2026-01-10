@@ -49,7 +49,7 @@ function validateEntity(row: EntityInsert): ValidationError[] {
 
   if (!row.type) {
     errors.push({ field: 'type', message: 'Entity type is required' })
-  } else if (!ENTITY_TYPES.includes(row.type)) {
+  } else if (!(ENTITY_TYPES as readonly string[]).includes(row.type)) {
     errors.push({ field: 'type', message: `Invalid entity type. Must be one of: ${ENTITY_TYPES.join(', ')}` })
   }
 
@@ -65,7 +65,7 @@ function validateIdentifier(row: IdentifierInsert): ValidationError[] {
 
   if (!row.type) {
     errors.push({ field: 'type', message: 'Identifier type is required' })
-  } else if (!IDENTIFIER_TYPES.includes(row.type)) {
+  } else if (!(IDENTIFIER_TYPES as readonly string[]).includes(row.type)) {
     errors.push({
       field: 'type',
       message: `Invalid identifier type. Must be one of: ${IDENTIFIER_TYPES.join(', ')}`,
@@ -92,7 +92,7 @@ function validateRelation(row: RelationInsert): ValidationError[] {
 
   if (!row.type) {
     errors.push({ field: 'type', message: 'Relation type is required' })
-  } else if (!RELATION_TYPES.includes(row.type)) {
+  } else if (!(RELATION_TYPES as readonly string[]).includes(row.type)) {
     errors.push({ field: 'type', message: `Invalid relation type. Must be one of: ${RELATION_TYPES.join(', ')}` })
   }
 
@@ -110,7 +110,7 @@ function validateIntel(row: IntelInsert): ValidationError[] {
 
   if (!row.type) {
     errors.push({ field: 'type', message: 'Intel type is required' })
-  } else if (!INTEL_TYPES.includes(row.type)) {
+  } else if (!(INTEL_TYPES as readonly string[]).includes(row.type)) {
     errors.push({ field: 'type', message: `Invalid intel type. Must be one of: ${INTEL_TYPES.join(', ')}` })
   }
 
@@ -124,7 +124,7 @@ function validateIntel(row: IntelInsert): ValidationError[] {
     }
   }
 
-  if (row.confidence && !CONFIDENCE_LEVELS.includes(row.confidence)) {
+  if (row.confidence && !(CONFIDENCE_LEVELS as readonly string[]).includes(row.confidence)) {
     errors.push({
       field: 'confidence',
       message: `Invalid confidence level. Must be one of: ${CONFIDENCE_LEVELS.join(', ')}`,
@@ -161,7 +161,7 @@ function validateSource(row: SourceInsert): ValidationError[] {
 
   if (!row.reliability) {
     errors.push({ field: 'reliability', message: 'Reliability is required' })
-  } else if (!RELIABILITY_LEVELS.includes(row.reliability)) {
+  } else if (!(RELIABILITY_LEVELS as readonly string[]).includes(row.reliability)) {
     errors.push({
       field: 'reliability',
       message: `Invalid reliability level. Must be one of: ${RELIABILITY_LEVELS.join(', ')}`,

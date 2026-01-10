@@ -19,7 +19,6 @@ export async function applyRealtimeRowChange(params: {
 
   const candidates = await params.outbox.findByTableRecord(params.table, params.row.id)
   for (const tx of candidates) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (tx.status === 'synced') continue
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (shouldAck(tx as any, params.row as any)) {

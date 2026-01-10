@@ -2,9 +2,11 @@ import { observer } from 'mobx-react-lite'
 import { useEffect, useState } from 'react'
 import { useRootStore } from '../stores/RootStore'
 import { StagedRowEditor } from '../components/StagedRowEditor'
+import { ResolutionReview } from '../components/ResolutionReview'
 import { getStagedExtractionsByInputId } from '../lib/idb/staged'
 import type { StagedExtraction } from '../lib/sync/types'
 import { commitStagedForInput } from '../services/sync/stagingToOutbox'
+import type { EntityResolution, ClarificationRequest } from '../services/llm/types'
 
 export const NLInputPage = observer(function NLInputPage() {
   const { nlQueue } = useRootStore()
@@ -93,6 +95,11 @@ export const NLInputPage = observer(function NLInputPage() {
   const pendingQueue = nlQueue.pendingQueue
   const completed = nlQueue.completed
   const failed = nlQueue.failed
+
+  const selectedItem = completed.find((i) => i.input_id === selectedInputId)
+  const result = selectedItem?.result as
+    | { resolutions?: EntityResolution[]; clarifications?: ClarificationRequest[] }
+    | null
 
   return (
     <div className="p-6 max-w-[1200px] mx-auto">
@@ -237,7 +244,7 @@ export const NLInputPage = observer(function NLInputPage() {
       )}
 
       {/* Staged Rows Review */}
-      {selectedInputId && stagedRows.length > 0 && (
+      {selectedInputId && (
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold m-0">Review Extracted Data</h2>
@@ -252,13 +259,20 @@ export const NLInputPage = observer(function NLInputPage() {
                 onClick={handleCommit}
                 disabled={isCommitting}
                 className={`px-4 py-1.5 bg-emerald-600 text-white border-none rounded text-sm font-semibold ${
-                    isCommitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-emerald-700'
+                  isCommitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-emerald-700'
                 }`}
               >
                 {isCommitting ? 'Committing...' : 'Commit to Database'}
               </button>
             </div>
           </div>
+
+          {result && (
+            <ResolutionReview
+              resolutions={result.resolutions}
+              clarifications={result.clarifications}
+            />
+          )}
 
           <div className="text-xs text-gray-500 mb-4">
             {stagedRows.filter((r) => r.status === 'accepted' || r.status === 'edited').length} of {stagedRows.length}{' '}

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { Intel, IntelType, ConfidenceLevel } from '../lib/types';
+import { getTable } from '../lib/supabase-helpers';
+import type { Intel, IntelType, ConfidenceLevel, Json } from '../lib/types';
 
 interface IntelFilters {
   type?: IntelType;
@@ -94,7 +95,7 @@ export function useCreateIntel() {
     mutationFn: async (intel: {
       type: IntelType;
       occurred_at: string;
-      data: any;
+      data: Json;
       source_id?: string;
       confidence?: ConfidenceLevel;
       entity_ids?: string[];
@@ -102,8 +103,7 @@ export function useCreateIntel() {
       const { entity_ids, ...intelData } = intel;
 
       // Create the intel record
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: createdIntel, error: intelError } = await (supabase.from('intel') as any)
+      const { data: createdIntel, error: intelError } = await getTable('intel')
         .insert(intelData)
         .select()
         .single();
@@ -117,8 +117,7 @@ export function useCreateIntel() {
           entity_id,
         }));
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: linkError } = await (supabase.from('intel_entities') as any)
+        const { error: linkError } = await getTable('intel_entities')
           .insert(intelEntities);
 
         if (linkError) throw linkError;
@@ -138,8 +137,7 @@ export function useUpdateIntel() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Intel> }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('intel') as any)
+      const { data, error } = await getTable('intel')
         .update(updates)
         .eq('id', id)
         .select()
@@ -161,8 +159,7 @@ export function useDeleteIntel() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('intel') as any)
+      const { data, error } = await getTable('intel')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
         .select()

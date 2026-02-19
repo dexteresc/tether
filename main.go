@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
@@ -9,6 +11,7 @@ import (
 	"github.com/dexteresc/tether/handlers"
 	"github.com/dexteresc/tether/models"
 	"github.com/dexteresc/tether/services"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,9 +32,13 @@ func main() {
 	}
 
 	// JWT middleware
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "secret"
+	}
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:       "tether",
-		Key:         []byte("secret"),
+		Key:         []byte(jwtSecret),
 		Timeout:     24 * time.Hour,
 		MaxRefresh:  24 * time.Hour,
 		IdentityKey: "email",
@@ -97,6 +104,21 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	// CORS
+	allowedOrigins := []string{"http://localhost:5173"}
+	if extra := os.Getenv("CORS_ORIGINS"); extra != "" {
+		allowedOrigins = append(allowedOrigins, strings.Split(extra, ",")...)
+	}
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	// Public routes
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})

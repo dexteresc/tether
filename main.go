@@ -107,7 +107,6 @@ func main() {
 		auth.POST("/login", authMiddleware.LoginHandler)
 		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
 		auth.POST("/register", handlers.CreateUser)
-		// auth.POST("/forgot_password", handlers.ForgotPassword)
 	}
 
 	// JWT-protected routes
@@ -118,7 +117,6 @@ func main() {
 		api.GET("/auth/me", handlers.GetCurrentUser)
 		users := api.Group("/users")
 		{
-			// TODO: Elevate users endpoints to admin or superuser roles
 			users.GET("/:id", handlers.GetUser)
 			users.PUT("/:id", handlers.UpdateUser)
 			users.DELETE("/:id", handlers.DeleteUser)

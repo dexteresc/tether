@@ -18,8 +18,6 @@ function App() {
           <Route path="logout" element={<LogoutPage />} />
           <Route element={<MainLayout />}>
             <Route index element={<Dashboard />} />
-            {/* <Route path="settings" element={<Settings />} />
-          <Route path="profile" element={<Profile />} /> */}
           </Route>
         </Route>
         <Route path="*" element={<NotFound />} />

@@ -1,15 +1,13 @@
 import { LoginForm } from "@/components/login-form";
 import { useAuth } from "@/contexts/auth-context";
-import { useEffect, useState, type FormEventHandler } from "react";
+import { useEffect, type FormEventHandler } from "react";
 import { useNavigate, useLocation } from "react-router";
 
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { user, login, error: authError } = useAuth();
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, login } = useAuth();
 
   const state = location.state;
   const from = state?.from?.pathname || "/";
@@ -34,7 +32,6 @@ function LoginPage() {
     };
 
     console.log("🔍 Credentials:", credentials);
-    setIsSubmitting(true);
 
     try {
       console.log("🔍 About to call login...");
@@ -43,9 +40,6 @@ function LoginPage() {
       // Navigation will happen automatically via useEffect when user state updates
     } catch (err) {
       console.error("❌ Login failed:", err);
-    } finally {
-      console.log("🔍 Finally block - setting isSubmitting to false");
-      setIsSubmitting(false);
     }
   };
 

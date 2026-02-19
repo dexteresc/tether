@@ -24,7 +24,7 @@ import {
 import { Link } from "react-router";
 import { Logo } from "./logo";
 import { useAuth } from "@/contexts/auth-context";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 // This is sample data.
 const data = {
@@ -151,7 +151,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       };
     }
     return {
-      name: user.entity?.data["name"] || "User",
+      name: user.entity?.data?.["name"] || "User",
       email: user.email,
       avatar: "",
     };

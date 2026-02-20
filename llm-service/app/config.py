@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     supabase_service_role_key: str
 
     # API Configuration
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     # Entity Resolution Configuration (Feature 003)
     fuzzy_match_first_name_threshold: float = 0.8

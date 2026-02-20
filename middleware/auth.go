@@ -34,7 +34,6 @@ type jwksResponse struct {
 }
 
 func SupabaseAuth() gin.HandlerFunc {
-	secret := os.Getenv("SUPABASE_JWT_SECRET")
 	supabaseURL := os.Getenv("SUPABASE_URL")
 
 	// Fetch JWKS for ES256 support
@@ -61,8 +60,8 @@ func SupabaseAuth() gin.HandlerFunc {
 		}
 	}
 
-	if secret == "" && len(ecKeys) == 0 {
-		panic("SUPABASE_JWT_SECRET or SUPABASE_URL with JWKS is required")
+	if len(ecKeys) == 0 {
+		panic("SUPABASE_URL with JWKS is required")
 	}
 
 	return func(c *gin.Context) {
@@ -79,21 +78,14 @@ func SupabaseAuth() gin.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			switch token.Method.(type) {
-			case *jwt.SigningMethodECDSA:
-				kid, _ := token.Header["kid"].(string)
-				if key, ok := ecKeys[kid]; ok {
-					return key, nil
-				}
-				return nil, fmt.Errorf("unknown kid: %s", kid)
-			case *jwt.SigningMethodHMAC:
-				if secret == "" {
-					return nil, fmt.Errorf("HS256 not configured")
-				}
-				return []byte(secret), nil
-			default:
+			if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
+			kid, _ := token.Header["kid"].(string)
+			if key, ok := ecKeys[kid]; ok {
+				return key, nil
+			}
+			return nil, fmt.Errorf("unknown kid: %s", kid)
 		})
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})

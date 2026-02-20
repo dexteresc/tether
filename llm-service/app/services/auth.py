@@ -1,14 +1,46 @@
-from jose import jwt, JWTError
+from jose import jwt, JWTError, jwk
 from typing import Optional
 import logging
+import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Cached JWKS keys (loaded once at first use)
+_jwks_keys: Optional[dict] = None
+
+
+def _load_jwks() -> dict:
+    """
+    Fetch JWKS public keys from Supabase for ES256 token verification.
+
+    Returns:
+        Dict mapping kid -> JWK key object
+    """
+    global _jwks_keys
+    if _jwks_keys is not None:
+        return _jwks_keys
+
+    _jwks_keys = {}
+    jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+    try:
+        response = httpx.get(jwks_url, timeout=10)
+        response.raise_for_status()
+        jwks_data = response.json()
+        for key_data in jwks_data.get("keys", []):
+            kid = key_data.get("kid")
+            if kid:
+                _jwks_keys[kid] = key_data
+        logger.info(f"Loaded {len(_jwks_keys)} JWKS key(s) from Supabase")
+    except Exception as e:
+        logger.warning(f"Failed to load JWKS from {jwks_url}: {e}")
+
+    return _jwks_keys
+
 
 def verify_supabase_jwt(token: str) -> Optional[str]:
     """
-    Verify a Supabase JWT token and extract the user_id.
+    Verify a Supabase JWT token (ES256 via JWKS) and extract the user_id.
 
     Args:
         token: JWT token string
@@ -17,17 +49,28 @@ def verify_supabase_jwt(token: str) -> Optional[str]:
         User ID if token is valid, None otherwise
     """
     try:
-        # Decode the JWT token
+        headers = jwt.get_unverified_headers(token)
+        kid = headers.get("kid")
+
+        if not kid:
+            logger.error("JWT missing kid header")
+            return None
+
+        keys = _load_jwks()
+        key_data = keys.get(kid)
+        if not key_data:
+            logger.error(f"Unknown kid in JWT: {kid}")
+            return None
+
+        key = jwk.construct(key_data, algorithm="ES256")
         payload = jwt.decode(
             token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
+            key,
+            algorithms=["ES256"],
             audience="authenticated",
         )
 
-        # Extract user_id from the "sub" claim
         user_id = payload.get("sub")
-
         if not user_id:
             logger.warning("No user_id found in JWT payload")
             return None

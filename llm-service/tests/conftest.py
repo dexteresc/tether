@@ -97,13 +97,35 @@ def mock_supabase_client():
 @pytest.fixture
 def mock_jwt_token():
     """
-    Generate valid JWT token for testing authenticated endpoints.
+    Generate valid ES256 JWT token for testing authenticated endpoints.
 
-    Returns a token with test user ID that can be verified.
+    Returns a token with test user ID, and injects the JWKS key into the auth module
+    so verify_supabase_jwt() can verify it.
     """
-    from app.config import settings
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.backends import default_backend
+    import base64
+    import app.services.auth as auth_module
 
     TEST_USER_ID = "00000000-0000-0000-0000-000000000001"
+    TEST_KID = "test-key-id"
+
+    private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
+    public_key = private_key.public_key()
+    nums = public_key.public_numbers()
+
+    # Inject JWKS key into auth module cache
+    auth_module._jwks_keys = {
+        TEST_KID: {
+            "kty": "EC",
+            "crv": "P-256",
+            "x": base64.urlsafe_b64encode(nums.x.to_bytes(32, "big")).rstrip(b"=").decode(),
+            "y": base64.urlsafe_b64encode(nums.y.to_bytes(32, "big")).rstrip(b"=").decode(),
+            "kid": TEST_KID,
+            "alg": "ES256",
+            "use": "sig",
+        }
+    }
 
     payload = {
         "sub": TEST_USER_ID,
@@ -113,8 +135,11 @@ def mock_jwt_token():
         "role": "authenticated"
     }
 
-    token = jwt.encode(payload, settings.supabase_jwt_secret, algorithm="HS256")
-    return token
+    token = jwt.encode(payload, private_key, algorithm="ES256", headers={"kid": TEST_KID})
+    yield token
+
+    # Cleanup
+    auth_module._jwks_keys = None
 
 @pytest.fixture
 def test_client():

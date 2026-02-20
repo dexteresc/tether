@@ -41,27 +41,6 @@ def verify_supabase_jwt(token: str) -> Optional[str]:
         return None
 
 
-def create_authenticated_supabase_client(token: str):
-    """
-    Create a Supabase client with user authentication.
-
-    Args:
-        token: User JWT token
-
-    Returns:
-        Authenticated Supabase client
-    """
-    from supabase import create_client
-
-    # Create client with user token for RLS enforcement
-    supabase = create_client(settings.supabase_url, settings.supabase_anon_key)
-
-    # Set the auth token
-    supabase.auth.set_session(token, token)
-
-    return supabase
-
-
 def create_service_role_client():
     """
     Create a Supabase client with service role (admin) privileges.

@@ -98,7 +98,6 @@ class TestEntityResolutionSyncIntegration:
 
             mock_context = ResolutionContext(
                 persons=mock_persons,
-                session_entities=[],
             )
             mock_build_context.return_value = mock_context
 

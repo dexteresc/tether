@@ -7,7 +7,7 @@ This module defines Pydantic models for entity resolution functionality.
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 class EntityResolutionResult(BaseModel):
@@ -142,17 +142,6 @@ class PersonEntity(BaseModel):
         return self.names[0] if self.names else None
 
 
-class SessionEntity(BaseModel):
-    """Recently mentioned entity within the current session."""
-
-    entity_id: UUID = Field(..., description="Entity UUID")
-    mention_count: int = Field(1, description="How many times mentioned in session")
-    last_mentioned_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        description="When last mentioned"
-    )
-
-
 class ResolutionContext(BaseModel):
     """Context available for entity resolution."""
 
@@ -162,12 +151,6 @@ class ResolutionContext(BaseModel):
         description="All person entities available for matching"
     )
 
-    # Session context (for pronoun resolution)
-    session_entities: list[SessionEntity] = Field(
-        default_factory=list,
-        description="Recently mentioned entities in current session"
-    )
-
     # Configuration
     fuzzy_first_name_threshold: float = Field(
         0.8,
@@ -175,26 +158,3 @@ class ResolutionContext(BaseModel):
         le=1.0,
         description="Fuzzy match threshold for first names (Jaro-Winkler)"
     )
-
-    fuzzy_last_name_threshold: float = Field(
-        0.7,
-        ge=0.0,
-        le=1.0,
-        description="Fuzzy match threshold for last names (Jaro-Winkler)"
-    )
-
-    auto_resolve_confidence_threshold: float = Field(
-        0.8,
-        ge=0.0,
-        le=1.0,
-        description="Confidence threshold for auto-resolving to single entity"
-    )
-
-    def get_recently_mentioned(self, limit: int = 5) -> list[UUID]:
-        """Get most recently mentioned entity IDs."""
-        sorted_entities = sorted(
-            self.session_entities,
-            key=lambda x: x.last_mentioned_at,
-            reverse=True
-        )
-        return [e.entity_id for e in sorted_entities[:limit]]

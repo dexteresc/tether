@@ -4,13 +4,7 @@ from typing import Optional
 from app.services.extraction import get_extraction_service, ExtractionService
 from app.services.supabase_sync import SupabaseSyncService
 from app.services.auth import verify_supabase_jwt, create_service_role_client, get_user_info
-from app.models.extraction import (
-    IntelligenceExtraction,
-    SyncResults,
-    ClassifiedExtraction,
-)
-from app.config import settings
-
+from app.models.extraction import ClassifiedExtraction
 
 router = APIRouter()
 
@@ -21,36 +15,6 @@ class ExtractionRequest(BaseModel):
     source_code: Optional[str] = "LLM"
     sync_to_db: bool = True
     anthropic_api_key: Optional[str] = None
-
-
-class ExtractionResponse(BaseModel):
-    extraction: IntelligenceExtraction
-    sync_results: Optional[SyncResults] = None
-
-
-# ClassifiedExtractionResponse removed - now using ClassifiedExtraction model directly (T028)
-
-
-class HealthResponse(BaseModel):
-    """Health check response with provider info."""
-    status: str
-    provider: str
-    model: str
-
-
-@router.get("/health", response_model=HealthResponse)
-async def health_check():
-    """
-    Health check endpoint with provider information.
-
-    Returns:
-        Health status and current LLM provider configuration
-    """
-    return HealthResponse(
-        status="healthy",
-        provider=settings.llm_provider,
-        model=settings.llm_model,
-    )
 
 
 @router.post("/extract", response_model=ClassifiedExtraction)

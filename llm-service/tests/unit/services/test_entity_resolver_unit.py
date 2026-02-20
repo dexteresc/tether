@@ -4,11 +4,7 @@ Unit tests for EntityResolverService methods.
 Tests individual methods in isolation.
 """
 
-from uuid import UUID
-from datetime import datetime, timezone
-
 from app.services.entity_resolver import EntityResolverService
-from app.models.resolution import PersonEntity
 
 
 class TestExactMatch:
@@ -221,87 +217,3 @@ class TestConfidenceScoring:
         assert 0.0 <= confidence <= 1.0, "Confidence should be in [0, 1]"
 
 
-class TestCandidateBuilding:
-    """Unit tests for build_candidates_list method."""
-
-    def test_candidates_include_distinguishing_attributes(self, sample_person_entities):
-        """Test candidates include attributes that distinguish them."""
-        class MockSupabase:
-            pass
-
-        resolver = EntityResolverService(MockSupabase())
-
-        # Get both Alices
-        alices = [p for p in sample_person_entities if "Alice" in p.names[0]]
-
-        candidates = resolver.build_candidates_list(alices)
-
-        assert len(candidates) == 2, "Should have 2 Alice candidates"
-
-        # Each should have distinguishing info
-        for candidate in candidates:
-            assert "id" in candidate
-            assert "name" in candidate
-            # Should have at least one distinguishing attribute
-            has_distinguishing = any(
-                k in candidate for k in ["company", "email", "location"]
-            )
-            assert has_distinguishing, \
-                "Each candidate should have distinguishing attributes"
-
-    def test_candidates_with_all_attributes(self, sample_person_entities):
-        """Test candidates include all available attributes."""
-        class MockSupabase:
-            pass
-
-        resolver = EntityResolverService(MockSupabase())
-
-        persons = [sample_person_entities[0]]  # John Smith (has all attributes)
-
-        candidates = resolver.build_candidates_list(persons)
-
-        assert len(candidates) == 1
-        candidate = candidates[0]
-
-        # John has company, email, phone, location
-        assert "company" in candidate
-        assert "email" in candidate
-
-    def test_candidates_with_minimal_attributes(self, sample_person_entities):
-        """Test candidates work with minimal attributes."""
-        class MockSupabase:
-            pass
-
-        resolver = EntityResolverService(MockSupabase())
-
-        # Create person with minimal attrs
-        minimal_person = PersonEntity(
-            id=UUID("77777777-7777-7777-7777-777777777777"),
-            names=["Jane Doe"],
-            emails=[],
-            phones=[],
-            company=None,
-            location=None,
-            updated_at=datetime.now(timezone.utc).isoformat()
-        )
-
-        candidates = resolver.build_candidates_list([minimal_person])
-
-        assert len(candidates) == 1
-        assert candidates[0]["name"] == "Jane Doe"
-        assert candidates[0]["id"] == "77777777-7777-7777-7777-777777777777"
-
-    def test_candidates_id_and_name_required(self, sample_person_entities):
-        """Test all candidates have id and name (required fields)."""
-        class MockSupabase:
-            pass
-
-        resolver = EntityResolverService(MockSupabase())
-
-        candidates = resolver.build_candidates_list(sample_person_entities)
-
-        for candidate in candidates:
-            assert "id" in candidate, "Each candidate must have id"
-            assert "name" in candidate, "Each candidate must have name"
-            assert isinstance(candidate["id"], str), "ID should be string (UUID)"
-            assert isinstance(candidate["name"], str), "Name should be string"

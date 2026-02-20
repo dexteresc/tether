@@ -34,9 +34,6 @@ class Settings(BaseSettings):
 
     # Entity Resolution Configuration (Feature 003)
     fuzzy_match_first_name_threshold: float = 0.8
-    fuzzy_match_last_name_threshold: float = 0.7
-    auto_resolve_confidence_threshold: float = 0.8
-    entity_cache_ttl_seconds: int = 300
 
 
 # Global settings instance

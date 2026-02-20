@@ -86,14 +86,12 @@ class EntityResolverService:
     async def build_resolution_context(
         self,
         user_id: Optional[str] = None,
-        session_entities: Optional[list] = None
     ) -> ResolutionContext:
         """
         Build a ResolutionContext from database query results.
 
         Args:
             user_id: Optional user ID for RLS filtering
-            session_entities: Optional list of recently mentioned entities
 
         Returns:
             ResolutionContext with all persons and configuration
@@ -104,10 +102,7 @@ class EntityResolverService:
         # Build resolution context with configuration from settings
         context = ResolutionContext(
             persons=persons,
-            session_entities=session_entities or [],
             fuzzy_first_name_threshold=self.config.fuzzy_match_first_name_threshold,
-            fuzzy_last_name_threshold=self.config.fuzzy_match_last_name_threshold,
-            auto_resolve_confidence_threshold=self.config.auto_resolve_confidence_threshold
         )
 
         return context
@@ -401,167 +396,3 @@ class EntityResolverService:
         # Clamp to [0.0, 1.0]
         return max(0.0, min(1.0, confidence))
 
-    def full_name_matching(
-        self,
-        reference: str,
-        persons: list[PersonEntity]
-    ) -> Optional[PersonEntity]:
-        """
-        Attempt to disambiguate using full name matching.
-
-        Implements T024 - handles "John Smith" vs "John Doe" disambiguation.
-
-        Args:
-            reference: The name reference (potentially full name)
-            persons: List of candidate persons to match against
-
-        Returns:
-            Single PersonEntity if full name uniquely matches, None otherwise
-        """
-        reference_lower = reference.lower().strip()
-
-        # Only try full name matching if reference contains space (likely full name)
-        if " " not in reference:
-            return None
-
-        matches = []
-        for person in persons:
-            for name in person.names:
-                if name.lower().strip() == reference_lower:
-                    matches.append(person)
-                    break
-
-        # Return single match, None if multiple or no matches
-        return matches[0] if len(matches) == 1 else None
-
-    def contextual_attribute_matching(
-        self,
-        reference: str,
-        input_text: str,
-        persons: list[PersonEntity]
-    ) -> Optional[tuple[PersonEntity, str]]:
-        """
-        Use contextual clues (company, email) from input text to disambiguate.
-
-        Implements T025 - handles "John from Acme Corp" disambiguation.
-
-        Args:
-            reference: The name reference
-            input_text: Full input text to extract context from
-            persons: List of candidate persons
-
-        Returns:
-            Tuple of (PersonEntity, context_attribute) if unique match found, None otherwise
-        """
-        input_lower = input_text.lower()
-
-        # Try company matching
-        for person in persons:
-            if person.company:
-                company_lower = person.company.lower()
-                # Check if company mentioned near the reference
-                if company_lower in input_lower:
-                    # Simple heuristic: company name appears in input
-                    return (person, f"company={person.company}")
-
-        # Try email matching
-        for person in persons:
-            if person.emails:
-                for email in person.emails:
-                    email_lower = email.lower()
-                    if email_lower in input_lower:
-                        return (person, f"email={email}")
-
-        return None
-
-    def detect_ambiguity(
-        self,
-        matches: list[PersonEntity],
-        confidence_threshold: float = 0.8
-    ) -> bool:
-        """
-        Detect if multiple persons match with sufficient confidence.
-
-        Implements T021 - identify ambiguous matches.
-
-        Args:
-            matches: List of matched PersonEntity objects
-            confidence_threshold: Minimum confidence to consider a match
-
-        Returns:
-            True if ambiguous (multiple high-confidence matches), False otherwise
-        """
-        return len(matches) > 1
-
-    def build_candidates_list(
-        self,
-        persons: list[PersonEntity]
-    ) -> list[dict]:
-        """
-        Build candidate list with distinguishing attributes for clarification.
-
-        Implements T022 - extract distinguishing attributes.
-
-        Args:
-            persons: List of candidate PersonEntity objects
-
-        Returns:
-            List of candidate dictionaries with id, name, and distinguishing attributes
-        """
-        candidates = []
-        for person in persons:
-            candidate = {
-                "id": str(person.id),
-                "name": person.get_primary_name(),
-            }
-
-            # Add distinguishing attributes if available
-            if person.company:
-                candidate["company"] = person.company
-            if person.emails:
-                candidate["email"] = person.emails[0]
-            if person.location:
-                candidate["location"] = person.location
-
-            candidates.append(candidate)
-
-        return candidates
-
-    def pronoun_resolution(
-        self,
-        pronoun: str,
-        context: ResolutionContext
-    ) -> Optional[PersonEntity]:
-        """
-        Resolve pronouns (he, she, they) to most recently mentioned entity.
-
-        Implements T041 - pronoun resolution using session context.
-
-        Args:
-            pronoun: The pronoun to resolve ("he", "she", "they", "his", "her", etc.)
-            context: Resolution context with session entities
-
-        Returns:
-            PersonEntity of most recently mentioned person, or None if no session context
-        """
-        pronoun_lower = pronoun.lower().strip()
-
-        # Common pronouns
-        pronouns = {"he", "she", "they", "him", "her", "them", "his", "hers", "their", "theirs"}
-
-        if pronoun_lower not in pronouns:
-            return None
-
-        # Get most recently mentioned entity
-        recent_entity_ids = context.get_recently_mentioned(limit=1)
-
-        if not recent_entity_ids:
-            return None
-
-        # Find the person entity matching the most recent ID
-        recent_id = recent_entity_ids[0]
-        for person in context.persons:
-            if person.id == recent_id:
-                return person
-
-        return None

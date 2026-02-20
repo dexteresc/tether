@@ -62,10 +62,7 @@ class TestEntityResolutionIntegration:
         """Resolution context with sample persons."""
         return ResolutionContext(
             persons=sample_persons,
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
     @pytest.mark.asyncio
@@ -151,10 +148,7 @@ class TestEntityResolutionIntegration:
 
         context = ResolutionContext(
             persons=persons_with_bob,
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         # Fuzzy match "Bob" to "Robert Johnson"
@@ -229,64 +223,6 @@ class TestEntityResolutionIntegration:
             context_match="company=Acme"
         )
         assert abs(context_confidence - 0.47) < 0.01  # 0.3 * 0.9 + 0.2 * 1.0 = 0.47 (with floating point tolerance)
-
-    def test_full_name_disambiguation(self, sample_persons):
-        """Test US2: Full name matching for disambiguation."""
-        class MockSupabase:
-            pass
-
-        resolver = EntityResolverService(MockSupabase())
-
-        # Add multiple persons with same first name
-        alice_persons = [p for p in sample_persons if "Alice" in p.names[0]]
-
-        # Full name should disambiguate
-        match = resolver.full_name_matching("Alice Johnson", alice_persons)
-        assert match is not None
-        assert "Alice Johnson" in match.names
-
-        # Partial name should not disambiguate
-        match = resolver.full_name_matching("Alice", alice_persons)
-        assert match is None  # No space in reference, can't do full name matching
-
-    def test_contextual_attribute_matching(self, sample_persons):
-        """Test US2: Contextual attribute matching for disambiguation."""
-        class MockSupabase:
-            pass
-
-        resolver = EntityResolverService(MockSupabase())
-
-        # Get ambiguous Alices
-        alice_persons = [p for p in sample_persons if "Alice" in p.names[0]]
-
-        # Context with company should disambiguate
-        input_text = "Alice from TechCorp called me yesterday"
-        result = resolver.contextual_attribute_matching("Alice", input_text, alice_persons)
-
-        assert result is not None
-        person, context_attr = result
-        assert person.company == "TechCorp"
-        assert "company=" in context_attr
-
-    def test_build_candidates_list(self, sample_persons):
-        """Test building clarification candidates."""
-        class MockSupabase:
-            pass
-
-        resolver = EntityResolverService(MockSupabase())
-
-        # Get ambiguous Alices
-        alice_persons = [p for p in sample_persons if "Alice" in p.names[0]]
-
-        candidates = resolver.build_candidates_list(alice_persons)
-
-        assert len(candidates) == 2
-        for candidate in candidates:
-            assert "id" in candidate
-            assert "name" in candidate
-            # At least one should have company
-            assert any("company" in c for c in candidates)
-
 
 class TestExtractionWithResolution:
     """Test extraction service integration with entity resolution."""

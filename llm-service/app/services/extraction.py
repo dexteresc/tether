@@ -42,6 +42,30 @@ def classify_extraction(extraction: IntelligenceExtraction) -> ExtractionClassif
         return ExtractionClassification.FACT_UPDATE
 
 
+def build_chain_of_thought(extraction: IntelligenceExtraction, classification: ExtractionClassification) -> str:
+    """
+    Build chain_of_thought string from extraction reasoning and classification.
+
+    Args:
+        extraction: The extraction result containing reasoning
+        classification: The derived classification
+
+    Returns:
+        Combined chain_of_thought string
+    """
+    chain_of_thought = summarize_reasoning(extraction.reasoning)
+
+    classification_reason = f"Classification: {classification.value}"
+    if classification == ExtractionClassification.MIXED:
+        classification_reason += " (contains both entity data and events)"
+    elif classification == ExtractionClassification.FACT_UPDATE:
+        classification_reason += " (primarily entity/attribute data)"
+    elif classification == ExtractionClassification.EVENT_LOG:
+        classification_reason += " (primarily temporal events)"
+
+    return f"{chain_of_thought}; {classification_reason}"
+
+
 class ExtractionService:
     """Service for orchestrating intelligence extraction from text."""
 
@@ -87,31 +111,15 @@ class ExtractionService:
         Returns:
             ClassifiedExtraction with classification, chain_of_thought, and extraction
         """
-        # Perform extraction
         extraction = self.extract_intelligence(text, context, user_name=user_name)
-
-        # Derive classification from content
         classification = classify_extraction(extraction)
-
-        # Summarize reasoning into chain_of_thought
-        chain_of_thought = summarize_reasoning(extraction.reasoning)
-
-        # Add classification context to chain_of_thought
-        classification_reason = f"Classification: {classification.value}"
-        if classification == ExtractionClassification.MIXED:
-            classification_reason += " (contains both entity data and events)"
-        elif classification == ExtractionClassification.FACT_UPDATE:
-            classification_reason += " (primarily entity/attribute data)"
-        elif classification == ExtractionClassification.EVENT_LOG:
-            classification_reason += " (primarily temporal events)"
-
-        chain_of_thought = f"{chain_of_thought}; {classification_reason}"
+        chain_of_thought = build_chain_of_thought(extraction, classification)
 
         return ClassifiedExtraction(
             classification=classification,
             chain_of_thought=chain_of_thought,
             extraction=extraction,
-            sync_results=None,  # Will be populated by caller if sync requested
+            sync_results=None,
         )
 
     async def extract_and_classify_with_resolution(
@@ -203,18 +211,7 @@ class ExtractionService:
 
         # Step 3: Classify extraction
         classification = classify_extraction(extraction)
-        chain_of_thought = summarize_reasoning(extraction.reasoning)
-
-        # Add classification context
-        classification_reason = f"Classification: {classification.value}"
-        if classification == ExtractionClassification.MIXED:
-            classification_reason += " (contains both entity data and events)"
-        elif classification == ExtractionClassification.FACT_UPDATE:
-            classification_reason += " (primarily entity/attribute data)"
-        elif classification == ExtractionClassification.EVENT_LOG:
-            classification_reason += " (primarily temporal events)"
-
-        chain_of_thought = f"{chain_of_thought}; {classification_reason}"
+        chain_of_thought = build_chain_of_thought(extraction, classification)
 
         # Add entity resolution summary to chain of thought
         if entity_resolutions:

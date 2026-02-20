@@ -16,7 +16,6 @@ from jose import jwt
 
 from app.services.auth import (
     verify_supabase_jwt,
-    create_authenticated_supabase_client,
     create_service_role_client,
     get_user_info
 )
@@ -151,42 +150,6 @@ class TestVerifySupabaseJWT:
 
         # ASSERT
         assert result is None
-
-
-class TestCreateAuthenticatedSupabaseClient:
-    """
-    Tests for create_authenticated_supabase_client function.
-
-    User scenario: Create Supabase client with user's JWT for RLS enforcement.
-    What breaks if untested:
-    - Users could access other users' data (RLS bypass)
-    - Token not properly passed to client
-    """
-
-    @patch('supabase.create_client')
-    def test_create_authenticated_supabase_client_success(self, mock_create_client):
-        """
-        Test that authenticated client is created with token.
-
-        User scenario: Authenticated user syncs intelligence to their database.
-        Expected: Client created with token for RLS.
-        """
-        # ARRANGE
-        token = "valid.jwt.token"
-        mock_client = MagicMock()
-        mock_create_client.return_value = mock_client
-
-        # ACT
-        result = create_authenticated_supabase_client(token)
-
-        # ASSERT
-        mock_create_client.assert_called_once_with(
-            settings.supabase_url,
-            settings.supabase_anon_key
-        )
-        # Verify set_session called with token
-        mock_client.auth.set_session.assert_called_once_with(token, token)
-        assert result == mock_client
 
 
 class TestCreateServiceRoleClient:

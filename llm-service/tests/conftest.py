@@ -397,17 +397,11 @@ def resolution_context_factory(sample_person_entities):
 
     def create_context(
         persons=None,
-        session_entities=None,
         fuzzy_first_threshold=0.8,
-        fuzzy_last_threshold=0.7,
-        auto_resolve_threshold=0.8
     ):
         return ResolutionContext(
             persons=persons or sample_person_entities,
-            session_entities=session_entities or [],
             fuzzy_first_name_threshold=fuzzy_first_threshold,
-            fuzzy_last_name_threshold=fuzzy_last_threshold,
-            auto_resolve_confidence_threshold=auto_resolve_threshold
         )
 
     return create_context

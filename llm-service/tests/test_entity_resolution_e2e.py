@@ -188,10 +188,7 @@ class TestEntityResolutionE2E:
 
         context = ResolutionContext(
             persons=[john_entity],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         # Step 2: Resolve "John" reference
@@ -280,10 +277,7 @@ class TestEntityResolutionE2E:
 
         context = ResolutionContext(
             persons=[john_entity],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         # Resolve references
@@ -386,10 +380,7 @@ class TestEntityResolutionE2E:
 
         context = ResolutionContext(
             persons=[john_smith, john_doe],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         # Create mock client (won't be used for resolution, just for service init)
@@ -446,10 +437,7 @@ class TestEntityResolutionE2E:
 
         context = ResolutionContext(
             persons=[john_smith, john_doe],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         mock_client = MagicMock()
@@ -488,10 +476,7 @@ class TestEntityResolutionE2E:
 
         context = ResolutionContext(
             persons=[robert],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         mock_client = MagicMock()
@@ -534,10 +519,7 @@ class TestFullNameVsSingleName:
 
         context = ResolutionContext(
             persons=[jonathan],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         mock_client = MagicMock()
@@ -570,10 +552,7 @@ class TestFullNameVsSingleName:
 
         context = ResolutionContext(
             persons=[john_smith],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         mock_client = MagicMock()
@@ -603,10 +582,7 @@ class TestFullNameVsSingleName:
 
         context = ResolutionContext(
             persons=[john_smith],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         mock_client = MagicMock()
@@ -667,10 +643,7 @@ class TestRequesterRelationshipScenario:
 
         context = ResolutionContext(
             persons=[john_smith, alice],
-            session_entities=[],
             fuzzy_first_name_threshold=0.8,
-            fuzzy_last_name_threshold=0.7,
-            auto_resolve_confidence_threshold=0.8
         )
 
         mock_client = MagicMock()

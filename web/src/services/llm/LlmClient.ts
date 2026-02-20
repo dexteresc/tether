@@ -1,6 +1,7 @@
 import type {
   ClassifiedExtractionResponse,
   EntityResolution,
+  EntityResolutionCandidate,
   ClarificationRequest,
   ExtractionRequest,
   HealthResponse,
@@ -43,7 +44,7 @@ function mapApiResponse(
         (c) => ({
           entity_id: c.id as string,
           name: c.name as string,
-          type: c.type as EntityResolution["candidates"][0]["type"],
+          type: c.type as EntityResolutionCandidate["type"],
           match_score: (c.match_score ?? c.confidence ?? 0) as number,
           reasoning: (c.reasoning ?? "") as string,
         })
@@ -67,7 +68,7 @@ function mapApiResponse(
     classification: raw.classification as ClassifiedExtractionResponse["classification"],
     chain_of_thought: raw.chain_of_thought as string,
     extraction: {
-      ...(extraction as ClassifiedExtractionResponse["extraction"]),
+      ...(extraction as unknown as ClassifiedExtractionResponse["extraction"]),
       resolutions,
       clarifications,
     },

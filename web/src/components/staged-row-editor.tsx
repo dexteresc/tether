@@ -125,11 +125,11 @@ function ProposedRowDisplay({
               <span className="capitalize">{row.type as string}</span>
             }
           />
-          {data?.confidence && (
+          {typeof data?.confidence === "string" && (
             <FieldRow
               label="Confidence"
               value={
-                <ConfidenceBadge level={data.confidence as string} />
+                <ConfidenceBadge level={data.confidence} />
               }
             />
           )}
@@ -167,23 +167,23 @@ function ProposedRowDisplay({
               <span className="capitalize">{row.type as string}</span>
             }
           />
-          {data?.description && (
+          {typeof data?.description === "string" && (
             <FieldRow
               label="Description"
-              value={data.description as string}
+              value={data.description}
             />
           )}
-          {row.occurred_at && (
+          {typeof row.occurred_at === "string" && (
             <FieldRow
               label="Occurred"
-              value={new Date(row.occurred_at as string).toLocaleString()}
+              value={new Date(row.occurred_at).toLocaleString()}
             />
           )}
-          {row.confidence && (
+          {typeof row.confidence === "string" && (
             <FieldRow
               label="Confidence"
               value={
-                <ConfidenceBadge level={row.confidence as string} />
+                <ConfidenceBadge level={row.confidence} />
               }
             />
           )}
@@ -207,10 +207,10 @@ function ProposedRowDisplay({
             label="Target"
             value={<IdRef id={row.target_id as string} idLabels={idLabels} />}
           />
-          {data?.description && (
+          {typeof data?.description === "string" && (
             <FieldRow
               label="Description"
-              value={data.description as string}
+              value={data.description}
             />
           )}
         </div>
@@ -227,8 +227,8 @@ function ProposedRowDisplay({
             label="Entity"
             value={<IdRef id={row.entity_id as string} idLabels={idLabels} />}
           />
-          {row.role && (
-            <FieldRow label="Role" value={row.role as string} />
+          {typeof row.role === "string" && (
+            <FieldRow label="Role" value={row.role} />
           )}
         </div>
       );

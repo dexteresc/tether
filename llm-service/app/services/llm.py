@@ -2,6 +2,7 @@ import instructor
 from openai import OpenAI
 import anthropic
 import outlines
+from outlines.inputs import Chat
 from ollama import Client as OllamaClient
 from typing import Optional
 from app.config import settings
@@ -146,10 +147,12 @@ USER-CENTRIC TEXT HANDLING:
         via grammar-constrained decoding, so max_retries is not needed for
         validation — output is guaranteed to match the schema.
         """
-        user_prompt = build_user_prompt(text, context, user_name)
-        prompt = f"{self.OLLAMA_SYSTEM_PROMPT}\n\n{user_prompt}"
+        chat = Chat([
+            {"role": "system", "content": self.OLLAMA_SYSTEM_PROMPT},
+            {"role": "user", "content": build_user_prompt(text, context, user_name)},
+        ])
 
-        result = self.outlines_model(prompt, IntelligenceExtraction)
+        result = self.outlines_model(chat, IntelligenceExtraction)
         return IntelligenceExtraction.model_validate_json(result)
 
 

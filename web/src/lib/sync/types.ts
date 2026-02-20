@@ -109,10 +109,19 @@ export interface SyncStateEntry {
   updated_at: IsoDateTimeString;
 }
 
-export interface ChangeBatch<T extends TableName = TableName> {
-  table: T;
-  since_updated_at: IsoDateTimeString;
-  rows: Array<RemoteRow<T>>;
-  next_cursor_updated_at: IsoDateTimeString;
-  server_time: IsoDateTimeString;
+export type SyncLogOperation = "INSERT" | "UPDATE" | "DELETE";
+
+export interface SyncLogEntry {
+  seq: number;
+  table_name: TableName;
+  record_id: string;
+  operation: SyncLogOperation;
+  row_data: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface SyncLogBatch {
+  entries: SyncLogEntry[];
+  last_seq: number;
+  has_more: boolean;
 }

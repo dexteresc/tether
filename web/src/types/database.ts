@@ -248,6 +248,33 @@ export type Database = {
           },
         ]
       }
+      sync_log: {
+        Row: {
+          seq: number
+          table_name: string
+          record_id: string
+          operation: string
+          row_data: Json | null
+          created_at: string
+        }
+        Insert: {
+          seq?: number
+          table_name: string
+          record_id: string
+          operation: string
+          row_data?: Json | null
+          created_at?: string
+        }
+        Update: {
+          seq?: number
+          table_name?: string
+          record_id?: string
+          operation?: string
+          row_data?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       sources: {
         Row: {
           active: boolean | null

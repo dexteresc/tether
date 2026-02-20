@@ -193,3 +193,4 @@ export function getTetherDb(): Promise<IDBPDatabase<TetherDbSchema>> {
   dbPromise ??= openTetherDb();
   return dbPromise;
 }
+

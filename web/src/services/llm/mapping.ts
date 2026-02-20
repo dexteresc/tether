@@ -94,22 +94,25 @@ export async function mapExtractionToStagedRows(
       stagedIds.push(entityStaged.staged_id);
     }
 
-    for (const idExt of entityExt.identifiers) {
-      const identifierRow: IdentifierInsert = {
-        id: crypto.randomUUID(),
-        entity_id: entityId,
-        type: idExt.identifier_type,
-        value: idExt.value,
-        metadata: idExt.metadata ?? {},
-      };
+    // Skip identifiers for resolved entities — they already exist in the DB
+    if (shouldCreateEntityRow) {
+      for (const idExt of entityExt.identifiers) {
+        const identifierRow: IdentifierInsert = {
+          id: crypto.randomUUID(),
+          entity_id: entityId,
+          type: idExt.identifier_type,
+          value: idExt.value,
+          metadata: idExt.metadata ?? {},
+        };
 
-      const identifierStaged = await createStagedExtraction(
-        inputId,
-        "identifiers",
-        identifierRow,
-        originLabel
-      );
-      stagedIds.push(identifierStaged.staged_id);
+        const identifierStaged = await createStagedExtraction(
+          inputId,
+          "identifiers",
+          identifierRow,
+          originLabel
+        );
+        stagedIds.push(identifierStaged.staged_id);
+      }
     }
   }
 

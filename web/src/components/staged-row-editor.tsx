@@ -9,9 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+export type IdLabel = { label: string; type?: string };
+
 interface StagedRowEditorProps {
   staged: StagedExtraction;
   onStatusChange?: () => void;
+  idLabels?: Map<string, IdLabel>;
 }
 
 const TABLE_LABELS: Record<TableName, string> = {
@@ -49,6 +52,33 @@ function FieldRow({
   );
 }
 
+function IdRef({
+  id,
+  idLabels,
+}: {
+  id: string;
+  idLabels?: Map<string, IdLabel>;
+}) {
+  const info = idLabels?.get(id);
+  if (info) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="font-medium">{info.label}</span>
+        {info.type && (
+          <span className="text-[10px] px-1 py-0.5 bg-muted rounded capitalize text-muted-foreground">
+            {info.type}
+          </span>
+        )}
+      </span>
+    );
+  }
+  return (
+    <span className="font-mono text-xs text-muted-foreground">
+      {id.slice(0, 8)}...
+    </span>
+  );
+}
+
 function ConfidenceBadge({ level }: { level: string }) {
   const colors: Record<string, string> = {
     confirmed: "bg-emerald-100 text-emerald-800",
@@ -69,9 +99,11 @@ function ConfidenceBadge({ level }: { level: string }) {
 function ProposedRowDisplay({
   table,
   row,
+  idLabels,
 }: {
   table: TableName;
   row: Record<string, unknown>;
+  idLabels?: Map<string, IdLabel>;
 }) {
   const data = row.data as Record<string, unknown> | undefined;
 
@@ -121,8 +153,7 @@ function ProposedRowDisplay({
           />
           <FieldRow
             label="Entity"
-            value={row.entity_id as string}
-            mono
+            value={<IdRef id={row.entity_id as string} idLabels={idLabels} />}
           />
         </div>
       );
@@ -168,8 +199,14 @@ function ProposedRowDisplay({
               <span className="capitalize">{row.type as string}</span>
             }
           />
-          <FieldRow label="Source" value={row.source_id as string} mono />
-          <FieldRow label="Target" value={row.target_id as string} mono />
+          <FieldRow
+            label="Source"
+            value={<IdRef id={row.source_id as string} idLabels={idLabels} />}
+          />
+          <FieldRow
+            label="Target"
+            value={<IdRef id={row.target_id as string} idLabels={idLabels} />}
+          />
           {data?.description && (
             <FieldRow
               label="Description"
@@ -182,11 +219,13 @@ function ProposedRowDisplay({
     case "intel_entities":
       return (
         <div className="flex flex-col gap-1">
-          <FieldRow label="Intel" value={row.intel_id as string} mono />
+          <FieldRow
+            label="Intel"
+            value={<IdRef id={row.intel_id as string} idLabels={idLabels} />}
+          />
           <FieldRow
             label="Entity"
-            value={row.entity_id as string}
-            mono
+            value={<IdRef id={row.entity_id as string} idLabels={idLabels} />}
           />
           {row.role && (
             <FieldRow label="Role" value={row.role as string} />
@@ -206,6 +245,7 @@ function ProposedRowDisplay({
 export const StagedRowEditor = observer(function StagedRowEditor({
   staged,
   onStatusChange,
+  idLabels,
 }: StagedRowEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRow, setEditedRow] = useState<string>(
@@ -348,7 +388,7 @@ export const StagedRowEditor = observer(function StagedRowEditor({
                 </div>
               </div>
             ) : (
-              <ProposedRowDisplay table={staged.table} row={row} />
+              <ProposedRowDisplay table={staged.table} row={row} idLabels={idLabels} />
             )}
           </div>
 

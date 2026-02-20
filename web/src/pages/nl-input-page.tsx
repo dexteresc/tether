@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useRootStore } from "@/stores/RootStore";
-import { StagedRowEditor } from "@/components/staged-row-editor";
+import { StagedRowEditor, type IdLabel } from "@/components/staged-row-editor";
 import { ResolutionReview } from "@/components/resolution-review";
 import { getStagedExtractionsByInputId } from "@/lib/idb/staged";
 import type { StagedExtraction } from "@/lib/sync/types";
@@ -12,15 +12,32 @@ import type {
 } from "@/services/llm/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+type DialogState =
+  | { type: "closed" }
+  | { type: "confirm"; title: string; description: string; onConfirm: () => void }
+  | { type: "info"; title: string; description: string };
 
 export const NLInputPage = observer(function NLInputPage() {
-  const { nlQueue } = useRootStore();
+  const { nlQueue, replica } = useRootStore();
   const [inputText, setInputText] = useState("");
   const [selectedInputId, setSelectedInputId] = useState<string | null>(
     null
   );
   const [stagedRows, setStagedRows] = useState<StagedExtraction[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [idLabels, setIdLabels] = useState<Map<string, IdLabel>>(new Map());
+  const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
 
   useEffect(() => {
     nlQueue.refresh();
@@ -41,6 +58,76 @@ export const NLInputPage = observer(function NLInputPage() {
   const loadStagedRows = async (inputId: string) => {
     const rows = await getStagedExtractionsByInputId(inputId);
     setStagedRows(rows);
+
+    // Build ID labels from staged rows + replica lookups
+    const labels = new Map<string, IdLabel>();
+
+    // Labels from staged rows themselves
+    for (const row of rows) {
+      const proposed = row.proposed_row as Record<string, unknown>;
+      const data = proposed.data as Record<string, unknown> | undefined;
+      if (row.table === "entities" && data?.name) {
+        labels.set(proposed.id as string, {
+          label: data.name as string,
+          type: proposed.type as string,
+        });
+      } else if (row.table === "intel" && data?.description) {
+        const desc = data.description as string;
+        labels.set(proposed.id as string, {
+          label: desc.length > 50 ? desc.slice(0, 50) + "..." : desc,
+          type: proposed.type as string,
+        });
+      }
+    }
+
+    // Labels from resolution results
+    const item = nlQueue.items.find((i) => i.input_id === inputId);
+    const res = item?.result as {
+      resolutions?: EntityResolution[];
+    } | null;
+    if (res?.resolutions) {
+      for (const r of res.resolutions) {
+        if (r.resolved_entity_id && !labels.has(r.resolved_entity_id)) {
+          labels.set(r.resolved_entity_id, {
+            label: r.entity_ref,
+            type: undefined,
+          });
+        }
+      }
+    }
+
+    // Collect any remaining unknown IDs and look them up from the replica
+    const unknownIds = new Set<string>();
+    for (const row of rows) {
+      const proposed = row.proposed_row as Record<string, unknown>;
+      for (const [key, val] of Object.entries(proposed)) {
+        if (key.endsWith("_id") && typeof val === "string" && !labels.has(val)) {
+          unknownIds.add(val);
+        }
+      }
+    }
+    for (const id of unknownIds) {
+      const entity = await replica.getById("entities", id);
+      if (entity) {
+        const eData = entity.data as Record<string, unknown> | undefined;
+        labels.set(id, {
+          label: (eData?.name as string) ?? "Unnamed",
+          type: entity.type,
+        });
+        continue;
+      }
+      const intel = await replica.getById("intel", id);
+      if (intel) {
+        const iData = intel.data as Record<string, unknown> | undefined;
+        const desc = (iData?.description as string) ?? intel.type;
+        labels.set(id, {
+          label: desc.length > 50 ? desc.slice(0, 50) + "..." : desc,
+          type: intel.type,
+        });
+      }
+    }
+
+    setIdLabels(labels);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,20 +139,26 @@ export const NLInputPage = observer(function NLInputPage() {
     setSelectedInputId(item.input_id);
   };
 
-  const handleCancel = async (inputId: string) => {
-    if (confirm("Are you sure you want to cancel this item?")) {
-      await nlQueue.cancel(inputId);
-      if (selectedInputId === inputId) {
-        setSelectedInputId(null);
-      }
-    }
+  const handleCancel = (inputId: string) => {
+    setDialog({
+      type: "confirm",
+      title: "Cancel item",
+      description: "Are you sure you want to cancel this item?",
+      onConfirm: async () => {
+        await nlQueue.cancel(inputId);
+        if (selectedInputId === inputId) {
+          setSelectedInputId(null);
+        }
+        setDialog({ type: "closed" });
+      },
+    });
   };
 
   const handleRetry = async (inputId: string) => {
     await nlQueue.retry(inputId);
   };
 
-  const handleCommit = async () => {
+  const handleCommit = () => {
     if (!selectedInputId) return;
 
     const acceptedCount = stagedRows.filter(
@@ -73,30 +166,40 @@ export const NLInputPage = observer(function NLInputPage() {
     ).length;
 
     if (acceptedCount === 0) {
-      alert("No accepted rows to commit. Please accept at least one row.");
+      setDialog({
+        type: "info",
+        title: "Nothing to commit",
+        description: "No accepted rows to commit. Please accept at least one row.",
+      });
       return;
     }
 
-    if (
-      !confirm(`Commit ${acceptedCount} accepted row(s) to the database?`)
-    ) {
-      return;
-    }
-
-    setIsCommitting(true);
-    try {
-      await commitStagedForInput(selectedInputId);
-      alert(
-        "Successfully committed to outbox. Sync will process these changes."
-      );
-      setSelectedInputId(null);
-    } catch (error) {
-      alert(
-        `Commit failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    } finally {
-      setIsCommitting(false);
-    }
+    setDialog({
+      type: "confirm",
+      title: "Commit to database",
+      description: `Commit ${acceptedCount} accepted row(s) to the database?`,
+      onConfirm: async () => {
+        setDialog({ type: "closed" });
+        setIsCommitting(true);
+        try {
+          await commitStagedForInput(selectedInputId);
+          setSelectedInputId(null);
+          setDialog({
+            type: "info",
+            title: "Committed",
+            description: "Successfully committed to outbox. Sync will process these changes.",
+          });
+        } catch (error) {
+          setDialog({
+            type: "info",
+            title: "Commit failed",
+            description: error instanceof Error ? error.message : "Unknown error",
+          });
+        } finally {
+          setIsCommitting(false);
+        }
+      },
+    });
   };
 
   const formatDuration = (seconds: number | null): string => {
@@ -325,6 +428,7 @@ export const NLInputPage = observer(function NLInputPage() {
             <StagedRowEditor
               key={staged.staged_id}
               staged={staged}
+              idLabels={idLabels}
               onStatusChange={() =>
                 loadStagedRows(selectedInputId)
               }
@@ -333,6 +437,38 @@ export const NLInputPage = observer(function NLInputPage() {
         </div>
       )}
       </div>
+
+      <AlertDialog
+        open={dialog.type !== "closed"}
+        onOpenChange={(open) => {
+          if (!open) setDialog({ type: "closed" });
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {dialog.type !== "closed" ? dialog.title : ""}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {dialog.type !== "closed" ? dialog.description : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            {dialog.type === "confirm" ? (
+              <>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={dialog.onConfirm}>
+                  Confirm
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction onClick={() => setDialog({ type: "closed" })}>
+                OK
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });

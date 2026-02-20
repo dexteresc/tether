@@ -1,9 +1,79 @@
 import type {
   ClassifiedExtractionResponse,
+  EntityResolution,
+  ClarificationRequest,
   ExtractionRequest,
   HealthResponse,
 } from "./types";
 import config from "@/lib/config";
+
+/**
+ * Maps the API response shape to the frontend types.
+ *
+ * API returns entity_resolutions/clarification_requests at the top level
+ * with field names like `input_reference`, `resolved: bool`, etc.
+ * Frontend expects them nested inside `extraction` as `resolutions`/`clarifications`
+ * with field names like `entity_ref`, `status: "resolved"|"new"|"ambiguous"`.
+ */
+function mapApiResponse(
+  raw: Record<string, unknown>
+): ClassifiedExtractionResponse {
+  const apiResolutions = (raw.entity_resolutions ?? []) as Array<
+    Record<string, unknown>
+  >;
+  const apiClarifications = (raw.clarification_requests ?? []) as Array<
+    Record<string, unknown>
+  >;
+
+  const resolutions: EntityResolution[] = apiResolutions.map((r) => {
+    let status: EntityResolution["status"];
+    if (r.ambiguous) {
+      status = "ambiguous";
+    } else if (r.resolved) {
+      status = "resolved";
+    } else {
+      status = "new";
+    }
+
+    return {
+      entity_ref: r.input_reference as string,
+      status,
+      resolved_entity_id: (r.resolved_entity_id as string) ?? undefined,
+      candidates: ((r.candidates as Array<Record<string, unknown>>) ?? []).map(
+        (c) => ({
+          entity_id: c.id as string,
+          name: c.name as string,
+          type: c.type as EntityResolution["candidates"][0]["type"],
+          match_score: (c.match_score ?? c.confidence ?? 0) as number,
+          reasoning: (c.reasoning ?? "") as string,
+        })
+      ),
+      reasoning: r.reasoning as string,
+    };
+  });
+
+  const clarifications: ClarificationRequest[] = apiClarifications.map(
+    (c) => ({
+      question: c.question as string,
+      context: c.context as string,
+      options: c.options as string[] | undefined,
+      related_entities: c.related_entities as string[] | undefined,
+    })
+  );
+
+  const extraction = raw.extraction as Record<string, unknown>;
+
+  return {
+    classification: raw.classification as ClassifiedExtractionResponse["classification"],
+    chain_of_thought: raw.chain_of_thought as string,
+    extraction: {
+      ...(extraction as ClassifiedExtractionResponse["extraction"]),
+      resolutions,
+      clarifications,
+    },
+    sync_results: (raw.sync_results as ClassifiedExtractionResponse["sync_results"]) ?? null,
+  };
+}
 
 export class LlmClient {
   private readonly baseUrl: string;
@@ -55,7 +125,8 @@ export class LlmClient {
       );
     }
 
-    return response.json();
+    const raw = await response.json();
+    return mapApiResponse(raw);
   }
 }
 

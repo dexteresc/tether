@@ -125,8 +125,9 @@ export async function drainOutboxOnce(params: {
   replica: ReplicaStore;
   conflicts: ConflictStore;
   limit?: number;
-}): Promise<void> {
+}): Promise<number> {
   const pending = await params.outbox.getPending(params.limit ?? 50);
+  if (pending.length === 0) return 0;
   pending.sort((a, b) => {
     const oa = TABLE_PUSH_ORDER[a.table] ?? 9;
     const ob = TABLE_PUSH_ORDER[b.table] ?? 9;
@@ -164,4 +165,5 @@ export async function drainOutboxOnce(params: {
       });
     }
   }
+  return pending.length;
 }

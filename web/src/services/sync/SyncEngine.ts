@@ -59,11 +59,12 @@ export class SyncEngine {
   };
 
   private async tick(): Promise<void> {
-    this.syncStatus.setProgress("push");
     try {
-      await this.orchestrator.tick();
+      const result = await this.orchestrator.tick();
+      if (result.pushed > 0 || result.pulled) {
+        this.syncStatus.setLastSyncAt(new Date().toISOString());
+      }
       this.syncStatus.setLastError(null);
-      this.syncStatus.setLastSyncAt(new Date().toISOString());
     } catch (err: unknown) {
       const message =
         err instanceof Error

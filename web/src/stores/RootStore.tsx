@@ -35,6 +35,7 @@ export class RootStore {
         replica: this.replica,
         outbox: this.outbox,
         conflicts: this.conflicts,
+        syncStatus: this.syncStatus,
       })
     );
   }

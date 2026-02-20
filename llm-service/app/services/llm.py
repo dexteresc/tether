@@ -1,6 +1,9 @@
 import instructor
 from openai import OpenAI
 import anthropic
+import outlines
+from outlines.inputs import Chat
+from ollama import Client as OllamaClient
 from typing import Optional
 from app.config import settings
 from app.models.extraction import IntelligenceExtraction
@@ -98,78 +101,59 @@ class OpenAIProvider(LLMProvider):
 
 
 class OllamaProvider(LLMProvider):
-    """Ollama provider with instructor integration."""
+    """Ollama provider with Outlines structured generation.
 
-    def __init__(self, model: str = "qwen2.5:7b", base_url: Optional[str] = None):
-        super().__init__()
-        self.model = model
+    Uses outlines.from_ollama for grammar-constrained decoding, guaranteeing
+    schema-valid JSON output from local models without retries.
+    """
 
-        # Create OpenAI-compatible client for Ollama
-        openai_client = OpenAI(
-            base_url=base_url or settings.ollama_base_url,
-            api_key="ollama",  # Ollama doesn't need a real API key
-        )
+    # System prompt for Ollama — kept concise since Outlines enforces the schema
+    OLLAMA_SYSTEM_PROMPT = """You are an expert intelligence analyst. Extract structured data from text.
 
-        # Patch with instructor for structured outputs
-        # Using MD_JSON mode for better Ollama compatibility with complex schemas
-        self.client = instructor.from_openai(openai_client, mode=instructor.Mode.MD_JSON)
-
-    def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
-    ) -> IntelligenceExtraction:
-        """Extract structured intelligence using Ollama with instructor."""
-
-        # Ollama needs a stricter system prompt with explicit enum values and JSON examples
-        # to produce well-formed structured output from local models
-        ollama_system_prompt = """You are an expert intelligence analyst. Extract structured data from text into JSON.
-
-CRITICAL RULES:
-1. For every entity, you MUST provide:
-   - 'name': The primary name string.
-   - 'entity_type': One of [person, organization, group, vehicle, location].
-   - 'identifiers': A list containing at least one entry with identifier_type='name'.
-   - 'confidence': One of [confirmed, high, medium, low, unconfirmed].
-2. Use ONLY these exact ENUM values:
-   - IDENTIFIER TYPES: name, email, phone, address, document, biometric, handle, registration, domain
-   - RELATION TYPES: parent, child, sibling, spouse, colleague, associate, friend, member, owner, founder, co-founder, visited, employee
-   - ENTITY TYPES: person, organization, group, vehicle, location
-   - INTEL TYPES: event, communication, sighting, report, document, media, financial
-   - CONFIDENCE: confirmed, high, medium, low, unconfirmed
-3. OUTPUT ONLY VALID JSON. DO NOT include any comments or explanations.
-4. Provide reasoning in the 'reasoning' field first.
+Your task is to:
+1. Identify ALL entities (people, organizations, groups, vehicles, locations)
+2. Extract ALL factual attributes (birthdays, addresses, positions, etc.)
+3. Identify ALL relationships between entities
+4. Identify ALL events/intelligence (meetings, communications, sightings, etc.)
+5. Track information sources (who reported this?)
+6. Assess confidence levels
+7. Provide your reasoning FIRST in the reasoning field
 
 USER-CENTRIC TEXT HANDLING:
 - When text uses first-person pronouns (I, me, my, mine), these refer to the authenticated user
 - When text mentions "the user" explicitly, this also refers to the authenticated user
 - Extract relationships from the user's perspective (e.g., "my friend John" = user has friend relation to John)
 - Create entities for people mentioned in relation to the user
-- Ensure the user entity is properly identified in relationships
+- Ensure the user entity is properly identified in relationships"""
 
-EXAMPLE OUTPUT:
-{
-  "reasoning": { "entities_identified": "John (person)...", ... },
-  "entities": [
-    {
-      "name": "John Smith",
-      "entity_type": "person",
-      "identifiers": [{"identifier_type": "name", "value": "John Smith"}],
-      "confidence": "confirmed"
-    }
-  ],
-  "relations": [],
-  "intel": []
-}"""
+    def __init__(self, model: str = "qwen2.5:7b", base_url: Optional[str] = None):
+        super().__init__()
+        self.model_name = model
 
-        return self.client.chat.completions.create(
-            model=self.model,
-            response_model=IntelligenceExtraction,
-            messages=[
-                {"role": "system", "content": ollama_system_prompt},
-                {"role": "user", "content": build_user_prompt(text, context, user_name)},
-            ],
-            temperature=0,
-            max_retries=max_retries,
-        )
+        # Derive Ollama host from base_url (strip /v1 suffix used by OpenAI-compat layer)
+        base = base_url or settings.ollama_base_url
+        host = base.rstrip("/").removesuffix("/v1")
+
+        # Create native Ollama client and wrap with Outlines for structured generation
+        ollama_client = OllamaClient(host=host)
+        self.outlines_model = outlines.from_ollama(ollama_client, model)
+
+    def extract(
+        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+    ) -> IntelligenceExtraction:
+        """Extract structured intelligence using Ollama with Outlines.
+
+        Outlines enforces the IntelligenceExtraction schema at the token level
+        via grammar-constrained decoding, so max_retries is not needed for
+        validation — output is guaranteed to match the schema.
+        """
+        chat = Chat([
+            {"role": "system", "content": self.OLLAMA_SYSTEM_PROMPT},
+            {"role": "user", "content": build_user_prompt(text, context, user_name)},
+        ])
+
+        result = self.outlines_model(chat, IntelligenceExtraction)
+        return IntelligenceExtraction.model_validate_json(result)
 
 
 class AnthropicProvider(LLMProvider):

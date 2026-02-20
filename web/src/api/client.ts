@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import config from "@/lib/config";
+import { supabase } from "@/lib/supabase";
 import type { ApiError } from "@/types/api";
 
 export class ApiClient {
@@ -15,9 +16,14 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    const token = localStorage.getItem("authToken");
 
-    const config: RequestInit = {
+    // Get token from Supabase session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const reqConfig: RequestInit = {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -27,11 +33,9 @@ export class ApiClient {
     };
 
     try {
-      const response = await fetch(url, config);
+      const response = await fetch(url, reqConfig);
 
-      // Handle common HTTP errors
       if (response.status === 401) {
-        localStorage.removeItem("authToken");
         throw new Error("Unauthorized");
       }
 
@@ -42,7 +46,6 @@ export class ApiClient {
         );
       }
 
-      // Handle empty responses
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return await response.json();

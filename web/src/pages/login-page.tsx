@@ -6,40 +6,28 @@ import { useNavigate, useLocation } from "react-router";
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, login, error } = useAuth();
 
-  const { user, login } = useAuth();
+  const from = location.state?.from?.pathname || "/";
 
-  const state = location.state;
-  const from = state?.from?.pathname || "/";
-
-  // Navigate when user is authenticated (handles login success AND already logged in)
   useEffect(() => {
     if (user) {
-      console.log("🔍 User is authenticated, navigating to:", from);
       navigate(from, { replace: true });
     }
   }, [user, navigate, from]);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
-    console.log("🔍 Form submission started");
     e.preventDefault();
     e.stopPropagation();
 
     const formData = new FormData(e.currentTarget);
-    const credentials = {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-    };
-
-    console.log("🔍 Credentials:", credentials);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
     try {
-      console.log("🔍 About to call login...");
-      await login(credentials);
-      console.log("✅ Login call completed successfully");
-      // Navigation will happen automatically via useEffect when user state updates
-    } catch (err) {
-      console.error("❌ Login failed:", err);
+      await login(email, password);
+    } catch {
+      // Error is set in auth context
     }
   };
 
@@ -67,6 +55,9 @@ function LoginPage() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
+            {error && (
+              <p className="mb-4 text-sm text-red-500 text-center">{error}</p>
+            )}
             <LoginForm onSubmit={handleSubmit} />
           </div>
         </div>

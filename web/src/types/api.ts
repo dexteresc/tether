@@ -1,14 +1,4 @@
-import type { User } from "./models";
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  token: string;
-  user: User;
-}
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface ApiError {
   message: string;

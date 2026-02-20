@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/handlers"
+	"github.com/dexteresc/tether/middleware"
 	"github.com/dexteresc/tether/models"
 	"github.com/dexteresc/tether/services"
 	"github.com/gin-contrib/cors"
@@ -29,78 +29,6 @@ func main() {
 
 	if err != nil {
 		log.Panic("Failed to auto migrate database: " + err.Error())
-	}
-
-	// JWT middleware
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "secret"
-	}
-	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
-		Realm:       "tether",
-		Key:         []byte(jwtSecret),
-		Timeout:     24 * time.Hour,
-		MaxRefresh:  24 * time.Hour,
-		IdentityKey: "email",
-
-		Authenticator: func(c *gin.Context) (interface{}, error) {
-			var login models.Login
-			if err := c.ShouldBindJSON(&login); err != nil {
-				return nil, jwt.ErrMissingLoginValues
-			}
-			user, err := services.AuthenticateUser(login.Email, login.Password)
-			if err != nil {
-				return nil, jwt.ErrFailedAuthentication
-			}
-			return user, nil
-		},
-
-		Authorizator: func(data interface{}, c *gin.Context) bool {
-
-			if user, ok := data.(*models.User); ok {
-				isAuthorized := user != nil
-				return isAuthorized
-			}
-			return false
-		},
-
-		PayloadFunc: func(data interface{}) jwt.MapClaims {
-			if user, ok := data.(*models.User); ok {
-				claims := jwt.MapClaims{
-					"email": user.Email,
-					"id":    user.ID,
-				}
-				return claims
-			}
-			return jwt.MapClaims{}
-		},
-
-		IdentityHandler: func(c *gin.Context) interface{} {
-			claims := jwt.ExtractClaims(c)
-
-			email, ok := claims["email"].(string)
-			if !ok {
-				return nil
-			}
-
-			user, err := services.GetUserByEmail(email)
-			if err != nil {
-				return nil
-			}
-
-			return user
-		},
-
-		Unauthorized: func(c *gin.Context, code int, message string) {
-			c.JSON(code, gin.H{"error": message})
-		},
-
-		TokenLookup:   "header: Authorization, query: token, cookie: jwt",
-		TokenHeadName: "Bearer",
-		TimeFunc:      time.Now,
-	})
-	if err != nil {
-		log.Panic("JWT Error: " + err.Error())
 	}
 
 	r := gin.Default()
@@ -124,19 +52,12 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	auth := r.Group("/api/auth")
-	{
-		auth.POST("/login", authMiddleware.LoginHandler)
-		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
-		auth.POST("/register", handlers.CreateUser)
-	}
-
-	// JWT-protected routes
-
+	// JWT-protected routes (Supabase Auth)
 	api := r.Group("/api")
-	api.Use(authMiddleware.MiddlewareFunc())
+	api.Use(middleware.SupabaseAuth())
 	{
 		api.GET("/auth/me", handlers.GetCurrentUser)
+
 		users := api.Group("/users")
 		{
 			users.GET("/:id", handlers.GetUser)
@@ -188,6 +109,7 @@ func main() {
 			intel.PUT("/:id", handlers.UpdateIntel)
 			intel.DELETE("/:id", handlers.DeleteIntel)
 		}
+
 		intelEntities := api.Group("/intel-entities")
 		{
 			intelEntities.GET("/", handlers.GetIntelEntities)

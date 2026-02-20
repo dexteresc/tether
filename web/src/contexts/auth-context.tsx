@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { authApi } from "@/lib/auth";
-import type { LoginCredentials } from "@/types/api";
+import { supabase } from "@/lib/supabase";
+import { apiClient } from "@/api/client";
 import type { User } from "@/types/models";
 import {
   useContext,
@@ -9,14 +9,16 @@ import {
   useCallback,
   createContext,
 } from "react";
+import type { Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   error: string | null;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshToken: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -35,74 +37,84 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Validate token on mount
-  useEffect(() => {
-    validateToken();
+  // Fetch app user data from backend
+  const fetchAppUser = useCallback(async () => {
+    try {
+      const appUser = await apiClient.get<User>("/auth/me");
+      setUser(appUser);
+    } catch {
+      setUser(null);
+    }
   }, []);
 
-  const validateToken = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      if (s) {
+        fetchAppUser().finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
+    });
 
-    try {
-      const userData = await authApi.validate();
-      setUser(userData);
-      setError(null);
-    } catch (err) {
-      console.error("Token validation failed:", err);
-      localStorage.removeItem("authToken");
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      if (s) {
+        fetchAppUser();
+      } else {
+        setUser(null);
+      }
+    });
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    try {
-      setError(null);
-      const response = await authApi.login(credentials);
-      setUser(response.user);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Login failed";
-      setError(message);
-      throw err;
+    return () => subscription.unsubscribe();
+  }, [fetchAppUser]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    setError(null);
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (authError) {
+      setError(authError.message);
+      throw authError;
+    }
+  }, []);
+
+  const register = useCallback(async (email: string, password: string) => {
+    setError(null);
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (authError) {
+      setError(authError.message);
+      throw authError;
     }
   }, []);
 
   const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } finally {
-      setUser(null);
-      setError(null);
-    }
-  }, []);
-
-  const refreshToken = useCallback(async () => {
-    try {
-      const response = await authApi.refresh();
-      setUser(response.user);
-      setError(null);
-    } catch (err) {
-      console.error("Token refresh failed:", err);
-      setUser(null);
-      throw err;
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setError(null);
   }, []);
 
   const value: AuthContextType = {
     user,
+    session,
     loading,
     error,
     login,
+    register,
     logout,
-    refreshToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,0 +1,2171 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/entities?select=id&data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Location:
+      - /entities?data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:05 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/intel?select=id&data-%3E%3Etest=eq.true
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Location:
+      - /intel?data-%3E%3Etest=eq.true&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:05 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: DELETE
+    uri: http://127.0.0.1:54321/rest/v1/sources?code=ilike.TEST_%25
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:05 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an expert intelligence
+      analyst. Extract structured data from text into JSON.\n\nCRITICAL RULES:\n1.
+      For every entity, you MUST provide:\n   - ''name'': The primary name string.\n   -
+      ''entity_type'': One of [person, organization, group, vehicle, location].\n   -
+      ''identifiers'': A list containing at least one entry with identifier_type=''name''.\n   -
+      ''confidence'': One of [confirmed, high, medium, low, unconfirmed].\n2. Use
+      ONLY these exact ENUM values:\n   - IDENTIFIER TYPES: name, email, phone, address,
+      document, biometric, handle, registration, domain\n   - RELATION TYPES: parent,
+      child, sibling, spouse, colleague, associate, friend, member, owner, founder,
+      co-founder, visited, employee\n   - ENTITY TYPES: person, organization, group,
+      vehicle, location\n   - INTEL TYPES: event, communication, sighting, report,
+      document, media, financial\n   - CONFIDENCE: confirmed, high, medium, low, unconfirmed\n3.
+      OUTPUT ONLY VALID JSON. DO NOT include any comments or explanations.\n4. Provide
+      reasoning in the ''reasoning'' field first.\n\nEXAMPLE OUTPUT:\n{\n  \"reasoning\":
+      { \"entities_identified\": \"John (person)...\", ... },\n  \"entities\": [\n    {\n      \"name\":
+      \"John Smith\",\n      \"entity_type\": \"person\",\n      \"identifiers\":
+      [{\"identifier_type\": \"name\", \"value\": \"John Smith\"}],\n      \"confidence\":
+      \"confirmed\"\n    }\n  ],\n  \"relations\": [],\n  \"intel\": []\n}\n\n\n                As
+      a genius expert, your task is to understand the content and provide\n                the
+      parsed objects in json that match the following json_schema:\n\n\n                {\n  \"$defs\":
+      {\n    \"ConfidenceLevel\": {\n      \"enum\": [\n        \"confirmed\",\n        \"high\",\n        \"medium\",\n        \"low\",\n        \"unconfirmed\"\n      ],\n      \"title\":
+      \"ConfidenceLevel\",\n      \"type\": \"string\"\n    },\n    \"EntityExtraction\":
+      {\n      \"properties\": {\n        \"name\": {\n          \"description\":
+      \"Primary name/identifier for the entity\",\n          \"title\": \"Name\",\n          \"type\":
+      \"string\"\n        },\n        \"entity_type\": {\n          \"$ref\": \"#/$defs/EntityType\",\n          \"description\":
+      \"Type of entity (person, organization, group, vehicle, location)\"\n        },\n        \"identifiers\":
+      {\n          \"description\": \"All identifiers found for this entity (name,
+      email, phone, etc.)\",\n          \"items\": {\n            \"$ref\": \"#/$defs/IdentifierExtraction\"\n          },\n          \"title\":
+      \"Identifiers\",\n          \"type\": \"array\"\n        },\n        \"attributes\":
+      {\n          \"additionalProperties\": true,\n          \"description\": \"Additional
+      attributes (e.g., {''birthday'': ''March 31'', ''position'': ''CEO'', ''address'':
+      ''123 Main St''})\",\n          \"title\": \"Attributes\",\n          \"type\":
+      \"object\"\n        },\n        \"confidence\": {\n          \"$ref\": \"#/$defs/ConfidenceLevel\",\n          \"description\":
+      \"Confidence level for this entity extraction\"\n        },\n        \"source_reference\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Who reported this information (e.g., ''Jonas'', ''direct observation'')\",\n          \"title\":
+      \"Source Reference\"\n        }\n      },\n      \"required\": [\n        \"name\",\n        \"entity_type\",\n        \"identifiers\",\n        \"confidence\"\n      ],\n      \"title\":
+      \"EntityExtraction\",\n      \"type\": \"object\"\n    },\n    \"EntityType\":
+      {\n      \"enum\": [\n        \"person\",\n        \"organization\",\n        \"group\",\n        \"vehicle\",\n        \"location\",\n        \"event\"\n      ],\n      \"title\":
+      \"EntityType\",\n      \"type\": \"string\"\n    },\n    \"IdentifierExtraction\":
+      {\n      \"properties\": {\n        \"identifier_type\": {\n          \"$ref\":
+      \"#/$defs/IdentifierType\",\n          \"description\": \"Type of identifier
+      (name, email, phone, document, etc.)\"\n        },\n        \"value\": {\n          \"description\":
+      \"The identifier value (e.g., ''John Smith'', ''john@acme.com'', ''+1-555-0123'')\",\n          \"title\":
+      \"Value\",\n          \"type\": \"string\"\n        },\n        \"metadata\":
+      {\n          \"anyOf\": [\n            {\n              \"additionalProperties\":
+      true,\n              \"type\": \"object\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Additional metadata about this identifier\",\n          \"title\": \"Metadata\"\n        }\n      },\n      \"required\":
+      [\n        \"identifier_type\",\n        \"value\"\n      ],\n      \"title\":
+      \"IdentifierExtraction\",\n      \"type\": \"object\"\n    },\n    \"IdentifierType\":
+      {\n      \"enum\": [\n        \"name\",\n        \"document\",\n        \"biometric\",\n        \"phone\",\n        \"email\",\n        \"handle\",\n        \"address\",\n        \"registration\",\n        \"domain\"\n      ],\n      \"title\":
+      \"IdentifierType\",\n      \"type\": \"string\"\n    },\n    \"IntelExtraction\":
+      {\n      \"properties\": {\n        \"intel_type\": {\n          \"$ref\": \"#/$defs/IntelType\",\n          \"description\":
+      \"Type of intelligence (event, communication, sighting, report, document, media,
+      financial)\"\n        },\n        \"description\": {\n          \"description\":
+      \"Clear description of what happened (e.g., ''Lukas went to the store'', ''Conference
+      in New York'')\",\n          \"title\": \"Description\",\n          \"type\":
+      \"string\"\n        },\n        \"occurred_at\": {\n          \"anyOf\": [\n            {\n              \"type\":
+      \"string\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ],\n          \"default\":
+      null,\n          \"description\": \"When this happened (natural language date/time
+      like ''today'', ''yesterday'', ''March 31'', ''last Friday'')\",\n          \"title\":
+      \"Occurred At\"\n        },\n        \"entities_involved\": {\n          \"description\":
+      \"Names of all entities involved in this event/intel\",\n          \"items\":
+      {\n            \"type\": \"string\"\n          },\n          \"title\": \"Entities
+      Involved\",\n          \"type\": \"array\"\n        },\n        \"location\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Where this happened (location name)\",\n          \"title\": \"Location\"\n        },\n        \"details\":
+      {\n          \"additionalProperties\": true,\n          \"description\": \"Additional
+      type-specific details (e.g., {''activity'': ''went to'', ''event'': ''conference'',
+      ''sighting_type'': ''in-person''})\",\n          \"title\": \"Details\",\n          \"type\":
+      \"object\"\n        },\n        \"confidence\": {\n          \"$ref\": \"#/$defs/ConfidenceLevel\",\n          \"description\":
+      \"Confidence level for this intel\"\n        },\n        \"source_reference\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Who reported this intel\",\n          \"title\": \"Source Reference\"\n        }\n      },\n      \"required\":
+      [\n        \"intel_type\",\n        \"description\",\n        \"entities_involved\",\n        \"confidence\"\n      ],\n      \"title\":
+      \"IntelExtraction\",\n      \"type\": \"object\"\n    },\n    \"IntelType\":
+      {\n      \"enum\": [\n        \"event\",\n        \"communication\",\n        \"sighting\",\n        \"report\",\n        \"document\",\n        \"media\",\n        \"financial\"\n      ],\n      \"title\":
+      \"IntelType\",\n      \"type\": \"string\"\n    },\n    \"Reasoning\": {\n      \"properties\":
+      {\n        \"entities_identified\": {\n          \"default\": \"\",\n          \"description\":
+      \"List all entities found in the text with their types (e.g., ''John (person),
+      Acme Corp (organization)'')\",\n          \"title\": \"Entities Identified\",\n          \"type\":
+      \"string\"\n        },\n        \"relationships_identified\": {\n          \"default\":
+      \"None\",\n          \"description\": \"List all relationships between entities
+      (e.g., ''John is spouse of Sarah, John owns Acme Corp'')\",\n          \"title\":
+      \"Relationships Identified\",\n          \"type\": \"string\"\n        },\n        \"facts_identified\":
+      {\n          \"default\": \"\",\n          \"description\": \"List all factual
+      information extracted (e.g., ''Samine''s birthday is March 31, John is CEO'')\",\n          \"title\":
+      \"Facts Identified\",\n          \"type\": \"string\"\n        },\n        \"events_identified\":
+      {\n          \"default\": \"\",\n          \"description\": \"List all events/intel
+      extracted (e.g., ''Lukas went to store today, conference in NY yesterday'')\",\n          \"title\":
+      \"Events Identified\",\n          \"type\": \"string\"\n        },\n        \"sources_identified\":
+      {\n          \"default\": \"Unknown\",\n          \"description\": \"Identify
+      who reported this information (e.g., ''Jonas reported this, direct observation'')\",\n          \"title\":
+      \"Sources Identified\",\n          \"type\": \"string\"\n        },\n        \"confidence_rationale\":
+      {\n          \"default\": \"\",\n          \"description\": \"Explain why you
+      assigned the confidence levels (e.g., ''High - specific details, Medium - secondhand
+      from Jonas'')\",\n          \"title\": \"Confidence Rationale\",\n          \"type\":
+      \"string\"\n        }\n      },\n      \"title\": \"Reasoning\",\n      \"type\":
+      \"object\"\n    },\n    \"RelationExtraction\": {\n      \"properties\": {\n        \"source_entity_name\":
+      {\n          \"description\": \"Name of the source entity in the relationship\",\n          \"title\":
+      \"Source Entity Name\",\n          \"type\": \"string\"\n        },\n        \"target_entity_name\":
+      {\n          \"description\": \"Name of the target entity in the relationship\",\n          \"title\":
+      \"Target Entity Name\",\n          \"type\": \"string\"\n        },\n        \"relation_type\":
+      {\n          \"$ref\": \"#/$defs/RelationType\",\n          \"description\":
+      \"Type of relationship (parent, child, sibling, spouse, colleague, associate,
+      friend, member, owner)\"\n        },\n        \"strength\": {\n          \"anyOf\":
+      [\n            {\n              \"maximum\": 10,\n              \"minimum\":
+      1,\n              \"type\": \"integer\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Strength of the relationship from 1 (weak) to 10 (strong)\",\n          \"title\":
+      \"Strength\"\n        },\n        \"valid_from\": {\n          \"anyOf\": [\n            {\n              \"type\":
+      \"string\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ],\n          \"default\":
+      null,\n          \"description\": \"When the relationship started (natural language
+      date like ''January 2020'', ''last year'')\",\n          \"title\": \"Valid
+      From\"\n        },\n        \"valid_to\": {\n          \"anyOf\": [\n            {\n              \"type\":
+      \"string\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ],\n          \"default\":
+      null,\n          \"description\": \"When the relationship ended (natural language
+      date)\",\n          \"title\": \"Valid To\"\n        },\n        \"description\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Additional context about the relationship (e.g., ''CEO of company'', ''works
+      as manager'')\",\n          \"title\": \"Description\"\n        },\n        \"confidence\":
+      {\n          \"$ref\": \"#/$defs/ConfidenceLevel\",\n          \"description\":
+      \"Confidence level for this relationship\"\n        },\n        \"source_reference\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Who reported this relationship\",\n          \"title\": \"Source Reference\"\n        }\n      },\n      \"required\":
+      [\n        \"source_entity_name\",\n        \"target_entity_name\",\n        \"relation_type\",\n        \"confidence\"\n      ],\n      \"title\":
+      \"RelationExtraction\",\n      \"type\": \"object\"\n    },\n    \"RelationType\":
+      {\n      \"enum\": [\n        \"parent\",\n        \"child\",\n        \"sibling\",\n        \"spouse\",\n        \"colleague\",\n        \"associate\",\n        \"friend\",\n        \"member\",\n        \"owner\",\n        \"founder\",\n        \"co-founder\",\n        \"visited\",\n        \"employee\"\n      ],\n      \"title\":
+      \"RelationType\",\n      \"type\": \"string\"\n    }\n  },\n  \"properties\":
+      {\n    \"reasoning\": {\n      \"$ref\": \"#/$defs/Reasoning\",\n      \"description\":
+      \"Step-by-step reasoning about the extraction (REQUIRED FIRST - forces LLM to
+      think before extracting)\"\n    },\n    \"entities\": {\n      \"description\":
+      \"All entities extracted from the text\",\n      \"items\": {\n        \"$ref\":
+      \"#/$defs/EntityExtraction\"\n      },\n      \"title\": \"Entities\",\n      \"type\":
+      \"array\"\n    },\n    \"relations\": {\n      \"description\": \"All relationships
+      extracted from the text\",\n      \"items\": {\n        \"$ref\": \"#/$defs/RelationExtraction\"\n      },\n      \"title\":
+      \"Relations\",\n      \"type\": \"array\"\n    },\n    \"intel\": {\n      \"description\":
+      \"All events/intelligence extracted from the text\",\n      \"items\": {\n        \"$ref\":
+      \"#/$defs/IntelExtraction\"\n      },\n      \"title\": \"Intel\",\n      \"type\":
+      \"array\"\n    }\n  },\n  \"required\": [\n    \"reasoning\"\n  ],\n  \"title\":
+      \"IntelligenceExtraction\",\n  \"type\": \"object\"\n}\n\n                Make
+      sure to return an instance of the JSON, not the schema itself\n"}, {"role":
+      "user", "content": "Extract structured intelligence from the following text:\n\nAlice
+      Brown works at DataCorp."}, {"role": "user", "content": "Return the correct
+      JSON response within a ```json codeblock. not the JSON_SCHEMA"}], "model": "qwen2.5:7b",
+      "temperature": 0}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '14775'
+      Content-Type:
+      - application/json
+      Host:
+      - localhost:11434
+      User-Agent:
+      - OpenAI/Python 1.10.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 1.10.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.9
+    method: POST
+    uri: http://localhost:11434/v1/chat/completions
+  response:
+    body:
+      string: '{"id":"chatcmpl-176","object":"chat.completion","created":1766437815,"model":"qwen2.5:7b","system_fingerprint":"fp_ollama","choices":[{"index":0,"message":{"role":"assistant","content":"```json\n{\n  \"reasoning\":
+        {\n    \"entities_identified\": \"Alice Brown (person), DataCorp (organization)\",\n    \"relationships_identified\":
+        \"Alice Brown is employee of DataCorp\",\n    \"facts_identified\": \"\",\n    \"events_identified\":
+        \"\",\n    \"sources_identified\": \"Unknown\",\n    \"confidence_rationale\":
+        \"Medium - common job-related statement, but no specific details or sources
+        provided\"\n  },\n  \"entities\": [\n    {\n      \"name\": \"Alice Brown\",\n      \"entity_type\":
+        \"person\",\n      \"identifiers\": [\n        {\n          \"identifier_type\":
+        \"name\",\n          \"value\": \"Alice Brown\"\n        }\n      ],\n      \"confidence\":
+        \"medium\"\n    },\n    {\n      \"name\": \"DataCorp\",\n      \"entity_type\":
+        \"organization\",\n      \"identifiers\": [\n        {\n          \"identifier_type\":
+        \"name\",\n          \"value\": \"DataCorp\"\n        }\n      ],\n      \"confidence\":
+        \"confirmed\"\n    }\n  ],\n  \"relations\": [\n    {\n      \"source_entity_name\":
+        \"Alice Brown\",\n      \"target_entity_name\": \"DataCorp\",\n      \"relation_type\":
+        \"employee\",\n      \"strength\": null,\n      \"valid_from\": null,\n      \"valid_to\":
+        null,\n      \"description\": \"works at\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"intel\":
+        []\n}\n```"},"finish_reason":"stop"}],"usage":{"prompt_tokens":3042,"completion_tokens":288,"total_tokens":3330}}
+
+        '
+    headers:
+      Content-Length:
+      - '1604'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/sources?select=id&code=eq.TEST_DEDUP
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Location:
+      - /sources?code=eq.TEST_DEDUP&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '4'
+      X-Kong-Upstream-Latency:
+      - '9'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"code": "TEST_DEDUP", "type": "human", "reliability": "C", "data": {},
+      "active": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '87'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/sources
+  response:
+    body:
+      string: '[{"id":"19ab2108-6c95-4d2a-86a9-b04bce649ce8","code":"TEST_DEDUP","type":"human","reliability":"C","data":{},"active":true,"created_at":"2025-12-22T21:10:15.682371+00:00","updated_at":"2025-12-22T21:10:15.682371+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '238'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '5'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/identifiers?select=entity_id%2Centities%21inner%28data%29&value=ilike.Alice%20Brown&type=eq.name&deleted_at=is.null&limit=1
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Location:
+      - /identifiers?deleted_at=is.null&limit=1&select=entity_id%2Centities%21inner%28data%29&type=eq.name&value=ilike.Alice%20Brown
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '6'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"type": "person", "data": {"name": "Alice Brown", "user_id": "00000000-0000-0000-0000-000000000001",
+      "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "_confidence": "medium"}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '178'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/entities
+  response:
+    body:
+      string: '[{"id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","type":"person","data":{"name":
+        "Alice Brown", "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "user_id":
+        "00000000-0000-0000-0000-000000000001", "_confidence": "medium"},"created_at":"2025-12-22T21:10:15.704576+00:00","updated_at":"2025-12-22T21:10:15.704576+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '335'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '4'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"entity_id": "9f9c74ea-6938-4762-8b6b-7e6dfa56d260", "type": "name", "value":
+      "Alice Brown", "metadata": null}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '111'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/identifiers
+  response:
+    body:
+      string: '[{"id":"5ce2a088-6e79-4e07-9aab-2f0376598a28","entity_id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","type":"name","value":"Alice
+        Brown","metadata":null,"created_at":"2025-12-22T21:10:15.711915+00:00","updated_at":"2025-12-22T21:10:15.711915+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '264'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '3'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/identifiers?select=entity_id%2Centities%21inner%28data%29&value=ilike.DataCorp&type=eq.name&deleted_at=is.null&limit=1
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Location:
+      - /identifiers?deleted_at=is.null&limit=1&select=entity_id%2Centities%21inner%28data%29&type=eq.name&value=ilike.DataCorp
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"type": "organization", "data": {"name": "DataCorp", "user_id": "00000000-0000-0000-0000-000000000001",
+      "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "_confidence": "confirmed"}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '184'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/entities
+  response:
+    body:
+      string: '[{"id":"514f22e6-6254-41f1-b7db-0e0bb151cdb8","type":"organization","data":{"name":
+        "DataCorp", "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "user_id":
+        "00000000-0000-0000-0000-000000000001", "_confidence": "confirmed"},"created_at":"2025-12-22T21:10:15.725049+00:00","updated_at":"2025-12-22T21:10:15.725049+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '341'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"entity_id": "514f22e6-6254-41f1-b7db-0e0bb151cdb8", "type": "name", "value":
+      "DataCorp", "metadata": null}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '108'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/identifiers
+  response:
+    body:
+      string: '[{"id":"24d2270e-4208-464f-b877-2b732931487e","entity_id":"514f22e6-6254-41f1-b7db-0e0bb151cdb8","type":"name","value":"DataCorp","metadata":null,"created_at":"2025-12-22T21:10:15.73196+00:00","updated_at":"2025-12-22T21:10:15.73196+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '259'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/relations?select=id&source_id=eq.9f9c74ea-6938-4762-8b6b-7e6dfa56d260&target_id=eq.514f22e6-6254-41f1-b7db-0e0bb151cdb8&type=eq.employee&deleted_at=is.null
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Location:
+      - /relations?deleted_at=is.null&select=id&source_id=eq.9f9c74ea-6938-4762-8b6b-7e6dfa56d260&target_id=eq.514f22e6-6254-41f1-b7db-0e0bb151cdb8&type=eq.employee
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"source_id": "9f9c74ea-6938-4762-8b6b-7e6dfa56d260", "target_id": "514f22e6-6254-41f1-b7db-0e0bb151cdb8",
+      "type": "employee", "strength": null, "valid_from": null, "valid_to": null,
+      "data": {"confidence": "medium", "source_id": "19ab2108-6c95-4d2a-86a9-b04bce649ce8",
+      "description": "works at"}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '296'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/relations
+  response:
+    body:
+      string: '[{"id":"8356b7af-44d0-48ce-8a38-519833eec601","source_id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","target_id":"514f22e6-6254-41f1-b7db-0e0bb151cdb8","type":"employee","strength":null,"valid_from":null,"valid_to":null,"data":{"source_id":
+        "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "confidence": "medium", "description":
+        "works at"},"created_at":"2025-12-22T21:10:15.744404+00:00","updated_at":"2025-12-22T21:10:15.744404+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '443'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '3'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/entities?select=id&data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001
+  response:
+    body:
+      string: "[{\"id\":\"9f9c74ea-6938-4762-8b6b-7e6dfa56d260\"}, \n {\"id\":\"514f22e6-6254-41f1-b7db-0e0bb151cdb8\"}]"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '96'
+      Content-Location:
+      - /entities?data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-1/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:15 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an expert intelligence
+      analyst. Extract structured data from text into JSON.\n\nCRITICAL RULES:\n1.
+      For every entity, you MUST provide:\n   - ''name'': The primary name string.\n   -
+      ''entity_type'': One of [person, organization, group, vehicle, location].\n   -
+      ''identifiers'': A list containing at least one entry with identifier_type=''name''.\n   -
+      ''confidence'': One of [confirmed, high, medium, low, unconfirmed].\n2. Use
+      ONLY these exact ENUM values:\n   - IDENTIFIER TYPES: name, email, phone, address,
+      document, biometric, handle, registration, domain\n   - RELATION TYPES: parent,
+      child, sibling, spouse, colleague, associate, friend, member, owner, founder,
+      co-founder, visited, employee\n   - ENTITY TYPES: person, organization, group,
+      vehicle, location\n   - INTEL TYPES: event, communication, sighting, report,
+      document, media, financial\n   - CONFIDENCE: confirmed, high, medium, low, unconfirmed\n3.
+      OUTPUT ONLY VALID JSON. DO NOT include any comments or explanations.\n4. Provide
+      reasoning in the ''reasoning'' field first.\n\nEXAMPLE OUTPUT:\n{\n  \"reasoning\":
+      { \"entities_identified\": \"John (person)...\", ... },\n  \"entities\": [\n    {\n      \"name\":
+      \"John Smith\",\n      \"entity_type\": \"person\",\n      \"identifiers\":
+      [{\"identifier_type\": \"name\", \"value\": \"John Smith\"}],\n      \"confidence\":
+      \"confirmed\"\n    }\n  ],\n  \"relations\": [],\n  \"intel\": []\n}\n\n\n                As
+      a genius expert, your task is to understand the content and provide\n                the
+      parsed objects in json that match the following json_schema:\n\n\n                {\n  \"$defs\":
+      {\n    \"ConfidenceLevel\": {\n      \"enum\": [\n        \"confirmed\",\n        \"high\",\n        \"medium\",\n        \"low\",\n        \"unconfirmed\"\n      ],\n      \"title\":
+      \"ConfidenceLevel\",\n      \"type\": \"string\"\n    },\n    \"EntityExtraction\":
+      {\n      \"properties\": {\n        \"name\": {\n          \"description\":
+      \"Primary name/identifier for the entity\",\n          \"title\": \"Name\",\n          \"type\":
+      \"string\"\n        },\n        \"entity_type\": {\n          \"$ref\": \"#/$defs/EntityType\",\n          \"description\":
+      \"Type of entity (person, organization, group, vehicle, location)\"\n        },\n        \"identifiers\":
+      {\n          \"description\": \"All identifiers found for this entity (name,
+      email, phone, etc.)\",\n          \"items\": {\n            \"$ref\": \"#/$defs/IdentifierExtraction\"\n          },\n          \"title\":
+      \"Identifiers\",\n          \"type\": \"array\"\n        },\n        \"attributes\":
+      {\n          \"additionalProperties\": true,\n          \"description\": \"Additional
+      attributes (e.g., {''birthday'': ''March 31'', ''position'': ''CEO'', ''address'':
+      ''123 Main St''})\",\n          \"title\": \"Attributes\",\n          \"type\":
+      \"object\"\n        },\n        \"confidence\": {\n          \"$ref\": \"#/$defs/ConfidenceLevel\",\n          \"description\":
+      \"Confidence level for this entity extraction\"\n        },\n        \"source_reference\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Who reported this information (e.g., ''Jonas'', ''direct observation'')\",\n          \"title\":
+      \"Source Reference\"\n        }\n      },\n      \"required\": [\n        \"name\",\n        \"entity_type\",\n        \"identifiers\",\n        \"confidence\"\n      ],\n      \"title\":
+      \"EntityExtraction\",\n      \"type\": \"object\"\n    },\n    \"EntityType\":
+      {\n      \"enum\": [\n        \"person\",\n        \"organization\",\n        \"group\",\n        \"vehicle\",\n        \"location\",\n        \"event\"\n      ],\n      \"title\":
+      \"EntityType\",\n      \"type\": \"string\"\n    },\n    \"IdentifierExtraction\":
+      {\n      \"properties\": {\n        \"identifier_type\": {\n          \"$ref\":
+      \"#/$defs/IdentifierType\",\n          \"description\": \"Type of identifier
+      (name, email, phone, document, etc.)\"\n        },\n        \"value\": {\n          \"description\":
+      \"The identifier value (e.g., ''John Smith'', ''john@acme.com'', ''+1-555-0123'')\",\n          \"title\":
+      \"Value\",\n          \"type\": \"string\"\n        },\n        \"metadata\":
+      {\n          \"anyOf\": [\n            {\n              \"additionalProperties\":
+      true,\n              \"type\": \"object\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Additional metadata about this identifier\",\n          \"title\": \"Metadata\"\n        }\n      },\n      \"required\":
+      [\n        \"identifier_type\",\n        \"value\"\n      ],\n      \"title\":
+      \"IdentifierExtraction\",\n      \"type\": \"object\"\n    },\n    \"IdentifierType\":
+      {\n      \"enum\": [\n        \"name\",\n        \"document\",\n        \"biometric\",\n        \"phone\",\n        \"email\",\n        \"handle\",\n        \"address\",\n        \"registration\",\n        \"domain\"\n      ],\n      \"title\":
+      \"IdentifierType\",\n      \"type\": \"string\"\n    },\n    \"IntelExtraction\":
+      {\n      \"properties\": {\n        \"intel_type\": {\n          \"$ref\": \"#/$defs/IntelType\",\n          \"description\":
+      \"Type of intelligence (event, communication, sighting, report, document, media,
+      financial)\"\n        },\n        \"description\": {\n          \"description\":
+      \"Clear description of what happened (e.g., ''Lukas went to the store'', ''Conference
+      in New York'')\",\n          \"title\": \"Description\",\n          \"type\":
+      \"string\"\n        },\n        \"occurred_at\": {\n          \"anyOf\": [\n            {\n              \"type\":
+      \"string\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ],\n          \"default\":
+      null,\n          \"description\": \"When this happened (natural language date/time
+      like ''today'', ''yesterday'', ''March 31'', ''last Friday'')\",\n          \"title\":
+      \"Occurred At\"\n        },\n        \"entities_involved\": {\n          \"description\":
+      \"Names of all entities involved in this event/intel\",\n          \"items\":
+      {\n            \"type\": \"string\"\n          },\n          \"title\": \"Entities
+      Involved\",\n          \"type\": \"array\"\n        },\n        \"location\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Where this happened (location name)\",\n          \"title\": \"Location\"\n        },\n        \"details\":
+      {\n          \"additionalProperties\": true,\n          \"description\": \"Additional
+      type-specific details (e.g., {''activity'': ''went to'', ''event'': ''conference'',
+      ''sighting_type'': ''in-person''})\",\n          \"title\": \"Details\",\n          \"type\":
+      \"object\"\n        },\n        \"confidence\": {\n          \"$ref\": \"#/$defs/ConfidenceLevel\",\n          \"description\":
+      \"Confidence level for this intel\"\n        },\n        \"source_reference\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Who reported this intel\",\n          \"title\": \"Source Reference\"\n        }\n      },\n      \"required\":
+      [\n        \"intel_type\",\n        \"description\",\n        \"entities_involved\",\n        \"confidence\"\n      ],\n      \"title\":
+      \"IntelExtraction\",\n      \"type\": \"object\"\n    },\n    \"IntelType\":
+      {\n      \"enum\": [\n        \"event\",\n        \"communication\",\n        \"sighting\",\n        \"report\",\n        \"document\",\n        \"media\",\n        \"financial\"\n      ],\n      \"title\":
+      \"IntelType\",\n      \"type\": \"string\"\n    },\n    \"Reasoning\": {\n      \"properties\":
+      {\n        \"entities_identified\": {\n          \"default\": \"\",\n          \"description\":
+      \"List all entities found in the text with their types (e.g., ''John (person),
+      Acme Corp (organization)'')\",\n          \"title\": \"Entities Identified\",\n          \"type\":
+      \"string\"\n        },\n        \"relationships_identified\": {\n          \"default\":
+      \"None\",\n          \"description\": \"List all relationships between entities
+      (e.g., ''John is spouse of Sarah, John owns Acme Corp'')\",\n          \"title\":
+      \"Relationships Identified\",\n          \"type\": \"string\"\n        },\n        \"facts_identified\":
+      {\n          \"default\": \"\",\n          \"description\": \"List all factual
+      information extracted (e.g., ''Samine''s birthday is March 31, John is CEO'')\",\n          \"title\":
+      \"Facts Identified\",\n          \"type\": \"string\"\n        },\n        \"events_identified\":
+      {\n          \"default\": \"\",\n          \"description\": \"List all events/intel
+      extracted (e.g., ''Lukas went to store today, conference in NY yesterday'')\",\n          \"title\":
+      \"Events Identified\",\n          \"type\": \"string\"\n        },\n        \"sources_identified\":
+      {\n          \"default\": \"Unknown\",\n          \"description\": \"Identify
+      who reported this information (e.g., ''Jonas reported this, direct observation'')\",\n          \"title\":
+      \"Sources Identified\",\n          \"type\": \"string\"\n        },\n        \"confidence_rationale\":
+      {\n          \"default\": \"\",\n          \"description\": \"Explain why you
+      assigned the confidence levels (e.g., ''High - specific details, Medium - secondhand
+      from Jonas'')\",\n          \"title\": \"Confidence Rationale\",\n          \"type\":
+      \"string\"\n        }\n      },\n      \"title\": \"Reasoning\",\n      \"type\":
+      \"object\"\n    },\n    \"RelationExtraction\": {\n      \"properties\": {\n        \"source_entity_name\":
+      {\n          \"description\": \"Name of the source entity in the relationship\",\n          \"title\":
+      \"Source Entity Name\",\n          \"type\": \"string\"\n        },\n        \"target_entity_name\":
+      {\n          \"description\": \"Name of the target entity in the relationship\",\n          \"title\":
+      \"Target Entity Name\",\n          \"type\": \"string\"\n        },\n        \"relation_type\":
+      {\n          \"$ref\": \"#/$defs/RelationType\",\n          \"description\":
+      \"Type of relationship (parent, child, sibling, spouse, colleague, associate,
+      friend, member, owner)\"\n        },\n        \"strength\": {\n          \"anyOf\":
+      [\n            {\n              \"maximum\": 10,\n              \"minimum\":
+      1,\n              \"type\": \"integer\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Strength of the relationship from 1 (weak) to 10 (strong)\",\n          \"title\":
+      \"Strength\"\n        },\n        \"valid_from\": {\n          \"anyOf\": [\n            {\n              \"type\":
+      \"string\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ],\n          \"default\":
+      null,\n          \"description\": \"When the relationship started (natural language
+      date like ''January 2020'', ''last year'')\",\n          \"title\": \"Valid
+      From\"\n        },\n        \"valid_to\": {\n          \"anyOf\": [\n            {\n              \"type\":
+      \"string\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ],\n          \"default\":
+      null,\n          \"description\": \"When the relationship ended (natural language
+      date)\",\n          \"title\": \"Valid To\"\n        },\n        \"description\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Additional context about the relationship (e.g., ''CEO of company'', ''works
+      as manager'')\",\n          \"title\": \"Description\"\n        },\n        \"confidence\":
+      {\n          \"$ref\": \"#/$defs/ConfidenceLevel\",\n          \"description\":
+      \"Confidence level for this relationship\"\n        },\n        \"source_reference\":
+      {\n          \"anyOf\": [\n            {\n              \"type\": \"string\"\n            },\n            {\n              \"type\":
+      \"null\"\n            }\n          ],\n          \"default\": null,\n          \"description\":
+      \"Who reported this relationship\",\n          \"title\": \"Source Reference\"\n        }\n      },\n      \"required\":
+      [\n        \"source_entity_name\",\n        \"target_entity_name\",\n        \"relation_type\",\n        \"confidence\"\n      ],\n      \"title\":
+      \"RelationExtraction\",\n      \"type\": \"object\"\n    },\n    \"RelationType\":
+      {\n      \"enum\": [\n        \"parent\",\n        \"child\",\n        \"sibling\",\n        \"spouse\",\n        \"colleague\",\n        \"associate\",\n        \"friend\",\n        \"member\",\n        \"owner\",\n        \"founder\",\n        \"co-founder\",\n        \"visited\",\n        \"employee\"\n      ],\n      \"title\":
+      \"RelationType\",\n      \"type\": \"string\"\n    }\n  },\n  \"properties\":
+      {\n    \"reasoning\": {\n      \"$ref\": \"#/$defs/Reasoning\",\n      \"description\":
+      \"Step-by-step reasoning about the extraction (REQUIRED FIRST - forces LLM to
+      think before extracting)\"\n    },\n    \"entities\": {\n      \"description\":
+      \"All entities extracted from the text\",\n      \"items\": {\n        \"$ref\":
+      \"#/$defs/EntityExtraction\"\n      },\n      \"title\": \"Entities\",\n      \"type\":
+      \"array\"\n    },\n    \"relations\": {\n      \"description\": \"All relationships
+      extracted from the text\",\n      \"items\": {\n        \"$ref\": \"#/$defs/RelationExtraction\"\n      },\n      \"title\":
+      \"Relations\",\n      \"type\": \"array\"\n    },\n    \"intel\": {\n      \"description\":
+      \"All events/intelligence extracted from the text\",\n      \"items\": {\n        \"$ref\":
+      \"#/$defs/IntelExtraction\"\n      },\n      \"title\": \"Intel\",\n      \"type\":
+      \"array\"\n    }\n  },\n  \"required\": [\n    \"reasoning\"\n  ],\n  \"title\":
+      \"IntelligenceExtraction\",\n  \"type\": \"object\"\n}\n\n                Make
+      sure to return an instance of the JSON, not the schema itself\n"}, {"role":
+      "user", "content": "Extract structured intelligence from the following text:\n\nAlice
+      Brown gave a presentation today."}, {"role": "user", "content": "Return the
+      correct JSON response within a ```json codeblock. not the JSON_SCHEMA"}], "model":
+      "qwen2.5:7b", "temperature": 0}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '14783'
+      Content-Type:
+      - application/json
+      Host:
+      - localhost:11434
+      User-Agent:
+      - OpenAI/Python 1.10.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 1.10.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.9
+    method: POST
+    uri: http://localhost:11434/v1/chat/completions
+  response:
+    body:
+      string: '{"id":"chatcmpl-384","object":"chat.completion","created":1766437823,"model":"qwen2.5:7b","system_fingerprint":"fp_ollama","choices":[{"index":0,"message":{"role":"assistant","content":"```json\n{\n  \"reasoning\":
+        {\n    \"entities_identified\": \"Alice Brown (person)\",\n    \"relationships_identified\":
+        \"\",\n    \"facts_identified\": \"Alice Brown gave a presentation today\",\n    \"events_identified\":
+        \"Presentation given by Alice Brown today\",\n    \"sources_identified\":
+        \"Unknown\",\n    \"confidence_rationale\": \"Medium - general statement,
+        no specific details\"\n  },\n  \"entities\": [\n    {\n      \"name\": \"Alice
+        Brown\",\n      \"entity_type\": \"person\",\n      \"identifiers\": [\n        {\n          \"identifier_type\":
+        \"name\",\n          \"value\": \"Alice Brown\"\n        }\n      ],\n      \"confidence\":
+        \"medium\"\n    }\n  ],\n  \"relations\": [],\n  \"intel\": [\n    {\n      \"intel_type\":
+        \"event\",\n      \"description\": \"Presentation given by Alice Brown today\",\n      \"entities_involved\":
+        [\n        \"Alice Brown\"\n      ],\n      \"location\": null,\n      \"details\":
+        {},\n      \"confidence\": \"medium\"\n    }\n  ]\n}\n```"},"finish_reason":"stop"}],"usage":{"prompt_tokens":3042,"completion_tokens":217,"total_tokens":3259}}
+
+        '
+    headers:
+      Content-Length:
+      - '1292'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/sources?select=id&code=eq.TEST_DEDUP
+  response:
+    body:
+      string: '[{"id":"19ab2108-6c95-4d2a-86a9-b04bce649ce8"}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '47'
+      Content-Location:
+      - /sources?code=eq.TEST_DEDUP&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-0/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/identifiers?select=entity_id%2Centities%21inner%28data%29&value=ilike.Alice%20Brown&type=eq.name&deleted_at=is.null&limit=1
+  response:
+    body:
+      string: '[{"entity_id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","entities":{"data":
+        {"name": "Alice Brown", "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8",
+        "user_id": "00000000-0000-0000-0000-000000000001", "_confidence": "medium"}}}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '226'
+      Content-Location:
+      - /identifiers?deleted_at=is.null&limit=1&select=entity_id%2Centities%21inner%28data%29&type=eq.name&value=ilike.Alice%20Brown
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-0/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - application/vnd.pgrst.object+json
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/entities?select=data&id=eq.9f9c74ea-6938-4762-8b6b-7e6dfa56d260
+  response:
+    body:
+      string: '{"data":{"name": "Alice Brown", "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8",
+        "user_id": "00000000-0000-0000-0000-000000000001", "_confidence": "medium"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '159'
+      Content-Location:
+      - /entities?id=eq.9f9c74ea-6938-4762-8b6b-7e6dfa56d260&select=data
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-0/*
+      Content-Type:
+      - application/vnd.pgrst.object+json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"data": {"name": "Alice Brown", "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8",
+      "user_id": "00000000-0000-0000-0000-000000000001", "_confidence": "medium"}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '160'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: PATCH
+    uri: http://127.0.0.1:54321/rest/v1/entities?id=eq.9f9c74ea-6938-4762-8b6b-7e6dfa56d260
+  response:
+    body:
+      string: '[{"id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","type":"person","data":{"name":
+        "Alice Brown", "_source": "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "user_id":
+        "00000000-0000-0000-0000-000000000001", "_confidence": "medium"},"created_at":"2025-12-22T21:10:15.704576+00:00","updated_at":"2025-12-22T21:10:23.262329+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '335'
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-0/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '3'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/identifiers?select=id&entity_id=eq.9f9c74ea-6938-4762-8b6b-7e6dfa56d260&type=eq.name&value=ilike.Alice%20Brown
+  response:
+    body:
+      string: '[{"id":"5ce2a088-6e79-4e07-9aab-2f0376598a28"}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '47'
+      Content-Location:
+      - /identifiers?entity_id=eq.9f9c74ea-6938-4762-8b6b-7e6dfa56d260&select=id&type=eq.name&value=ilike.Alice%20Brown
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-0/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"type": "event", "occurred_at": "2025-12-22T22:10:23.271003", "data":
+      {"description": "Presentation given by Alice Brown today", "details": {}}, "source_id":
+      "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "confidence": "medium"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '222'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/intel
+  response:
+    body:
+      string: '[{"id":"1665479d-e441-45dd-a541-0f7b146662f3","type":"event","occurred_at":"2025-12-22T22:10:23.271003+00:00","data":{"details":
+        {}, "description": "Presentation given by Alice Brown today"},"source_id":"19ab2108-6c95-4d2a-86a9-b04bce649ce8","confidence":"medium","created_at":"2025-12-22T21:10:23.273469+00:00","updated_at":"2025-12-22T21:10:23.273469+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '379'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"intel_id": "1665479d-e441-45dd-a541-0f7b146662f3", "entity_id": "9f9c74ea-6938-4762-8b6b-7e6dfa56d260",
+      "role": "participant"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '128'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: POST
+    uri: http://127.0.0.1:54321/rest/v1/intel_entities
+  response:
+    body:
+      string: '[{"id":"1831ec29-8bb6-4b31-9b40-493835f296ef","intel_id":"1665479d-e441-45dd-a541-0f7b146662f3","entity_id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","role":"participant","created_at":"2025-12-22T21:10:23.278486+00:00","updated_at":"2025-12-22T21:10:23.278486+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '283'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/entities?select=id&data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001
+  response:
+    body:
+      string: "[{\"id\":\"514f22e6-6254-41f1-b7db-0e0bb151cdb8\"}, \n {\"id\":\"9f9c74ea-6938-4762-8b6b-7e6dfa56d260\"}]"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '96'
+      Content-Location:
+      - /entities?data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-1/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/identifiers?select=%2A&type=eq.name&value=ilike.Alice%20Brown
+  response:
+    body:
+      string: '[{"id":"5ce2a088-6e79-4e07-9aab-2f0376598a28","entity_id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","type":"name","value":"Alice
+        Brown","metadata":null,"created_at":"2025-12-22T21:10:15.711915+00:00","updated_at":"2025-12-22T21:10:15.711915+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '264'
+      Content-Location:
+      - /identifiers?select=%2A&type=eq.name&value=ilike.Alice%20Brown
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-0/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/entities?select=id&data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001
+  response:
+    body:
+      string: "[{\"id\":\"514f22e6-6254-41f1-b7db-0e0bb151cdb8\"}, \n {\"id\":\"9f9c74ea-6938-4762-8b6b-7e6dfa56d260\"}]"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '96'
+      Content-Location:
+      - /entities?data-%3E%3Euser_id=eq.00000000-0000-0000-0000-000000000001&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - 0-1/*
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: DELETE
+    uri: http://127.0.0.1:54321/rest/v1/intel_entities?entity_id=in.%28514f22e6-6254-41f1-b7db-0e0bb151cdb8%2C9f9c74ea-6938-4762-8b6b-7e6dfa56d260%29
+  response:
+    body:
+      string: '[{"id":"1831ec29-8bb6-4b31-9b40-493835f296ef","intel_id":"1665479d-e441-45dd-a541-0f7b146662f3","entity_id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","role":"participant","created_at":"2025-12-22T21:10:23.278486+00:00","updated_at":"2025-12-22T21:10:23.278486+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '283'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: DELETE
+    uri: http://127.0.0.1:54321/rest/v1/relations?or=%28source_id.in.%28514f22e6-6254-41f1-b7db-0e0bb151cdb8%2C9f9c74ea-6938-4762-8b6b-7e6dfa56d260%29%2Ctarget_id.in.%28514f22e6-6254-41f1-b7db-0e0bb151cdb8%2C9f9c74ea-6938-4762-8b6b-7e6dfa56d260%29%29
+  response:
+    body:
+      string: '[{"id":"8356b7af-44d0-48ce-8a38-519833eec601","source_id":"9f9c74ea-6938-4762-8b6b-7e6dfa56d260","target_id":"514f22e6-6254-41f1-b7db-0e0bb151cdb8","type":"employee","strength":null,"valid_from":null,"valid_to":null,"data":{"source_id":
+        "19ab2108-6c95-4d2a-86a9-b04bce649ce8", "confidence": "medium", "description":
+        "works at"},"created_at":"2025-12-22T21:10:15.744404+00:00","updated_at":"2025-12-22T21:10:15.744404+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '443'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '2'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: DELETE
+    uri: http://127.0.0.1:54321/rest/v1/identifiers?entity_id=in.%28514f22e6-6254-41f1-b7db-0e0bb151cdb8%2C9f9c74ea-6938-4762-8b6b-7e6dfa56d260%29
+  response:
+    body:
+      string: "[{\"id\":\"5ce2a088-6e79-4e07-9aab-2f0376598a28\",\"entity_id\":\"9f9c74ea-6938-4762-8b6b-7e6dfa56d260\",\"type\":\"name\",\"value\":\"Alice
+        Brown\",\"metadata\":null,\"created_at\":\"2025-12-22T21:10:15.711915+00:00\",\"updated_at\":\"2025-12-22T21:10:15.711915+00:00\",\"deleted_at\":null},
+        \n {\"id\":\"24d2270e-4208-464f-b877-2b732931487e\",\"entity_id\":\"514f22e6-6254-41f1-b7db-0e0bb151cdb8\",\"type\":\"name\",\"value\":\"DataCorp\",\"metadata\":null,\"created_at\":\"2025-12-22T21:10:15.73196+00:00\",\"updated_at\":\"2025-12-22T21:10:15.73196+00:00\",\"deleted_at\":null}]"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '525'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: DELETE
+    uri: http://127.0.0.1:54321/rest/v1/entities?id=in.%28514f22e6-6254-41f1-b7db-0e0bb151cdb8%2C9f9c74ea-6938-4762-8b6b-7e6dfa56d260%29
+  response:
+    body:
+      string: "[{\"id\":\"9f9c74ea-6938-4762-8b6b-7e6dfa56d260\",\"type\":\"person\",\"data\":{\"name\":
+        \"Alice Brown\", \"_source\": \"19ab2108-6c95-4d2a-86a9-b04bce649ce8\", \"user_id\":
+        \"00000000-0000-0000-0000-000000000001\", \"_confidence\": \"medium\"},\"created_at\":\"2025-12-22T21:10:15.704576+00:00\",\"updated_at\":\"2025-12-22T21:10:23.262329+00:00\",\"deleted_at\":null},
+        \n {\"id\":\"514f22e6-6254-41f1-b7db-0e0bb151cdb8\",\"type\":\"organization\",\"data\":{\"name\":
+        \"DataCorp\", \"_source\": \"19ab2108-6c95-4d2a-86a9-b04bce649ce8\", \"user_id\":
+        \"00000000-0000-0000-0000-000000000001\", \"_confidence\": \"confirmed\"},\"created_at\":\"2025-12-22T21:10:15.725049+00:00\",\"updated_at\":\"2025-12-22T21:10:15.725049+00:00\",\"deleted_at\":null}]"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '678'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Profile:
+      - public
+      Host:
+      - 127.0.0.1:54321
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: GET
+    uri: http://127.0.0.1:54321/rest/v1/intel?select=id&data-%3E%3Etest=eq.true
+  response:
+    body:
+      string: '[]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Location:
+      - /intel?data-%3E%3Etest=eq.true&select=id
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '1'
+      X-Kong-Upstream-Latency:
+      - '0'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Profile:
+      - public
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2'
+      Content-Profile:
+      - public
+      Content-Type:
+      - application/json
+      Host:
+      - 127.0.0.1:54321
+      Prefer:
+      - return=representation
+      User-Agent:
+      - python-httpx/0.27.2
+      X-Client-Info:
+      - supabase-py/2.25.1
+      apiKey:
+      - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    method: DELETE
+    uri: http://127.0.0.1:54321/rest/v1/sources?code=ilike.TEST_%25
+  response:
+    body:
+      string: '[{"id":"19ab2108-6c95-4d2a-86a9-b04bce649ce8","code":"TEST_DEDUP","type":"human","reliability":"C","data":{},"active":true,"created_at":"2025-12-22T21:10:15.682371+00:00","updated_at":"2025-12-22T21:10:15.682371+00:00","deleted_at":null}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '238'
+      Content-Profile:
+      - public
+      Content-Range:
+      - '*/*'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 22 Dec 2025 21:10:23 GMT
+      Preference-Applied:
+      - return=representation
+      Server:
+      - postgrest/14.1
+      Via:
+      - kong/2.8.1
+      X-Kong-Proxy-Latency:
+      - '0'
+      X-Kong-Upstream-Latency:
+      - '1'
+    status:
+      code: 200
+      message: OK
+version: 1

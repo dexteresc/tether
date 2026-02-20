@@ -21,5 +21,37 @@ services:
     ports:
       - "11434:11434"
 
+  llm-service:
+    build:
+      context: ./llm-service
+      dockerfile: Dockerfile
+    container_name: tether-llm-service
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM Configuration
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o}
+
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Ollama
+      OLLAMA_BASE_URL: http://host.docker.internal:11434/v1
+
+      # Supabase
+      SUPABASE_URL: http://host.docker.internal:54321
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+
+      # CORS
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    volumes:
+      - ./llm-service/app:/app/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
 volumes:
   ollama_data:

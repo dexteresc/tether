@@ -5,7 +5,7 @@ WORKDIR /backend
 
 # Hot reloading mod
 RUN go install github.com/air-verse/air@latest
-EXPOSE 8080
+EXPOSE 9090
 EXPOSE 2345
 
 ENTRYPOINT ["air", "-c", ".air.toml"]
@@ -27,6 +27,6 @@ FROM gcr.io/distroless/static-debian12 AS production
 WORKDIR /app
 COPY --from=builder /app/server .
 
-EXPOSE 8080
+EXPOSE 9090
 
 ENTRYPOINT ["/app/server"]

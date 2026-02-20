@@ -1,16 +1,12 @@
 import {
-  BookOpen,
-  Bot,
-  Frame,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
+  Brain,
+  Database,
+  Network,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
+import { SyncIndicator } from "@/components/sync-indicator";
 import {
   Sidebar,
   SidebarContent,
@@ -26,115 +22,62 @@ import { Logo } from "./logo";
 import { useAuth } from "@/contexts/auth-context";
 import { useMemo } from "react";
 
-// This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Intelligence",
+      url: "/nl-input",
+      icon: Brain,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
+          title: "NL Input",
+          url: "/nl-input",
         },
       ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
+      title: "Data",
+      url: "/entities",
+      icon: Database,
+      isActive: true,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Entities",
+          url: "/entities",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "Intel",
+          url: "/intel",
         },
         {
-          title: "Quantum",
-          url: "#",
+          title: "Relations",
+          url: "/relations",
+        },
+        {
+          title: "Identifiers",
+          url: "/identifiers",
+        },
+        {
+          title: "Sources",
+          url: "/sources",
+        },
+        {
+          title: "Intel-Entities",
+          url: "/intel-entities",
         },
       ],
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
+      title: "Visualization",
+      url: "/graph",
+      icon: Network,
       items: [
         {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
+          title: "Graph",
+          url: "/graph",
         },
       ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
     },
   ],
 };
@@ -177,9 +120,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
+        <SyncIndicator />
         <NavUser user={navUser} />
       </SidebarFooter>
       <SidebarRail />

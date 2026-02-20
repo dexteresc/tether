@@ -6,15 +6,15 @@ import { useNavigate, useLocation } from "react-router";
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, login, error } = useAuth();
+  const { session, login, error } = useAuth();
 
   const from = location.state?.from?.pathname || "/";
 
   useEffect(() => {
-    if (user) {
+    if (session) {
       navigate(from, { replace: true });
     }
-  }, [user, navigate, from]);
+  }, [session, navigate, from]);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();

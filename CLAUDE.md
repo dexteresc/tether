@@ -21,7 +21,13 @@ Auto-generated from all feature plans. Last updated: 2024-12-22
 │   │   ├── services/     # Business logic (LLM, extraction, sync)
 │   │   └── routes/       # FastAPI endpoints
 │   └── tests/
-├── frontend/             # React + TypeScript + Vite
+├── web/                  # React + TypeScript + Vite (shadcn/ui)
+│   └── src/
+│       ├── components/   # UI components (app-sidebar, data-table, ui/)
+│       ├── pages/        # Page components
+│       ├── stores/       # MobX stores
+│       ├── services/     # LLM client, sync engine
+│       └── lib/          # IDB, config, sync types
 ├── handlers/             # Go API handlers
 ├── models/               # Go data models
 ├── services/             # Go services
@@ -38,9 +44,9 @@ cd llm-service && uvicorn app.main:app --reload --port 8000
 cd llm-service && pytest tests/ -v
 cd llm-service && ruff check .
 
-# Frontend
-cd frontend && npm run dev
-cd frontend && npm run lint
+# Web Frontend
+cd web && npm run dev
+cd web && npm run lint
 
 # Supabase
 supabase start

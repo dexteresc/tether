@@ -26,13 +26,17 @@ export const NLInputPage = observer(function NLInputPage() {
     nlQueue.refresh();
   }, [nlQueue]);
 
+  const selectedItemStatus = nlQueue.items.find(
+    (i) => i.input_id === selectedInputId
+  )?.status;
+
   useEffect(() => {
     if (selectedInputId) {
       loadStagedRows(selectedInputId);
     } else {
       setStagedRows([]);
     }
-  }, [selectedInputId]);
+  }, [selectedInputId, selectedItemStatus]);
 
   const loadStagedRows = async (inputId: string) => {
     const rows = await getStagedExtractionsByInputId(inputId);
@@ -117,47 +121,48 @@ export const NLInputPage = observer(function NLInputPage() {
   } | null;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="mb-6 text-2xl font-bold">
-        Natural Language Input
-      </h1>
-
-      {/* Input Form */}
-      <form onSubmit={handleSubmit} className="mb-8">
-        <div className="mb-3">
-          <label className="block mb-2 text-sm font-medium">
-            Enter intelligence text:
-          </label>
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Example: John Doe met Jane Smith at the Hilton Hotel on March 15, 2024..."
-            className="w-full min-h-[120px] p-3 text-sm border rounded-md bg-background"
-          />
-        </div>
-        <Button type="submit" disabled={!inputText.trim()}>
-          Submit
-        </Button>
-      </form>
-
-      {/* Queue Status */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-8">
-        {[
-          { label: "Processing", value: currentlyProcessing ? 1 : 0 },
-          { label: "Pending", value: pendingQueue.length },
-          { label: "Completed", value: completed.length },
-          { label: "Failed", value: failed.length },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="pt-4">
-              <div className="text-xs text-muted-foreground mb-1">
-                {stat.label}
-              </div>
-              <div className="text-2xl font-semibold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
+    <div>
+      <div className="p-4 border-b flex items-center justify-between">
+        <h2 className="text-xl font-bold">Natural Language Input</h2>
       </div>
+
+      <div className="p-4">
+        {/* Input Form */}
+        <form onSubmit={handleSubmit} className="mb-6">
+          <div className="mb-3">
+            <label className="block mb-2 text-sm font-medium">
+              Enter intelligence text:
+            </label>
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Example: John Doe met Jane Smith at the Hilton Hotel on March 15, 2024..."
+              className="w-full min-h-[120px] p-3 text-sm border rounded-md bg-background"
+            />
+          </div>
+          <Button type="submit" disabled={!inputText.trim()}>
+            Submit
+          </Button>
+        </form>
+
+        {/* Queue Status */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {[
+            { label: "Processing", value: currentlyProcessing ? 1 : 0 },
+            { label: "Pending", value: pendingQueue.length },
+            { label: "Completed", value: completed.length },
+            { label: "Failed", value: failed.length },
+          ].map((stat) => (
+            <Card key={stat.label}>
+              <CardContent className="pt-4">
+                <div className="text-xs text-muted-foreground mb-1">
+                  {stat.label}
+                </div>
+                <div className="text-2xl font-semibold">{stat.value}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
       {/* Currently Processing */}
       {currentlyProcessing && (
@@ -327,6 +332,7 @@ export const NLInputPage = observer(function NLInputPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 });

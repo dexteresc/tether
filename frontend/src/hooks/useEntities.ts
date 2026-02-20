@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { Entity, EntityType } from '../lib/types';
+import { getEntityWithDetails, searchEntitiesByIdentifier, getTable } from '../lib/supabase-helpers';
+import type { Entity, EntityType, Json } from '../lib/types';
 
 interface EntityFilters {
   type?: EntityType;
@@ -34,14 +35,7 @@ export function useEntity(id: string | undefined) {
     enabled: !!id,
     queryFn: async () => {
       if (!id) throw new Error('Entity ID is required');
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).rpc('get_entity_with_details', {
-        p_entity_id: id,
-      });
-
-      if (error) throw error;
-      return data;
+      return await getEntityWithDetails(id);
     },
   });
 }
@@ -51,9 +45,8 @@ export function useCreateEntity() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (entity: { type: EntityType; data?: any }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error} = await (supabase.from('entities') as any)
+    mutationFn: async (entity: { type: EntityType; data?: Json }) => {
+      const { data, error} = await getTable('entities')
         .insert({
           type: entity.type,
           data: entity.data || {},
@@ -76,8 +69,7 @@ export function useUpdateEntity() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Entity> }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('entities') as any)
+      const { data, error } = await getTable('entities')
         .update(updates)
         .eq('id', id)
         .select()
@@ -99,8 +91,7 @@ export function useDeleteEntity() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('entities') as any)
+      const { data, error } = await getTable('entities')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -121,14 +112,7 @@ export function useSearchEntities(searchValue: string, identifierType?: string) 
     queryKey: ['search_entities', searchValue, identifierType],
     enabled: searchValue.length > 0,
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).rpc('search_entities_by_identifier', {
-        p_search_value: searchValue,
-        p_identifier_type: identifierType || null,
-      });
-
-      if (error) throw error;
-      return data;
+      return await searchEntitiesByIdentifier(searchValue, identifierType);
     },
   });
 }

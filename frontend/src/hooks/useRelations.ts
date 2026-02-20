@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { Relation, RelationType } from '../lib/types';
+import { getEntityGraph, getTable } from '../lib/supabase-helpers';
+import type { Relation, RelationType, Json } from '../lib/types';
 
 // Fetch relations for a specific entity
 export function useRelations(entityId: string | undefined) {
@@ -29,15 +30,7 @@ export function useRelationGraph(entityId: string | undefined, depth: number = 2
     enabled: !!entityId,
     queryFn: async () => {
       if (!entityId) throw new Error('Entity ID is required');
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).rpc('get_entity_graph', {
-        p_entity_id: entityId,
-        p_depth: depth,
-      });
-
-      if (error) throw error;
-      return data;
+      return await getEntityGraph(entityId, depth);
     },
   });
 }
@@ -54,10 +47,9 @@ export function useCreateRelation() {
       strength?: number;
       valid_from?: string;
       valid_to?: string;
-      data?: any;
+      data?: Json;
     }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('relations') as any)
+      const { data, error } = await getTable('relations')
         .insert(relation)
         .select()
         .single();
@@ -80,8 +72,7 @@ export function useUpdateRelation() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Relation> }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('relations') as any)
+      const { data, error } = await getTable('relations')
         .update(updates)
         .eq('id', id)
         .select()
@@ -103,8 +94,7 @@ export function useDeleteRelation() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('relations') as any)
+      const { data, error } = await getTable('relations')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
         .select()

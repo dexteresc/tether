@@ -38,6 +38,7 @@ Verify compliance with [Tether Constitution](../../.specify/memory/constitution.
 - [ ] **Test Coverage**: Critical paths have tests (LLM extraction, DB sync, API contracts, auth flows)
 - [ ] **Architecture Boundaries**: No cross-service imports, services communicate via API contracts
 - [ ] **Environment Configuration**: All runtime config uses environment variables, no hardcoded secrets
+- [ ] **Test-Driven Development (TDD)**: Tests written FIRST before implementation, all tests must FAIL initially, then pass after implementation
 
 ## Project Structure
 

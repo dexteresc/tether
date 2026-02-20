@@ -8,7 +8,6 @@ from app.models.extraction import (
     IntelligenceExtraction,
     SyncResults,
     ClassifiedExtraction,
-    ExtractionClassification,
 )
 from app.config import settings
 
@@ -28,12 +27,7 @@ class ExtractionResponse(BaseModel):
     sync_results: Optional[SyncResults] = None
 
 
-class ClassifiedExtractionResponse(BaseModel):
-    """Response with classification, chain-of-thought, and extraction results."""
-    classification: ExtractionClassification
-    chain_of_thought: str
-    extraction: IntelligenceExtraction
-    sync_results: Optional[SyncResults] = None
+# ClassifiedExtractionResponse removed - now using ClassifiedExtraction model directly (T028)
 
 
 class HealthResponse(BaseModel):
@@ -58,7 +52,7 @@ async def health_check():
     )
 
 
-@router.post("/extract", response_model=ClassifiedExtractionResponse)
+@router.post("/extract", response_model=ClassifiedExtraction)
 async def extract_intelligence(
     request: ExtractionRequest,
     authorization: Optional[str] = Header(None),
@@ -70,12 +64,14 @@ async def extract_intelligence(
     - Entities (persons, organizations, etc.) → Fact Updates
     - Events/Intel (interactions, sightings, etc.) → Event Logs
 
+    T028: Returns needs_clarification=True when ambiguous entity references detected.
+
     Args:
         request: Extraction request with text and options
         authorization: Bearer token for authentication
 
     Returns:
-        ClassifiedExtractionResponse with classification, chain_of_thought, extraction, and sync_results
+        ClassifiedExtraction with classification, extraction, entity resolutions, and clarification requests
     """
     # Verify authentication
     user_id = None
@@ -92,10 +88,17 @@ async def extract_intelligence(
             if user_info:
                 user_name = user_info.get("name")
 
-    # Extract and classify intelligence with user context
+    # Create Supabase client for entity resolution and sync
+    supabase = create_service_role_client()
+
+    # Extract and classify intelligence with entity resolution
     extraction_service = get_extraction_service()
-    classified_result = extraction_service.extract_and_classify(
-        request.text, request.context, user_name=user_name
+    classified_result = await extraction_service.extract_and_classify_with_resolution(
+        text=request.text,
+        supabase_client=supabase,
+        user_id=user_id,
+        context=request.context,
+        user_name=user_name
     )
 
     # Sync to database if requested
@@ -106,18 +109,14 @@ async def extract_intelligence(
                 status_code=401, detail="Authentication required for database sync"
             )
 
-        # Create authenticated Supabase client
-        supabase = create_service_role_client()
-
-        # Sync extraction
+        # Sync extraction with entity resolutions
         sync_service = SupabaseSyncService(supabase, user_id)
         sync_results = sync_service.sync_extraction(
-            classified_result.extraction, request.source_code
+            classified_result.extraction,
+            request.source_code,
+            entity_resolutions=classified_result.entity_resolutions
         )
+        classified_result.sync_results = sync_results
 
-    return ClassifiedExtractionResponse(
-        classification=classified_result.classification,
-        chain_of_thought=classified_result.chain_of_thought,
-        extraction=classified_result.extraction,
-        sync_results=sync_results,
-    )
+    # T028: needs_clarification is automatically set by extract_and_classify_with_resolution
+    return classified_result

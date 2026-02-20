@@ -11,7 +11,7 @@ from supabase import create_client
 from app.config import settings
 from app.services.extraction import ExtractionService
 from app.services.supabase_sync import SupabaseSyncService
-from app.models.extraction import EntityType, IntelType, RelationType
+from app.models.extraction import EntityType, IntelType
 
 
 # Test user ID (use a consistent test user)
@@ -258,7 +258,7 @@ class TestEntityResolution:
         # First extraction
         text1 = "Alice Brown works at DataCorp."
         extraction1 = extraction_service.extract_intelligence(text1)
-        results1 = sync_service.sync_extraction(extraction1, "TEST_DEDUP")
+        _results1 = sync_service.sync_extraction(extraction1, "TEST_DEDUP")
 
         # Get Alice's entity ID
         entities_after_first = (
@@ -272,7 +272,7 @@ class TestEntityResolution:
         # Second extraction mentioning Alice again
         text2 = "Alice Brown gave a presentation today."
         extraction2 = extraction_service.extract_intelligence(text2)
-        results2 = sync_service.sync_extraction(extraction2, "TEST_DEDUP")
+        _results2 = sync_service.sync_extraction(extraction2, "TEST_DEDUP")
 
         # Verify Alice wasn't duplicated
         entities_after_second = (
@@ -338,7 +338,7 @@ class TestComplexScenario:
         # Sync to database
         results = sync_service.sync_extraction(extraction, "TEST_COMPLEX")
 
-        print(f"\nSync results:")
+        print("\nSync results:")
         print(f"  Entities created: {len(results.entities_created)}")
         print(f"  Entities updated: {len(results.entities_updated)}")
         print(f"  Relations created: {len(results.relations_created)}")

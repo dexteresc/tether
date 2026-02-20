@@ -7,18 +7,6 @@ function nowIso(): string {
   return new Date().toISOString()
 }
 
-function withReplicaMeta<T extends { id: string }>(row: T, existingMeta?: ReplicaMeta): ReplicaRow<T> {
-  const meta: ReplicaMeta = existingMeta ?? {
-    local_last_accessed_at: nowIso(),
-    local_dirty: false,
-    local_deleted: false,
-    base_updated_at: null,
-    last_pulled_at: null,
-  }
-
-  return { ...row, __meta: meta }
-}
-
 export class ReplicaStore {
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true })
@@ -45,8 +33,24 @@ export class ReplicaStore {
       const existing = await tx.store.get(row.id)
       const existingMeta = existing?.__meta
       if (existingMeta?.local_dirty) continue
+
+      // Check if the row is deleted
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tx.store.put(withReplicaMeta(row, existingMeta) as any)
+      const isDeleted = !!(row as any).deleted_at
+
+      const meta: ReplicaMeta = existingMeta ?? {
+        local_last_accessed_at: nowIso(),
+        local_dirty: false,
+        local_deleted: isDeleted,
+        base_updated_at: null,
+        last_pulled_at: null,
+      }
+
+      // Update local_deleted flag based on server state
+      meta.local_deleted = isDeleted
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tx.store.put({ ...row, __meta: meta } as any)
     }
 
     await tx.done
@@ -60,8 +64,13 @@ export class ReplicaStore {
     const results: Array<ReplicaRow<RemoteRow<T>>> = []
     let cursor = await index.openCursor(null, 'prev')
     while (cursor && results.length < limit) {
+      const row = cursor.value
+      // Filter out deleted records
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      results.push(cursor.value as any)
+      if (!row.__meta.local_deleted && !(row as any).deleted_at) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        results.push(row as any)
+      }
       cursor = await cursor.continue()
     }
 

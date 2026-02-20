@@ -9,27 +9,25 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/handlers"
 	"github.com/dexteresc/tether/middleware"
-	"github.com/dexteresc/tether/models"
 	"github.com/dexteresc/tether/services"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	config.ConnectDatabase()
-	err := config.DB.AutoMigrate(
-		&models.Source{},
-		&models.Entity{},
-		&models.Relation{},
-		&models.Identifier{},
-		&models.Intel{},
-		&models.IntelEntity{},
-		&models.User{},
-	)
-
-	if err != nil {
-		log.Panic("Failed to auto migrate database: " + err.Error())
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found or error loading it")
 	}
+
+	config.ConnectDatabase()
+
+	// Schema management:
+	// - Supabase migrations handle ALL schema changes
+	// - GORM is used only as an ORM (no AutoMigrate)
+	// - When Go models change, create a new Supabase migration manually
+	log.Println("Using Supabase-managed schema")
 
 	r := gin.Default()
 

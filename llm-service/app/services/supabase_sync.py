@@ -10,6 +10,7 @@ from app.models.extraction import (
     SyncResults,
     IdentifierExtraction,
 )
+from app.models.resolution import EntityResolutionResult
 from app.utils.date_parser import parse_and_format_date
 from app.utils.entity_matcher import find_entity_by_identifier
 
@@ -32,7 +33,7 @@ class SupabaseSyncService:
         self.user_id = user_id
 
     def sync_extraction(
-        self, extraction: IntelligenceExtraction, default_source: str = "LLM"
+        self, extraction: IntelligenceExtraction, default_source: str = "LLM", entity_resolutions: Optional[List[EntityResolutionResult]] = None
     ) -> SyncResults:
         """
         Sync entire extraction to database.
@@ -42,6 +43,7 @@ class SupabaseSyncService:
         Args:
             extraction: Intelligence extraction to sync
             default_source: Default source code if none specified
+            entity_resolutions: Optional list of entity resolution results (Feature 003)
 
         Returns:
             SyncResults with created/updated entities, relations, intel, and errors
@@ -54,8 +56,18 @@ class SupabaseSyncService:
         # Map entity names to IDs (for relations and intel linking)
         entity_name_to_id: Dict[str, str] = {}
 
+        # T019: Process entity resolutions first to populate entity_name_to_id
+        if entity_resolutions:
+            self._process_entity_resolutions(entity_resolutions, entity_name_to_id, source_id, results)
+
         # Sync all entities (Fact Updates - FR-004, FR-006)
         for entity in extraction.entities:
+            # Skip entities that were already resolved (T019)
+            # Their IDs are already in entity_name_to_id from _process_entity_resolutions
+            if entity.name in entity_name_to_id:
+                logger.info(f"Skipping entity sync for '{entity.name}' - already resolved to {entity_name_to_id[entity.name]}")
+                continue
+
             try:
                 logger.info(f"Syncing entity: {entity.name} (type={entity.entity_type.value})")
                 entity_sync_result = self._sync_entity(entity, source_id)
@@ -116,6 +128,88 @@ class SupabaseSyncService:
                 )
 
         return results
+
+    def _process_entity_resolutions(
+        self,
+        resolutions: List[EntityResolutionResult],
+        entity_name_to_id: Dict[str, str],
+        source_id: str,
+        results: SyncResults
+    ):
+        """
+        Process entity resolutions and populate entity_name_to_id mapping.
+
+        Implements T019 (use resolved_entity_id) and T020 (create new entities).
+
+        Args:
+            resolutions: List of entity resolution results
+            entity_name_to_id: Dictionary to populate with name->id mappings
+            source_id: Source ID for new entities
+            results: SyncResults to track created entities
+        """
+        for resolution in resolutions:
+            reference = resolution.input_reference
+
+            if resolution.resolved and resolution.resolved_entity_id:
+                # T019: Use resolved entity ID
+                entity_id_str = str(resolution.resolved_entity_id)
+                entity_name_to_id[reference] = entity_id_str
+                logger.info(f"Resolved '{reference}' to existing entity {entity_id_str} (confidence: {resolution.confidence:.2f})")
+
+            elif resolution.resolution_method == "new_entity":
+                # T020: Create new entity when confidence < threshold
+                logger.info(f"Creating new entity for unresolved reference '{reference}'")
+                try:
+                    # Create minimal person entity
+                    entity_data = {
+                        "name": reference,
+                        "user_id": self.user_id,
+                        "_source": source_id,
+                        "_confidence": "medium",  # Default confidence for new entities
+                        "_resolution_method": resolution.resolution_method,
+                    }
+
+                    entity_response = (
+                        self.supabase.table("entities")
+                        .insert({
+                            "type": "person",  # Assume person for name references
+                            "data": entity_data,
+                        })
+                        .execute()
+                    )
+
+                    if entity_response.data and len(entity_response.data) > 0:
+                        new_entity_id = entity_response.data[0]["id"]
+
+                        # Create name identifier
+                        self.supabase.table("identifiers").insert({
+                            "entity_id": new_entity_id,
+                            "type": "name",
+                            "value": reference,
+                        }).execute()
+
+                        # Map to entity_name_to_id
+                        entity_name_to_id[reference] = new_entity_id
+
+                        # Track in results
+                        results.entities_created.append({
+                            "entity_id": new_entity_id,
+                            "name": reference,
+                            "type": "person",
+                            "created": True,
+                            "resolution_confidence": resolution.confidence,
+                        })
+
+                        logger.info(f"Created new entity for '{reference}': {new_entity_id}")
+
+                except Exception as e:
+                    error_msg = f"Failed to create entity for '{reference}': {str(e)}"
+                    logger.error(error_msg)
+                    results.errors.append({
+                        "type": "entity_resolution",
+                        "entity_name": reference,
+                        "error_message": error_msg,
+                    })
 
     def _sync_entity(
         self, entity: EntityExtraction, source_id: str
@@ -238,17 +332,28 @@ class SupabaseSyncService:
         for identifier in identifiers:
             # Check if identifier already exists
             if skip_duplicates:
+                # T038: Upsert logic - check if same type exists for this entity
                 existing = (
                     self.supabase.table("identifiers")
-                    .select("id")
+                    .select("id, value")
                     .eq("entity_id", entity_id)
                     .eq("type", identifier.identifier_type.value)
-                    .ilike("value", identifier.value)
                     .execute()
                 )
 
                 if existing.data and len(existing.data) > 0:
-                    continue  # Skip duplicate
+                    # Check if value differs - if so, update it (upsert)
+                    existing_id = existing.data[0]["id"]
+                    existing_value = existing.data[0]["value"]
+
+                    if existing_value.lower() != identifier.value.lower():
+                        # Update existing identifier with new value
+                        self.supabase.table("identifiers").update(
+                            {"value": identifier.value}
+                        ).eq("id", existing_id).execute()
+                        logger.info(f"Updated identifier {identifier.identifier_type.value} for entity {entity_id}: {existing_value} -> {identifier.value}")
+
+                    continue  # Skip creating new one
 
             # Create identifier
             response = (

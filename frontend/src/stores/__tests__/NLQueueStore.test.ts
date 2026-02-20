@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { NLQueueStore } from '../NLQueueStore'
 import { getTetherDb } from '../../lib/idb/db'
 import * as LlmClientModule from '../../services/llm/LlmClient'
+import type { LlmClient } from '../../services/llm/LlmClient'
 import type { ClassifiedExtractionResponse } from '../../services/llm/types'
 
 // Mock the LLM client
@@ -77,10 +78,9 @@ describe('NLQueueStore', () => {
 
       mockExtract.mockResolvedValue(mockResponse)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(LlmClientModule.getLlmClient).mockReturnValue({
         extract: mockExtract,
-      } as any)
+      } as Partial<LlmClient> as LlmClient)
 
       // Enqueue multiple items
       await store.enqueue('Text 1', null)
@@ -249,10 +249,9 @@ describe('NLQueueStore', () => {
 
       mockExtract.mockResolvedValue(mockResponse)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(LlmClientModule.getLlmClient).mockReturnValue({
         extract: mockExtract,
-      } as any)
+      } as Partial<LlmClient> as LlmClient)
 
       await store.enqueue('Test text', null)
 

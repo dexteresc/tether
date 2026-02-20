@@ -22,9 +22,13 @@ export const EntitiesPage = observer(function EntitiesPage() {
         const entitiesData = await replica.listByUpdatedAt('entities', 1000)
         const identifiersData = await replica.listByUpdatedAt('identifiers', 10000)
 
+        // Filter out deleted items
+        const activeEntities = entitiesData.filter(e => !e.deleted_at)
+        const activeIdentifiers = identifiersData.filter(i => !i.deleted_at)
+
         // Group identifiers by entity_id
         const idMap: Record<string, Identifier[]> = {}
-        for (const id of identifiersData) {
+        for (const id of activeIdentifiers) {
           if (!idMap[id.entity_id]) {
             idMap[id.entity_id] = []
           }
@@ -32,7 +36,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
         }
 
         setIdentifiersMap(idMap)
-        setEntities(entitiesData as EntityRow[])
+        setEntities(activeEntities)
       } catch (error) {
         console.error('Failed to load entities:', error)
       } finally {

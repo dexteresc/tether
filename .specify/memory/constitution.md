@@ -1,14 +1,17 @@
 <!--
 Sync Impact Report:
-- Version: 1.0.0 (Initial ratification)
-- Principles established:
-  1. Type-First Development
-  2. Minimal Dependencies
-  3. Test Coverage for Critical Paths
-  4. Clear Architecture Boundaries
-  5. Configuration via Environment
-- Templates status: ✅ All templates reviewed and aligned
-- Follow-up: None - all placeholders resolved
+- Version change: 1.0.0 → 1.1.0
+- Type: MINOR (New principle added: Test-Driven Development)
+- Principles modified:
+  - Added: VI. Test-Driven Development (TDD)
+  - Existing principles I-V unchanged
+- Added sections: Principle VI with TDD requirements and rationale
+- Removed sections: None
+- Templates status:
+  - ✅ plan-template.md: Updated Constitution Check section to include TDD requirement
+  - ✅ tasks-template.md: Updated to mandate tests-first approach across all user stories
+  - ✅ spec-template.md: No constitution-specific constraints required
+- Follow-up: None - all templates updated to reflect TDD mandate
 -->
 
 # Tether Constitution
@@ -56,6 +59,22 @@ Services communicate via well-defined API contracts. Database access follows Row
 All runtime configuration MUST use environment variables. No hardcoded URLs, API keys, or provider settings in code. Support for multiple deployment environments (development, staging, production) through .env files.
 
 **Rationale**: The LLM service switches between OpenAI and Ollama providers purely through LLM_PROVIDER environment variable. This enables local development with Ollama (free, private) and production with OpenAI (faster, more capable) without code changes.
+
+### VI. Test-Driven Development (TDD)
+
+All new features and bug fixes MUST follow Test-Driven Development:
+1. **Write tests FIRST** before implementation - tests must FAIL initially
+2. **Implement minimum code** to make tests pass
+3. **Refactor** while keeping tests green
+
+Tests MUST:
+- Cover all user stories and acceptance criteria
+- Use descriptive test names that document expected behavior
+- Be independent and able to run in any order
+- Follow the Arrange-Act-Assert (AAA) pattern
+- Use VCR cassettes for LLM interactions (deterministic, fast)
+
+**Rationale**: TDD ensures code is testable by design and prevents over-engineering. Writing tests first clarifies requirements before implementation, reducing rework. For the LLM service, TDD with VCR cassettes caught extraction regressions early (80 seconds for 20 tests) and documented expected extraction behavior better than comments. Tests become living documentation of system behavior and acceptance criteria.
 
 ## Development Workflow
 
@@ -117,4 +136,4 @@ This constitution supersedes all other development practices. Changes to princip
 
 All code reviews MUST verify compliance with these principles. Violations require explicit justification or rejection of PR.
 
-**Version**: 1.0.0 | **Ratified**: 2024-12-22 | **Last Amended**: 2024-12-22
+**Version**: 1.1.0 | **Ratified**: 2024-12-22 | **Last Amended**: 2025-12-24

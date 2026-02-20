@@ -296,6 +296,32 @@ def summarize_reasoning(reasoning: Reasoning) -> str:
     return "; ".join(parts) if parts else "No reasoning provided"
 
 
+class ClarificationOption(BaseModel):
+    """Option for user clarification of ambiguous entity (T027)."""
+    entity_id: str = Field(
+        description="UUID of the candidate entity"
+    )
+    display_name: str = Field(
+        description="Name to display to user"
+    )
+    display_context: str = Field(
+        description="Distinguishing context (e.g., 'Acme Corp, john@acme.com')"
+    )
+
+
+class ClarificationRequest(BaseModel):
+    """Request for user clarification when entity resolution is ambiguous (T027)."""
+    question: str = Field(
+        description="Question to ask the user (e.g., 'Which John do you mean?')"
+    )
+    options: List[ClarificationOption] = Field(
+        description="List of candidate options for user to choose from"
+    )
+    ambiguous_reference: str = Field(
+        description="The ambiguous reference that needs clarification"
+    )
+
+
 class ClassifiedExtraction(BaseModel):
     """Response model with classification, chain-of-thought, and extraction results."""
     classification: ExtractionClassification = Field(
@@ -310,4 +336,16 @@ class ClassifiedExtraction(BaseModel):
     sync_results: Optional[SyncResults] = Field(
         default=None,
         description="Results of database sync operations (if sync_to_db was true)"
+    )
+    needs_clarification: bool = Field(
+        default=False,
+        description="Whether entity resolution needs user clarification (ambiguous references)"
+    )
+    clarification_requests: List[ClarificationRequest] = Field(
+        default_factory=list,
+        description="Clarification requests for ambiguous entity references (T027)"
+    )
+    entity_resolutions: List[Any] = Field(
+        default_factory=list,
+        description="Entity resolution results for person references (List[EntityResolutionResult])"
     )

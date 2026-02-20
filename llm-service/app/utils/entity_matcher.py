@@ -1,6 +1,9 @@
 from supabase import Client
 from typing import Optional, Dict, List
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def find_entity_by_identifier(
@@ -38,7 +41,7 @@ def find_entity_by_identifier(
 
         return None
     except Exception as e:
-        print(f"Error finding entity by identifier: {e}")
+        logger.error(f"Error finding entity by identifier: {e}")
         return None
 
 
@@ -94,7 +97,7 @@ def find_or_create_entity(
 
         return new_entity_id
     except Exception as e:
-        print(f"Error creating entity: {e}")
+        logger.error(f"Error creating entity: {e}")
         raise
 
 

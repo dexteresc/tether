@@ -11,11 +11,14 @@ class Settings(BaseSettings):
     )
 
     # LLM Configuration
-    llm_provider: Literal["openai", "ollama"] = "ollama"
+    llm_provider: Literal["openai", "ollama", "anthropic"] = "ollama"
     llm_model: str = "qwen2.5:7b"
 
     # OpenAI
     openai_api_key: str = ""
+
+    # Anthropic
+    anthropic_api_key: str = ""
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434/v1"

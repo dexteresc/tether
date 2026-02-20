@@ -45,15 +45,16 @@ def classify_extraction(extraction: IntelligenceExtraction) -> ExtractionClassif
 class ExtractionService:
     """Service for orchestrating intelligence extraction from text."""
 
-    def __init__(self, provider: Optional[str] = None, model: Optional[str] = None):
+    def __init__(self, provider: Optional[str] = None, model: Optional[str] = None, api_key: Optional[str] = None):
         """
         Initialize extraction service.
 
         Args:
-            provider: LLM provider ("openai" or "ollama")
+            provider: LLM provider ("openai", "ollama", or "anthropic")
             model: Model name
+            api_key: Optional API key override (e.g. from frontend)
         """
-        self.llm_provider = get_llm_provider(provider, model)
+        self.llm_provider = get_llm_provider(provider, model, api_key=api_key)
 
     def extract_intelligence(
         self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None

@@ -1,15 +1,17 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRootStore } from "@/stores/RootStore";
 import { StagedRowEditor, type IdLabel } from "@/components/staged-row-editor";
 import { ResolutionReview } from "@/components/resolution-review";
 import { getStagedExtractionsByInputId } from "@/lib/idb/staged";
 import type { StagedExtraction } from "@/lib/sync/types";
 import { commitStagedForInput } from "@/services/sync/stagingToOutbox";
+import { getLlmClient } from "@/services/llm/LlmClient";
 import type {
   EntityResolution,
   ClarificationRequest,
 } from "@/services/llm/types";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -28,6 +30,47 @@ type DialogState =
   | { type: "confirm"; title: string; description: string; onConfirm: () => void }
   | { type: "info"; title: string; description: string };
 
+type LlmStatus =
+  | { state: "checking" }
+  | { state: "connected"; provider: string; model: string }
+  | { state: "disconnected" };
+
+type LlmStatusBannerProps = {
+  llmStatus: Exclude<LlmStatus, { state: "checking" }>;
+  hasAnthropicKey: boolean;
+};
+
+function LlmStatusBanner({ llmStatus, hasAnthropicKey }: LlmStatusBannerProps) {
+  let variant: "default" | "destructive" = "default";
+  let title: string;
+  let description: string | undefined;
+
+  if (llmStatus.state === "disconnected") {
+    if (hasAnthropicKey) {
+      title = "LLM service offline \u2014 using Anthropic API key";
+      description =
+        "The local LLM service is not running, but your Anthropic key is configured. Start the LLM service to process extractions.";
+    } else {
+      variant = "destructive";
+      title = "LLM service unavailable";
+      description =
+        "The LLM service is not running and no Anthropic API key is configured. Add your API key in Settings (user menu) or start the LLM service.";
+    }
+  } else if (hasAnthropicKey) {
+    title = "Using Anthropic API key";
+    description = `Extractions will use your Anthropic API key. Remove it in Settings to use ${llmStatus.provider} instead.`;
+  } else {
+    title = `Connected to ${llmStatus.provider} (${llmStatus.model})`;
+  }
+
+  return (
+    <Alert variant={variant} className="mb-4">
+      <AlertTitle>{title}</AlertTitle>
+      {description && <AlertDescription>{description}</AlertDescription>}
+    </Alert>
+  );
+}
+
 export const NLInputPage = observer(function NLInputPage() {
   const { nlQueue, replica } = useRootStore();
   const [inputText, setInputText] = useState("");
@@ -38,6 +81,22 @@ export const NLInputPage = observer(function NLInputPage() {
   const [isCommitting, setIsCommitting] = useState(false);
   const [idLabels, setIdLabels] = useState<Map<string, IdLabel>>(new Map());
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
+  const [llmStatus, setLlmStatus] = useState<LlmStatus>({ state: "checking" });
+
+  const hasAnthropicKey = Boolean(localStorage.getItem("tether_anthropic_api_key"));
+
+  const checkHealth = useCallback(async () => {
+    try {
+      const health = await getLlmClient().health();
+      setLlmStatus({ state: "connected", provider: health.provider, model: health.model });
+    } catch {
+      setLlmStatus({ state: "disconnected" });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkHealth();
+  }, [checkHealth]);
 
   useEffect(() => {
     nlQueue.refresh();
@@ -230,6 +289,11 @@ export const NLInputPage = observer(function NLInputPage() {
       </div>
 
       <div className="p-4">
+        {/* LLM Status */}
+        {llmStatus.state !== "checking" && (
+          <LlmStatusBanner llmStatus={llmStatus} hasAnthropicKey={hasAnthropicKey} />
+        )}
+
         {/* Input Form */}
         <form onSubmit={handleSubmit} className="mb-6">
           <div className="mb-3">

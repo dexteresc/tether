@@ -1,8 +1,48 @@
 import instructor
 from openai import OpenAI
+import anthropic
 from typing import Optional
 from app.config import settings
 from app.models.extraction import IntelligenceExtraction
+
+
+# Shared system prompt for cloud providers (OpenAI, Anthropic)
+SYSTEM_PROMPT = """You are an intelligence analyst extracting structured information from text.
+
+Your task is to:
+1. Identify ALL entities (people, organizations, groups, vehicles, locations)
+2. Extract ALL factual attributes (birthdays, addresses, positions, etc.)
+3. Identify ALL relationships between entities
+4. Identify ALL events/intelligence (meetings, communications, sightings, etc.)
+5. Track information sources (who reported this?)
+6. Assess confidence levels
+
+IMPORTANT:
+- Extract multiple identifiers per entity when possible (name, email, phone, etc.)
+- For relationships, determine the correct type (parent, spouse, colleague, member, owner, etc.)
+- For intel, categorize correctly (event, communication, sighting, report, document, media, financial)
+- Always provide your reasoning FIRST in the reasoning field
+- Be thorough - extract ALL information present in the text
+
+USER-CENTRIC TEXT HANDLING:
+- When text uses first-person pronouns (I, me, my, mine), these refer to the authenticated user
+- When text mentions "the user" explicitly, this also refers to the authenticated user
+- Extract relationships from the user's perspective (e.g., "my friend John" = user has friend relation to John)
+- Create entities for people mentioned in relation to the user
+- Ensure the user entity is properly identified in relationships"""
+
+
+def build_user_prompt(text: str, context: Optional[str] = None, user_name: Optional[str] = None) -> str:
+    """Build user prompt with optional user name and context prepended."""
+    prompt = f"Extract structured intelligence from the following text:\n\n{text}"
+
+    if user_name:
+        prompt = f"The authenticated user is: {user_name}\n\n{prompt}"
+
+    if context:
+        prompt = f"Context: {context}\n\n{prompt}"
+
+    return prompt
 
 
 class LLMProvider:
@@ -12,7 +52,7 @@ class LLMProvider:
         self.client = None
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3
+        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
     ) -> IntelligenceExtraction:
         """
         Extract structured intelligence from text.
@@ -21,6 +61,7 @@ class LLMProvider:
             text: Text to extract from
             context: Optional context to help with extraction
             max_retries: Number of retries for validation errors
+            user_name: Optional name of the authenticated user
 
         Returns:
             IntelligenceExtraction object with entities, relations, and intel
@@ -45,53 +86,15 @@ class OpenAIProvider(LLMProvider):
         self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using OpenAI with instructor."""
-
-        # Build system prompt
-        system_prompt = """You are an intelligence analyst extracting structured information from text.
-
-Your task is to:
-1. Identify ALL entities (people, organizations, groups, vehicles, locations)
-2. Extract ALL factual attributes (birthdays, addresses, positions, etc.)
-3. Identify ALL relationships between entities
-4. Identify ALL events/intelligence (meetings, communications, sightings, etc.)
-5. Track information sources (who reported this?)
-6. Assess confidence levels
-
-IMPORTANT:
-- Extract multiple identifiers per entity when possible (name, email, phone, etc.)
-- For relationships, determine the correct type (parent, spouse, colleague, member, owner, etc.)
-- For intel, categorize correctly (event, communication, sighting, report, document, media, financial)
-- Always provide your reasoning FIRST in the reasoning field
-- Be thorough - extract ALL information present in the text
-
-USER-CENTRIC TEXT HANDLING:
-- When text uses first-person pronouns (I, me, my, mine), these refer to the authenticated user
-- When text mentions "the user" explicitly, this also refers to the authenticated user
-- Extract relationships from the user's perspective (e.g., "my friend John" = user has friend relation to John)
-- Create entities for people mentioned in relation to the user
-- Ensure the user entity is properly identified in relationships"""
-
-        # Build user prompt with user context
-        user_prompt = f"Extract structured intelligence from the following text:\n\n{text}"
-
-        if user_name:
-            user_prompt = f"The authenticated user is: {user_name}\n\n{user_prompt}"
-
-        if context:
-            user_prompt = f"Context: {context}\n\n{user_prompt}"
-
-        # Call OpenAI with instructor
-        extraction = self.client.chat.completions.create(
+        return self.client.chat.completions.create(
             model=self.model,
             response_model=IntelligenceExtraction,
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": build_user_prompt(text, context, user_name)},
             ],
             max_retries=max_retries,
         )
-
-        return extraction
 
 
 class OllamaProvider(LLMProvider):
@@ -116,8 +119,9 @@ class OllamaProvider(LLMProvider):
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using Ollama with instructor."""
 
-        # Build enhanced system prompt with explicit structure requirements
-        system_prompt = """You are an expert intelligence analyst. Extract structured data from text into JSON.
+        # Ollama needs a stricter system prompt with explicit enum values and JSON examples
+        # to produce well-formed structured output from local models
+        ollama_system_prompt = """You are an expert intelligence analyst. Extract structured data from text into JSON.
 
 CRITICAL RULES:
 1. For every entity, you MUST provide:
@@ -156,39 +160,54 @@ EXAMPLE OUTPUT:
   "intel": []
 }"""
 
-        # Build user prompt with user context
-        user_prompt = f"Extract structured intelligence from the following text:\n\n{text}"
-
-        if user_name:
-            user_prompt = f"The authenticated user is: {user_name}\n\n{user_prompt}"
-
-        if context:
-            user_prompt = f"Context: {context}\n\n{user_prompt}"
-
-        # Call Ollama with instructor with enhanced configuration
-        extraction = self.client.chat.completions.create(
+        return self.client.chat.completions.create(
             model=self.model,
             response_model=IntelligenceExtraction,
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+                {"role": "system", "content": ollama_system_prompt},
+                {"role": "user", "content": build_user_prompt(text, context, user_name)},
             ],
-            temperature=0,  # More deterministic outputs
-            max_retries=max_retries,  # Retry on validation errors
+            temperature=0,
+            max_retries=max_retries,
         )
 
-        return extraction
+
+class AnthropicProvider(LLMProvider):
+    """Anthropic provider with instructor integration."""
+
+    def __init__(self, model: str = "claude-sonnet-4-5-20250514", api_key: Optional[str] = None):
+        super().__init__()
+        self.model = model
+
+        anthropic_client = anthropic.Anthropic(api_key=api_key or settings.anthropic_api_key)
+        self.client = instructor.from_anthropic(anthropic_client)
+
+    def extract(
+        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+    ) -> IntelligenceExtraction:
+        """Extract structured intelligence using Anthropic with instructor."""
+        return self.client.chat.completions.create(
+            model=self.model,
+            response_model=IntelligenceExtraction,
+            messages=[
+                {"role": "user", "content": build_user_prompt(text, context, user_name)},
+            ],
+            system=SYSTEM_PROMPT,
+            max_tokens=4096,
+            max_retries=max_retries,
+        )
 
 
 def get_llm_provider(
-    provider: Optional[str] = None, model: Optional[str] = None
+    provider: Optional[str] = None, model: Optional[str] = None, api_key: Optional[str] = None
 ) -> LLMProvider:
     """
     Factory function to get the appropriate LLM provider.
 
     Args:
-        provider: "openai" or "ollama" (defaults to settings.llm_provider)
+        provider: "openai", "ollama", or "anthropic" (defaults to settings.llm_provider)
         model: Model name (defaults to settings.llm_model)
+        api_key: Optional API key override for cloud providers
 
     Returns:
         LLMProvider instance
@@ -197,8 +216,10 @@ def get_llm_provider(
     model = model or settings.llm_model
 
     if provider == "openai":
-        return OpenAIProvider(model=model)
-    elif provider == "ollama":
+        return OpenAIProvider(model=model, api_key=api_key)
+    if provider == "ollama":
         return OllamaProvider(model=model)
-    else:
-        raise ValueError(f"Unknown LLM provider: {provider}")
+    if provider == "anthropic":
+        return AnthropicProvider(model=model, api_key=api_key)
+
+    raise ValueError(f"Unknown LLM provider: {provider}")

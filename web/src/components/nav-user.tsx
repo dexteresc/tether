@@ -1,11 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import {
   BadgeCheck,
   Bell,
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  Settings,
   Sparkles,
 } from "lucide-react"
 
@@ -14,6 +16,15 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +34,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -38,6 +51,8 @@ function getInitials(name: string, email: string): string {
   return email ? email[0].toUpperCase() : "?"
 }
 
+const STORAGE_KEY = "tether_anthropic_api_key"
+
 export function NavUser({
   user,
 }: {
@@ -50,6 +65,18 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
   const initials = getInitials(user.name, user.email)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem(STORAGE_KEY) ?? "")
+
+  const handleSaveSettings = () => {
+    const trimmed = apiKey.trim()
+    if (trimmed) {
+      localStorage.setItem(STORAGE_KEY, trimmed)
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+    setSettingsOpen(false)
+  }
 
   return (
     <SidebarMenu>
@@ -98,6 +125,10 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
+                <Settings />
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <BadgeCheck />
                 Account
@@ -118,6 +149,47 @@ export function NavUser({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Settings</DialogTitle>
+              <DialogDescription>
+                Configure your LLM provider. The API key is stored only in your browser.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="anthropic-key">Anthropic API Key</Label>
+                <Input
+                  id="anthropic-key"
+                  type="password"
+                  placeholder="sk-ant-..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  When set, extractions will use Claude instead of the local LLM.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              {apiKey && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setApiKey("")
+                    localStorage.removeItem(STORAGE_KEY)
+                    setSettingsOpen(false)
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button onClick={handleSaveSettings}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SidebarMenuItem>
     </SidebarMenu>
   )

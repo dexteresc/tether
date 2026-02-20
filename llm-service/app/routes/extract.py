@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
-from app.services.extraction import get_extraction_service
+from app.services.extraction import get_extraction_service, ExtractionService
 from app.services.supabase_sync import SupabaseSyncService
 from app.services.auth import verify_supabase_jwt, create_service_role_client, get_user_info
 from app.models.extraction import (
@@ -20,6 +20,7 @@ class ExtractionRequest(BaseModel):
     context: Optional[str] = None
     source_code: Optional[str] = "LLM"
     sync_to_db: bool = True
+    anthropic_api_key: Optional[str] = None
 
 
 class ExtractionResponse(BaseModel):
@@ -91,8 +92,11 @@ async def extract_intelligence(
     # Create Supabase client for entity resolution and sync
     supabase = create_service_role_client()
 
-    # Extract and classify intelligence with entity resolution
-    extraction_service = get_extraction_service()
+    # Use Anthropic provider if API key provided, otherwise use configured provider
+    if request.anthropic_api_key:
+        extraction_service = ExtractionService(provider="anthropic", api_key=request.anthropic_api_key)
+    else:
+        extraction_service = get_extraction_service()
     classified_result = await extraction_service.extract_and_classify_with_resolution(
         text=request.text,
         supabase_client=supabase,

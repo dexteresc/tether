@@ -105,6 +105,8 @@ export class LlmClient {
       headers["Authorization"] = `Bearer ${bearerToken}`;
     }
 
+    const anthropicApiKey = localStorage.getItem("tether_anthropic_api_key");
+
     const response = await fetch(`${this.baseUrl}/api/extract`, {
       method: "POST",
       headers,
@@ -113,6 +115,7 @@ export class LlmClient {
         context: request.context ?? null,
         source_code: request.source_code ?? "LLM",
         sync_to_db: request.sync_to_db ?? false,
+        anthropic_api_key: anthropicApiKey || undefined,
       }),
     });
 

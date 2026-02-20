@@ -109,6 +109,16 @@ export class SupabasePushRemote implements PushRemote {
   }
 }
 
+// Parent tables must be pushed before child tables that reference them via FK.
+const TABLE_PUSH_ORDER: Record<string, number> = {
+  sources: 0,
+  entities: 0,
+  identifiers: 1,
+  relations: 1,
+  intel: 1,
+  intel_entities: 2,
+};
+
 export async function drainOutboxOnce(params: {
   remote: PushRemote;
   outbox: OutboxStore;
@@ -117,6 +127,12 @@ export async function drainOutboxOnce(params: {
   limit?: number;
 }): Promise<void> {
   const pending = await params.outbox.getPending(params.limit ?? 50);
+  pending.sort((a, b) => {
+    const oa = TABLE_PUSH_ORDER[a.table] ?? 9;
+    const ob = TABLE_PUSH_ORDER[b.table] ?? 9;
+    if (oa !== ob) return oa - ob;
+    return a.created_at.localeCompare(b.created_at);
+  });
   for (const tx of pending) {
     await params.outbox.updateStatus(tx.tx_id, "syncing");
     try {

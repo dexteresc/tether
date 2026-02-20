@@ -42,13 +42,21 @@ export class OutboxStore {
 
   async getPending(limit = 50): Promise<OutboxTransaction[]> {
     const db = await getTetherDb();
-    const rows = await db.getAllFromIndex(
+    const pending = await db.getAllFromIndex(
       "outbox_transactions",
       OUTBOX_INDEXES.byStatus,
       "pending",
       limit
     );
-    return rows;
+    // Also retry errored transactions (max 5 attempts)
+    const errored = await db.getAllFromIndex(
+      "outbox_transactions",
+      OUTBOX_INDEXES.byStatus,
+      "error",
+      limit
+    );
+    const retryable = errored.filter((tx) => tx.attempt_count < 5);
+    return [...pending, ...retryable];
   }
 
   async updateStatus(

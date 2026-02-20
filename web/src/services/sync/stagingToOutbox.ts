@@ -119,7 +119,7 @@ export async function commitStagedForInput(
   );
 
   const acceptedRows = stagedRows.filter(
-    (row) => row.status === "accepted"
+    (row) => row.status === "accepted" || row.status === "edited"
   );
 
   if (acceptedRows.length === 0) {

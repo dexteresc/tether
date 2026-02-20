@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
 import { supabase } from "@/lib/supabase";
-import { apiClient } from "@/api/client";
 import type { User } from "@/types/models";
 import {
   useContext,
@@ -35,31 +34,38 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+function userFromSession(s: Session | null): User | null {
+  if (!s?.user) return null;
+  const su = s.user;
+  return {
+    id: su.id,
+    entityId: su.id,
+    email: su.email ?? "",
+    entity: {
+      id: su.id,
+      type: "person",
+      data: {
+        name: su.user_metadata?.full_name ?? su.email ?? "User",
+      },
+      createdAt: su.created_at,
+      updatedAt: su.created_at,
+      deletedAt: null,
+    },
+  };
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch app user data from backend
-  const fetchAppUser = useCallback(async () => {
-    try {
-      const appUser = await apiClient.get<User>("/auth/me");
-      setUser(appUser);
-    } catch {
-      setUser(null);
-    }
-  }, []);
-
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
-      if (s) {
-        fetchAppUser().finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
+      setUser(userFromSession(s));
+      setLoading(false);
     });
 
     // Listen for auth changes
@@ -67,15 +73,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
-      if (s) {
-        fetchAppUser();
-      } else {
-        setUser(null);
-      }
+      setUser(userFromSession(s));
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchAppUser]);
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setError(null);

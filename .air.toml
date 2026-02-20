@@ -1,4 +1,4 @@
 root = "."
 
 [build]
-    exclude_dir = ["web", "frontend", "docker-compose.yml", "Dockerfile"]
+    exclude_dir = ["web", "docker-compose.yml", "Dockerfile"]

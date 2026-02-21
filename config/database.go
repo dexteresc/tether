@@ -18,7 +18,7 @@ func ConnectDatabase() {
 	port := os.Getenv("DB_PORT")
 	sslmode := os.Getenv("DB_SSLMODE")
 	if sslmode == "" {
-		sslmode = "disable"
+		sslmode = "require"
 	}
 
 	dsn := fmt.Sprintf(

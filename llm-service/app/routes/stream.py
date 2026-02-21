@@ -102,16 +102,33 @@ async def websocket_extract(websocket: WebSocket):
                 # Send completion
                 await websocket.send_json({"status": "complete"})
 
-            except Exception as e:
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Extraction validation error: {e}")
+                await websocket.send_json(
+                    {"error": f"Extraction failed: {str(e)}"}
+                )
+            except RuntimeError as e:
+                logger.error(f"Extraction/sync runtime error: {e}")
                 await websocket.send_json(
                     {"error": f"Extraction/sync failed: {str(e)}"}
+                )
+            except Exception as e:
+                logger.error(f"Unexpected extraction/sync error: {type(e).__name__}: {e}")
+                await websocket.send_json(
+                    {"error": "An internal error occurred during extraction"}
                 )
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for user: {user_id}")
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+    except json.JSONDecodeError as e:
+        logger.warning(f"Invalid JSON received on WebSocket: {e}")
         try:
-            await websocket.send_json({"error": str(e)})
-        except Exception as send_error:
-            logger.error(f"Failed to send error to client: {send_error}")
+            await websocket.send_json({"error": "Invalid JSON message"})
+        except Exception:
+            pass
+    except Exception as e:
+        logger.error(f"WebSocket error: {type(e).__name__}: {e}")
+        try:
+            await websocket.send_json({"error": "An internal error occurred"})
+        except Exception:
+            pass

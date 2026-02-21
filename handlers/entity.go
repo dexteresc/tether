@@ -9,10 +9,23 @@ import (
 	"github.com/google/uuid"
 )
 
+var validEntityTypes = map[string]bool{
+	"person":       true,
+	"organization": true,
+	"group":        true,
+	"vehicle":      true,
+	"location":     true,
+}
+
 func CreateEntity(c *gin.Context) {
 	var entity models.Entity
 	if err := c.ShouldBindJSON(&entity); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !validEntityTypes[entity.Type] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entity type. Must be one of: person, organization, group, vehicle, location"})
 		return
 	}
 
@@ -58,6 +71,11 @@ func UpdateEntity(c *gin.Context) {
 	var entity models.Entity
 	if err := c.ShouldBindJSON(&entity); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if entity.Type != "" && !validEntityTypes[entity.Type] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entity type. Must be one of: person, organization, group, vehicle, location"})
 		return
 	}
 

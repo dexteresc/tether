@@ -30,8 +30,6 @@ async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "llm_provider": settings.llm_provider,
-        "llm_model": settings.llm_model,
     }
 
 
@@ -40,10 +38,7 @@ async def startup_event():
     """Startup event handler."""
     print("=" * 50)
     print("Tether Intelligence LLM Service")
-    print("=" * 50)
     print(f"LLM Provider: {settings.llm_provider}")
-    print(f"LLM Model: {settings.llm_model}")
-    print(f"Supabase URL: {settings.supabase_url}")
     print("=" * 50)
 
 

@@ -1,39 +1,53 @@
 from jose import jwt, JWTError, jwk
 from typing import Optional
 import logging
+import time
 import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Cached JWKS keys (loaded once at first use)
+# JWKS cache with TTL
 _jwks_keys: Optional[dict] = None
+_jwks_fetched_at: float = 0.0
+_JWKS_TTL_SECONDS = 3600  # 1 hour
 
 
 def _load_jwks() -> dict:
     """
     Fetch JWKS public keys from Supabase for ES256 token verification.
+    Keys are cached with a TTL and refreshed automatically when stale.
 
     Returns:
         Dict mapping kid -> JWK key object
     """
-    global _jwks_keys
-    if _jwks_keys is not None:
+    global _jwks_keys, _jwks_fetched_at
+
+    # Return cached keys if still fresh
+    if _jwks_keys is not None and (time.monotonic() - _jwks_fetched_at) < _JWKS_TTL_SECONDS:
         return _jwks_keys
 
-    _jwks_keys = {}
     jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
     try:
         response = httpx.get(jwks_url, timeout=10)
         response.raise_for_status()
         jwks_data = response.json()
+        new_keys = {}
         for key_data in jwks_data.get("keys", []):
             kid = key_data.get("kid")
             if kid:
-                _jwks_keys[kid] = key_data
+                new_keys[kid] = key_data
+        _jwks_keys = new_keys
+        _jwks_fetched_at = time.monotonic()
         logger.info(f"Loaded {len(_jwks_keys)} JWKS key(s) from Supabase")
-    except Exception as e:
-        logger.warning(f"Failed to load JWKS from {jwks_url}: {e}")
+    except httpx.HTTPError as e:
+        logger.warning(f"HTTP error loading JWKS from Supabase: {e}")
+        if _jwks_keys is None:
+            _jwks_keys = {}
+    except httpx.RequestError as e:
+        logger.warning(f"Network error loading JWKS from Supabase: {e}")
+        if _jwks_keys is None:
+            _jwks_keys = {}
 
     return _jwks_keys
 
@@ -68,6 +82,7 @@ def verify_supabase_jwt(token: str) -> Optional[str]:
             key,
             algorithms=["ES256"],
             audience="authenticated",
+            options={"require_exp": True},
         )
 
         user_id = payload.get("sub")
@@ -78,9 +93,6 @@ def verify_supabase_jwt(token: str) -> Optional[str]:
         return user_id
     except JWTError as e:
         logger.error(f"JWT verification failed: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Error verifying JWT: {e}")
         return None
 
 
@@ -133,8 +145,11 @@ def get_user_info(user_id: str) -> Optional[dict]:
                 "metadata": user_metadata
             }
 
-    except Exception as e:
-        logger.error(f"Error fetching user info: {e}")
+    except httpx.HTTPError as e:
+        logger.error(f"HTTP error fetching user info for {user_id}: {e}")
+        return None
+    except (KeyError, AttributeError) as e:
+        logger.error(f"Error parsing user info for {user_id}: {e}")
         return None
 
     return None

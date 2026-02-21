@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
@@ -33,34 +35,107 @@ type jwksResponse struct {
 	Keys []jwksKey `json:"keys"`
 }
 
-func SupabaseAuth() gin.HandlerFunc {
-	supabaseURL := os.Getenv("SUPABASE_URL")
+// jwksCache holds JWKS keys with a TTL for periodic refresh.
+type jwksCache struct {
+	mu          sync.RWMutex
+	keys        map[string]*ecdsa.PublicKey
+	lastFetched time.Time
+	ttl         time.Duration
+	jwksURL     string
+}
 
-	// Fetch JWKS for ES256 support
-	ecKeys := make(map[string]*ecdsa.PublicKey)
-	if supabaseURL != "" {
-		resp, err := http.Get(supabaseURL + "/auth/v1/.well-known/jwks.json")
-		if err == nil {
-			defer resp.Body.Close()
-			var jwks jwksResponse
-			if json.NewDecoder(resp.Body).Decode(&jwks) == nil {
-				for _, k := range jwks.Keys {
-					if k.Kty == "EC" && k.Crv == "P-256" {
-						xBytes, _ := base64.RawURLEncoding.DecodeString(k.X)
-						yBytes, _ := base64.RawURLEncoding.DecodeString(k.Y)
-						ecKeys[k.Kid] = &ecdsa.PublicKey{
-							Curve: elliptic.P256(),
-							X:     new(big.Int).SetBytes(xBytes),
-							Y:     new(big.Int).SetBytes(yBytes),
-						}
-					}
-				}
-				log.Printf("Loaded %d JWKS key(s) from Supabase", len(ecKeys))
+func newJWKSCache(supabaseURL string, ttl time.Duration) *jwksCache {
+	return &jwksCache{
+		keys:    make(map[string]*ecdsa.PublicKey),
+		ttl:     ttl,
+		jwksURL: supabaseURL + "/auth/v1/.well-known/jwks.json",
+	}
+}
+
+func (c *jwksCache) getKey(kid string) (*ecdsa.PublicKey, bool) {
+	c.mu.RLock()
+	stale := time.Since(c.lastFetched) > c.ttl
+	key, ok := c.keys[kid]
+	c.mu.RUnlock()
+
+	// If key found and not stale, return it
+	if ok && !stale {
+		return key, true
+	}
+
+	// If stale or key not found, refresh
+	c.refresh()
+
+	c.mu.RLock()
+	key, ok = c.keys[kid]
+	c.mu.RUnlock()
+	return key, ok
+}
+
+func (c *jwksCache) refresh() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check: another goroutine may have refreshed while we waited for the lock
+	if time.Since(c.lastFetched) < c.ttl/2 {
+		return
+	}
+
+	resp, err := http.Get(c.jwksURL)
+	if err != nil {
+		log.Printf("Failed to refresh JWKS: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	var jwks jwksResponse
+	if json.NewDecoder(resp.Body).Decode(&jwks) != nil {
+		log.Printf("Failed to decode JWKS response")
+		return
+	}
+
+	newKeys := make(map[string]*ecdsa.PublicKey)
+	for _, k := range jwks.Keys {
+		if k.Kty == "EC" && k.Crv == "P-256" {
+			xBytes, err := base64.RawURLEncoding.DecodeString(k.X)
+			if err != nil {
+				log.Printf("Failed to decode JWKS key X coordinate for kid %s: %v", k.Kid, err)
+				continue
+			}
+			yBytes, err := base64.RawURLEncoding.DecodeString(k.Y)
+			if err != nil {
+				log.Printf("Failed to decode JWKS key Y coordinate for kid %s: %v", k.Kid, err)
+				continue
+			}
+			newKeys[k.Kid] = &ecdsa.PublicKey{
+				Curve: elliptic.P256(),
+				X:     new(big.Int).SetBytes(xBytes),
+				Y:     new(big.Int).SetBytes(yBytes),
 			}
 		}
 	}
 
-	if len(ecKeys) == 0 {
+	if len(newKeys) > 0 {
+		c.keys = newKeys
+		c.lastFetched = time.Now()
+		log.Printf("Refreshed %d JWKS key(s) from Supabase", len(newKeys))
+	}
+}
+
+func (c *jwksCache) keyCount() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.keys)
+}
+
+func SupabaseAuth() gin.HandlerFunc {
+	supabaseURL := os.Getenv("SUPABASE_URL")
+
+	// Initialize JWKS cache with 1-hour TTL
+	cache := newJWKSCache(supabaseURL, 1*time.Hour)
+	cache.refresh()
+
+	if cache.keyCount() == 0 {
 		panic("SUPABASE_URL with JWKS is required")
 	}
 
@@ -82,7 +157,7 @@ func SupabaseAuth() gin.HandlerFunc {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
 			kid, _ := token.Header["kid"].(string)
-			if key, ok := ecKeys[kid]; ok {
+			if key, ok := cache.getKey(kid); ok {
 				return key, nil
 			}
 			return nil, fmt.Errorf("unknown kid: %s", kid)
@@ -127,9 +202,16 @@ func getOrCreateUser(supabaseID, email string) (*models.User, error) {
 	}
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		// Fix #1: Use json.Marshal instead of fmt.Sprintf to prevent JSON injection
+		dataMap := map[string]interface{}{"user": true, "name": email}
+		dataBytes, err := json.Marshal(dataMap)
+		if err != nil {
+			return fmt.Errorf("failed to marshal entity data: %w", err)
+		}
+
 		entity := models.Entity{
 			Type: "person",
-			Data: datatypes.JSON(fmt.Sprintf(`{"user": true, "name": "%s"}`, email)),
+			Data: datatypes.JSON(dataBytes),
 		}
 		if err := tx.Create(&entity).Error; err != nil {
 			return err

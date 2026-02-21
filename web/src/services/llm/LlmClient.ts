@@ -87,7 +87,7 @@ export class LlmClient {
   }
 
   async health(): Promise<HealthResponse> {
-    const response = await fetch(`${this.baseUrl}/api/health`);
+    const response = await fetch(`${this.baseUrl}/health`);
     if (!response.ok) {
       throw new Error(`Health check failed: ${response.statusText}`);
     }

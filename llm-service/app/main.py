@@ -30,6 +30,8 @@ async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
+        "provider": settings.llm_provider,
+        "model": settings.llm_model,
     }
 
 

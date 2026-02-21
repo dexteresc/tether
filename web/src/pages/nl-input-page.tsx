@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRootStore } from "@/stores/RootStore";
 import { StagedRowEditor, type IdLabel } from "@/components/staged-row-editor";
 import { ResolutionReview } from "@/components/resolution-review";
-import { getStagedExtractionsByInputId } from "@/lib/idb/staged";
+import { getStagedExtractionsByInputId, bulkUpdateStagedStatus } from "@/lib/idb/staged";
 import type { StagedExtraction } from "@/lib/sync/types";
 import { commitStagedForInput } from "@/services/sync/stagingToOutbox";
 import { getLlmClient } from "@/services/llm/LlmClient";
@@ -478,14 +478,42 @@ export const NLInputPage = observer(function NLInputPage() {
             />
           )}
 
-          <div className="text-xs text-muted-foreground mb-4">
-            {
-              stagedRows.filter(
-                (r) =>
-                  r.status === "accepted" || r.status === "edited"
-              ).length
-            }{" "}
-            of {stagedRows.length} rows accepted
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-xs text-muted-foreground">
+              {
+                stagedRows.filter(
+                  (r) =>
+                    r.status === "accepted" || r.status === "edited"
+                ).length
+              }{" "}
+              of {stagedRows.length} rows accepted
+            </div>
+            {stagedRows.some((r) => r.status === "proposed") && (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7 text-xs"
+                  onClick={async () => {
+                    await bulkUpdateStagedStatus(selectedInputId, ["proposed"], "accepted");
+                    loadStagedRows(selectedInputId);
+                  }}
+                >
+                  Accept All
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={async () => {
+                    await bulkUpdateStagedStatus(selectedInputId, ["proposed"], "rejected");
+                    loadStagedRows(selectedInputId);
+                  }}
+                >
+                  Reject All
+                </Button>
+              </div>
+            )}
           </div>
 
           {stagedRows.map((staged) => (

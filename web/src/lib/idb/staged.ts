@@ -70,6 +70,22 @@ export async function updateStagedExtraction(
   });
 }
 
+export async function bulkUpdateStagedStatus(
+  inputId: string,
+  fromStatuses: StagedStatus[],
+  toStatus: StagedStatus
+): Promise<void> {
+  const db = await getTetherDb();
+  const rows = await getStagedExtractionsByInputId(inputId);
+  const tx = db.transaction("staged_extractions", "readwrite");
+  for (const row of rows) {
+    if (fromStatuses.includes(row.status)) {
+      await tx.store.put({ ...row, status: toStatus, validation_errors: null });
+    }
+  }
+  await tx.done;
+}
+
 export async function deleteStagedExtractionsByInputId(
   inputId: string
 ): Promise<void> {

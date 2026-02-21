@@ -116,7 +116,9 @@ func (p *IntelligenceProcessor) processEntity(tx *gorm.DB, extracted *models.Ext
 		// Entity found – merge any new descriptive data into the JSONB column
 		var dataMap map[string]interface{}
 		if entity.Data != nil {
-			_ = json.Unmarshal(entity.Data, &dataMap)
+			if err := json.Unmarshal(entity.Data, &dataMap); err != nil {
+				return nil, nil, fmt.Errorf("failed to unmarshal entity data: %w", err)
+			}
 		}
 		if dataMap == nil {
 			dataMap = map[string]interface{}{}
@@ -143,7 +145,10 @@ func (p *IntelligenceProcessor) processEntity(tx *gorm.DB, extracted *models.Ext
 			dataMap["metadata"] = meta
 		}
 		if updated {
-			bytes, _ := json.Marshal(dataMap)
+			bytes, err := json.Marshal(dataMap)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to marshal entity data: %w", err)
+			}
 			if err := tx.Model(&entity).Update("data", datatypes.JSON(bytes)).Error; err != nil {
 				return nil, nil, err
 			}
@@ -158,7 +163,10 @@ func (p *IntelligenceProcessor) processEntity(tx *gorm.DB, extracted *models.Ext
 		if len(extracted.Metadata) > 0 {
 			payload["metadata"] = extracted.Metadata
 		}
-		bytes, _ := json.Marshal(payload)
+		bytes, err := json.Marshal(payload)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to marshal new entity payload: %w", err)
+		}
 
 		entity = models.Entity{
 			Type: extracted.Type,
@@ -177,13 +185,18 @@ func (p *IntelligenceProcessor) processEntity(tx *gorm.DB, extracted *models.Ext
 	if extracted.Name != "" {
 		var existing models.Identifier
 		if tx.Where("entity_id = ? AND type = ? AND value = ?", entity.ID, "name", extracted.Name).First(&existing).Error == gorm.ErrRecordNotFound {
-			nameMeta, _ := json.Marshal(map[string]interface{}{})
-			_ = tx.Create(&models.Identifier{
+			nameMeta, err := json.Marshal(map[string]interface{}{})
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to marshal name identifier metadata: %w", err)
+			}
+			if err := tx.Create(&models.Identifier{
 				EntityID: entity.ID,
 				Type:     "name",
 				Value:    extracted.Name,
 				Metadata: datatypes.JSON(nameMeta),
-			}).Error
+			}).Error; err != nil {
+				return nil, nil, fmt.Errorf("failed to create name identifier: %w", err)
+			}
 		}
 	}
 
@@ -194,7 +207,10 @@ func (p *IntelligenceProcessor) processEntity(tx *gorm.DB, extracted *models.Ext
 		err := tx.Where("entity_id = ? AND type = ? AND value = ?", entity.ID, identData.Type, identData.Value).First(&existing).Error
 		if err == gorm.ErrRecordNotFound {
 			meta := map[string]interface{}{"verified": identData.Verified}
-			metaBytes, _ := json.Marshal(meta)
+			metaBytes, err := json.Marshal(meta)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to marshal identifier metadata: %w", err)
+			}
 			if err := tx.Create(&models.Identifier{
 				EntityID: entity.ID,
 				Type:     identData.Type,
@@ -236,7 +252,9 @@ func (p *IntelligenceProcessor) processRelation(tx *gorm.DB, extracted *models.E
 		if len(extracted.Metadata) > 0 {
 			var dataMap map[string]interface{}
 			if existing.Data != nil {
-				_ = json.Unmarshal(existing.Data, &dataMap)
+				if err := json.Unmarshal(existing.Data, &dataMap); err != nil {
+					return nil, nil, fmt.Errorf("failed to unmarshal relation data: %w", err)
+				}
 			}
 			if dataMap == nil {
 				dataMap = map[string]interface{}{}
@@ -249,7 +267,10 @@ func (p *IntelligenceProcessor) processRelation(tx *gorm.DB, extracted *models.E
 				}
 			}
 			if updated {
-				bytes, _ := json.Marshal(dataMap)
+				bytes, err := json.Marshal(dataMap)
+				if err != nil {
+					return nil, nil, fmt.Errorf("failed to marshal relation data: %w", err)
+				}
 				if err := tx.Model(&existing).Update("data", datatypes.JSON(bytes)).Error; err != nil {
 					return nil, nil, err
 				}
@@ -258,7 +279,10 @@ func (p *IntelligenceProcessor) processRelation(tx *gorm.DB, extracted *models.E
 		relation = &existing
 
 	case gorm.ErrRecordNotFound:
-		bytes, _ := json.Marshal(extracted.Metadata)
+		bytes, err := json.Marshal(extracted.Metadata)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to marshal relation metadata: %w", err)
+		}
 		newRel := models.Relation{
 			SourceID: fromEntity.ID,
 			TargetID: toEntity.ID,

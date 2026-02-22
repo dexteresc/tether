@@ -8,21 +8,25 @@ class EntityType(str, Enum):
     PERSON = "person"
     ORGANIZATION = "organization"
     GROUP = "group"
-    VEHICLE = "vehicle"
     LOCATION = "location"
     EVENT = "event"
+    PROJECT = "project"
+    ASSET = "asset"
 
 
 class IdentifierType(str, Enum):
     NAME = "name"
+    ALIAS = "alias"
     DOCUMENT = "document"
-    BIOMETRIC = "biometric"
     PHONE = "phone"
     EMAIL = "email"
     HANDLE = "handle"
     ADDRESS = "address"
     REGISTRATION = "registration"
     DOMAIN = "domain"
+    WEBSITE = "website"
+    ACCOUNT_ID = "account_id"
+    BIOMETRIC = "biometric"
 
 
 class RelationType(str, Enum):
@@ -30,15 +34,25 @@ class RelationType(str, Enum):
     CHILD = "child"
     SIBLING = "sibling"
     SPOUSE = "spouse"
+    RELATIVE = "relative"
     COLLEAGUE = "colleague"
     ASSOCIATE = "associate"
     FRIEND = "friend"
+    EMPLOYEE = "employee"
     MEMBER = "member"
     OWNER = "owner"
     FOUNDER = "founder"
     CO_FOUNDER = "co-founder"
+    MENTOR = "mentor"
+    CLIENT = "client"
+    PARTNER = "partner"
+    INTRODUCED_BY = "introduced_by"
+    WORKS_AT = "works_at"
+    LIVES_IN = "lives_in"
+    INVESTED_IN = "invested_in"
+    ATTENDED = "attended"
     VISITED = "visited"
-    EMPLOYEE = "employee"
+    KNOWS = "knows"
 
 
 class IntelType(str, Enum):
@@ -49,6 +63,8 @@ class IntelType(str, Enum):
     DOCUMENT = "document"
     MEDIA = "media"
     FINANCIAL = "financial"
+    NOTE = "note"
+    TIP = "tip"
 
 
 class ConfidenceLevel(str, Enum):
@@ -119,7 +135,7 @@ class EntityExtraction(BaseModel):
         description="Primary name/identifier for the entity"
     )
     entity_type: EntityType = Field(
-        description="Type of entity (person, organization, group, vehicle, location)"
+        description="Type of entity (person, organization, group, location, event, project, asset)"
     )
     identifiers: List[IdentifierExtraction] = Field(
         description="All identifiers found for this entity (name, email, phone, etc.)"
@@ -158,7 +174,7 @@ class RelationExtraction(BaseModel):
         description="Name of the target entity in the relationship"
     )
     relation_type: RelationType = Field(
-        description="Type of relationship (parent, child, sibling, spouse, colleague, associate, friend, member, owner)"
+        description="Type of relationship (parent, child, sibling, spouse, relative, colleague, associate, friend, employee, member, owner, founder, co-founder, mentor, client, partner, introduced_by, works_at, lives_in, invested_in, attended, visited, knows)"
     )
     strength: Optional[int] = Field(
         default=None,
@@ -191,7 +207,7 @@ class IntelExtraction(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     
     intel_type: IntelType = Field(
-        description="Type of intelligence (event, communication, sighting, report, document, media, financial)"
+        description="Type of intelligence (event, communication, sighting, report, document, media, financial, note, tip)"
     )
     description: str = Field(
         description="Clear description of what happened (e.g., 'Lukas went to the store', 'Conference in New York')"

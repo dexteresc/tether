@@ -1,3 +1,4 @@
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -34,32 +35,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      attribute_definitions: {
+        Row: {
+          applies_to: string[]
+          data_type: string
+          key: string
+          label: string
+        }
+        Insert: {
+          applies_to?: string[]
+          data_type?: string
+          key: string
+          label: string
+        }
+        Update: {
+          applies_to?: string[]
+          data_type?: string
+          key?: string
+          label?: string
+        }
+        Relationships: []
+      }
       entities: {
         Row: {
           created_at: string
+          created_by: string | null
           data: Json
           deleted_at: string | null
+          geom: unknown
           id: string
+          sensitivity: string
+          status: string
           type: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           data?: Json
           deleted_at?: string | null
+          geom?: unknown
           id?: string
+          sensitivity?: string
+          status?: string
           type: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           data?: Json
           deleted_at?: string | null
+          geom?: unknown
           id?: string
+          sensitivity?: string
+          status?: string
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "entities_sensitivity_fkey"
+            columns: ["sensitivity"]
+            isOneToOne: false
+            referencedRelation: "sensitivity_levels"
+            referencedColumns: ["level"]
+          },
+        ]
+      }
+      entity_attributes: {
+        Row: {
+          confidence: string
+          created_at: string
+          deleted_at: string | null
+          entity_id: string
+          id: string
+          key: string
+          notes: string | null
+          source_id: string | null
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+          value: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          deleted_at?: string | null
+          entity_id: string
+          id?: string
+          key: string
+          notes?: string | null
+          source_id?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+          value: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          deleted_at?: string | null
+          entity_id?: string
+          id?: string
+          key?: string
+          notes?: string | null
+          source_id?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_attributes_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_attributes_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_connection_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_attributes_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       identifiers: {
         Row: {
@@ -100,16 +209,27 @@ export type Database = {
             referencedRelation: "entities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "identifiers_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_connection_counts"
+            referencedColumns: ["id"]
+          },
         ]
       }
       intel: {
         Row: {
           confidence: string
           created_at: string
+          created_by: string | null
           data: Json
           deleted_at: string | null
+          geom: unknown
           id: string
           occurred_at: string
+          search_vector: unknown
+          sensitivity: string
           source_id: string | null
           type: string
           updated_at: string
@@ -117,10 +237,14 @@ export type Database = {
         Insert: {
           confidence?: string
           created_at?: string
+          created_by?: string | null
           data: Json
           deleted_at?: string | null
+          geom?: unknown
           id?: string
           occurred_at: string
+          search_vector?: unknown
+          sensitivity?: string
           source_id?: string | null
           type: string
           updated_at?: string
@@ -128,15 +252,26 @@ export type Database = {
         Update: {
           confidence?: string
           created_at?: string
+          created_by?: string | null
           data?: Json
           deleted_at?: string | null
+          geom?: unknown
           id?: string
           occurred_at?: string
+          search_vector?: unknown
+          sensitivity?: string
           source_id?: string | null
           type?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "intel_sensitivity_fkey"
+            columns: ["sensitivity"]
+            isOneToOne: false
+            referencedRelation: "sensitivity_levels"
+            referencedColumns: ["level"]
+          },
           {
             foreignKeyName: "intel_source_id_fkey"
             columns: ["source_id"]
@@ -183,10 +318,55 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "intel_entities_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_connection_counts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "intel_entities_intel_id_fkey"
             columns: ["intel_id"]
             isOneToOne: false
             referencedRelation: "intel"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_tags: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          record_id: string
+          record_table: string
+          tag_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          record_id: string
+          record_table: string
+          tag_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          record_id?: string
+          record_table?: string
+          tag_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
             referencedColumns: ["id"]
           },
         ]
@@ -197,6 +377,7 @@ export type Database = {
           data: Json | null
           deleted_at: string | null
           id: string
+          sensitivity: string
           source_id: string
           strength: number | null
           target_id: string
@@ -210,6 +391,7 @@ export type Database = {
           data?: Json | null
           deleted_at?: string | null
           id?: string
+          sensitivity?: string
           source_id: string
           strength?: number | null
           target_id: string
@@ -223,6 +405,7 @@ export type Database = {
           data?: Json | null
           deleted_at?: string | null
           id?: string
+          sensitivity?: string
           source_id?: string
           strength?: number | null
           target_id?: string
@@ -233,10 +416,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "relations_sensitivity_fkey"
+            columns: ["sensitivity"]
+            isOneToOne: false
+            referencedRelation: "sensitivity_levels"
+            referencedColumns: ["level"]
+          },
+          {
             foreignKeyName: "relations_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
             referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relations_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "entity_connection_counts"
             referencedColumns: ["id"]
           },
           {
@@ -246,32 +443,30 @@ export type Database = {
             referencedRelation: "entities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "relations_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "entity_connection_counts"
+            referencedColumns: ["id"]
+          },
         ]
       }
-      sync_log: {
+      sensitivity_levels: {
         Row: {
-          seq: number
-          table_name: string
-          record_id: string
-          operation: string
-          row_data: Json | null
-          created_at: string
+          label: string
+          level: string
+          rank: number
         }
         Insert: {
-          seq?: number
-          table_name: string
-          record_id: string
-          operation: string
-          row_data?: Json | null
-          created_at?: string
+          label: string
+          level: string
+          rank: number
         }
         Update: {
-          seq?: number
-          table_name?: string
-          record_id?: string
-          operation?: string
-          row_data?: Json | null
-          created_at?: string
+          label?: string
+          level?: string
+          rank?: number
         }
         Relationships: []
       }
@@ -284,6 +479,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           reliability: string
+          sensitivity: string
           type: string
           updated_at: string
         }
@@ -295,6 +491,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           reliability: string
+          sensitivity?: string
           type: string
           updated_at?: string
         }
@@ -306,19 +503,156 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           reliability?: string
+          sensitivity?: string
           type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sources_sensitivity_fkey"
+            columns: ["sensitivity"]
+            isOneToOne: false
+            referencedRelation: "sensitivity_levels"
+            referencedColumns: ["level"]
+          },
+        ]
+      }
+      sync_log: {
+        Row: {
+          created_at: string
+          operation: string
+          record_id: string
+          row_data: Json | null
+          seq: number
+          table_name: string
+        }
+        Insert: {
+          created_at?: string
+          operation: string
+          record_id: string
+          row_data?: Json | null
+          seq?: number
+          table_name: string
+        }
+        Update: {
+          created_at?: string
+          operation?: string
+          record_id?: string
+          row_data?: Json | null
+          seq?: number
+          table_name?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []
       }
+      user_access_levels: {
+        Row: {
+          granted_at: string
+          max_level: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          max_level: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          max_level?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_access_levels_max_level_fkey"
+            columns: ["max_level"]
+            isOneToOne: false
+            referencedRelation: "sensitivity_levels"
+            referencedColumns: ["level"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      entity_connection_counts: {
+        Row: {
+          connections: number | null
+          id: string | null
+          type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       create_user_entity: {
         Args: { p_email: string; p_name: string; p_user_id?: string }
         Returns: string
+      }
+      find_entities_near: {
+        Args: {
+          p_entity_type?: string
+          p_lat: number
+          p_lon: number
+          p_radius_m?: number
+        }
+        Returns: {
+          distance_m: number
+          entity_data: Json
+          entity_id: string
+          entity_type: string
+        }[]
+      }
+      find_intel_near: {
+        Args: {
+          p_from_date?: string
+          p_lat: number
+          p_lon: number
+          p_radius_m?: number
+          p_to_date?: string
+        }
+        Returns: {
+          distance_m: number
+          intel_data: Json
+          intel_id: string
+          intel_type: string
+          occurred_at: string
+        }[]
+      }
+      find_shortest_path: {
+        Args: { p_max_depth?: number; p_source_id: string; p_target_id: string }
+        Returns: {
+          depth: number
+          path: string[]
+          relation_types: string[]
+        }[]
       }
       get_entity_graph: {
         Args: { p_depth?: number; p_entity_id: string }
@@ -327,6 +661,26 @@ export type Database = {
           entity_data: Json
           entity_id: string
           entity_type: string
+          relation_id: string
+          relation_source_id: string
+          relation_strength: number
+          relation_target_id: string
+          relation_type: string
+        }[]
+      }
+      get_entity_graph_v2: {
+        Args: {
+          p_depth?: number
+          p_entity_id: string
+          p_min_strength?: number
+          p_relation_types?: string[]
+        }
+        Returns: {
+          depth: number
+          entity_data: Json
+          entity_id: string
+          entity_type: string
+          path: string[]
           relation_id: string
           relation_source_id: string
           relation_strength: number
@@ -346,6 +700,7 @@ export type Database = {
           identifier_value: string
         }[]
       }
+      user_can_see: { Args: { p_sensitivity: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -482,17 +837,3 @@ export const Constants = {
   },
 } as const
 
-// Convenience types
-export type Entity = Database['public']['Tables']['entities']['Row']
-export type Identifier = Database['public']['Tables']['identifiers']['Row']
-export type Relation = Database['public']['Tables']['relations']['Row']
-export type Intel = Database['public']['Tables']['intel']['Row']
-export type Source = Database['public']['Tables']['sources']['Row']
-export type IntelEntity = Database['public']['Tables']['intel_entities']['Row']
-
-export type EntityType = Entity['type']
-export type IdentifierType = Identifier['type']
-export type RelationType = Relation['type']
-export type IntelType = Intel['type']
-export type ConfidenceLevel = Intel['confidence']
-export type Reliability = Source['reliability']

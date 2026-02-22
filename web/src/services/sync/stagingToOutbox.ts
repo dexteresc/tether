@@ -91,7 +91,7 @@ export async function commitStagedToOutbox(): Promise<{
       );
       await Promise.all(
         inputStagedRows.map((staged) =>
-          stagedWriteTx.store.delete(staged.staged_id)
+          stagedWriteTx.store.put({ ...staged, status: "committed" })
         )
       );
       await stagedWriteTx.done;
@@ -169,8 +169,31 @@ export async function commitStagedForInput(
   const stagedWriteTx = db.transaction("staged_extractions", "readwrite");
   await Promise.all(
     acceptedRows.map((staged) =>
-      stagedWriteTx.store.delete(staged.staged_id)
+      stagedWriteTx.store.put({ ...staged, status: "committed" })
     )
   );
   await stagedWriteTx.done;
+
+  // Save a snapshot of committed/rejected rows into the NlQueueItem result
+  // so the data survives even if staged rows are later cleared from IDB
+  const queueItem = await db.get("nl_input_queue", inputId);
+  if (queueItem) {
+    const existingResult = (queueItem.result ?? {}) as Record<string, unknown>;
+    const toSnapshot = (row: StagedExtraction) => ({
+      table: row.table,
+      proposed_row: row.proposed_row,
+      origin_label: row.origin_label,
+    });
+    await db.put("nl_input_queue", {
+      ...queueItem,
+      result: {
+        ...existingResult,
+        committed_rows: acceptedRows.map(toSnapshot),
+        rejected_rows: stagedRows
+          .filter((r) => r.status === "rejected")
+          .map(toSnapshot),
+      },
+      updated_at: now,
+    });
+  }
 }

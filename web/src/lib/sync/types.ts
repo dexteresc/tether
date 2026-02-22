@@ -9,6 +9,9 @@ export const TABLES = [
   "relations",
   "intel",
   "intel_entities",
+  "entity_attributes",
+  "tags",
+  "record_tags",
 ] as const;
 
 export type TableName = (typeof TABLES)[number];
@@ -69,7 +72,7 @@ export interface NlQueueItem {
   updated_at: IsoDateTimeString;
 }
 
-export type StagedStatus = "proposed" | "accepted" | "rejected" | "edited";
+export type StagedStatus = "proposed" | "accepted" | "rejected" | "edited" | "committed";
 
 export interface StagedExtraction {
   staged_id: string;

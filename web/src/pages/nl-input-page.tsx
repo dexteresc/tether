@@ -37,28 +37,28 @@ type LlmStatus =
 
 type LlmStatusBannerProps = {
   llmStatus: Exclude<LlmStatus, { state: "checking" }>;
-  hasAnthropicKey: boolean;
+  useAnthropic: boolean;
 };
 
-function LlmStatusBanner({ llmStatus, hasAnthropicKey }: LlmStatusBannerProps) {
+function LlmStatusBanner({ llmStatus, useAnthropic }: LlmStatusBannerProps) {
   let variant: "default" | "destructive" = "default";
   let title: string;
   let description: string | undefined;
 
   if (llmStatus.state === "disconnected") {
-    if (hasAnthropicKey) {
-      title = "LLM service offline \u2014 using Anthropic API key";
+    if (useAnthropic) {
+      title = "Using Anthropic (Claude)";
       description =
-        "The local LLM service is not running, but your Anthropic key is configured. Start the LLM service to process extractions.";
+        "The local LLM service is not running. Extractions will use your Anthropic API key. Switch to Local LLM in Settings to use Ollama.";
     } else {
       variant = "destructive";
       title = "LLM service unavailable";
       description =
-        "The LLM service is not running and no Anthropic API key is configured. Add your API key in Settings (user menu) or start the LLM service.";
+        "The LLM service is not running. Start it or switch to Anthropic in Settings.";
     }
-  } else if (hasAnthropicKey) {
-    title = "Using Anthropic API key";
-    description = `Extractions will use your Anthropic API key. Remove it in Settings to use ${llmStatus.provider} instead.`;
+  } else if (useAnthropic) {
+    title = "Using Anthropic (Claude)";
+    description = `Local LLM is also available (${llmStatus.provider}). Switch in Settings.`;
   } else {
     title = `Connected to ${llmStatus.provider} (${llmStatus.model})`;
   }
@@ -83,7 +83,9 @@ export const NLInputPage = observer(function NLInputPage() {
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
   const [llmStatus, setLlmStatus] = useState<LlmStatus>({ state: "checking" });
 
-  const hasAnthropicKey = Boolean(localStorage.getItem("tether_anthropic_api_key"));
+  const useAnthropic =
+    localStorage.getItem("tether_llm_provider") === "anthropic" &&
+    Boolean(localStorage.getItem("tether_anthropic_api_key"));
 
   const checkHealth = useCallback(async () => {
     try {
@@ -115,7 +117,44 @@ export const NLInputPage = observer(function NLInputPage() {
   }, [selectedInputId, selectedItemStatus]);
 
   const loadStagedRows = async (inputId: string) => {
-    const rows = await getStagedExtractionsByInputId(inputId);
+    let rows = await getStagedExtractionsByInputId(inputId);
+
+    // If IDB has no staged rows, reconstruct from the snapshot saved in the result
+    if (rows.length === 0) {
+      const item = nlQueue.items.find((i) => i.input_id === inputId);
+      const res = item?.result as {
+        committed_rows?: Array<{ table: string; proposed_row: unknown; origin_label: string | null }>;
+        rejected_rows?: Array<{ table: string; proposed_row: unknown; origin_label: string | null }>;
+      } | null;
+
+      const synthetics: StagedExtraction[] = [];
+      for (const r of res?.committed_rows ?? []) {
+        synthetics.push({
+          staged_id: crypto.randomUUID(),
+          created_at: item?.created_at ?? new Date().toISOString(),
+          input_id: inputId,
+          table: r.table as StagedExtraction["table"],
+          proposed_row: r.proposed_row,
+          status: "committed",
+          validation_errors: null,
+          origin_label: r.origin_label,
+        });
+      }
+      for (const r of res?.rejected_rows ?? []) {
+        synthetics.push({
+          staged_id: crypto.randomUUID(),
+          created_at: item?.created_at ?? new Date().toISOString(),
+          input_id: inputId,
+          table: r.table as StagedExtraction["table"],
+          proposed_row: r.proposed_row,
+          status: "rejected",
+          validation_errors: null,
+          origin_label: r.origin_label,
+        });
+      }
+      rows = synthetics;
+    }
+
     setStagedRows(rows);
 
     // Build ID labels from staged rows + replica lookups
@@ -242,7 +281,8 @@ export const NLInputPage = observer(function NLInputPage() {
         setIsCommitting(true);
         try {
           await commitStagedForInput(selectedInputId);
-          setSelectedInputId(null);
+          await nlQueue.refresh();
+          await loadStagedRows(selectedInputId);
           setDialog({
             type: "info",
             title: "Committed",
@@ -291,7 +331,7 @@ export const NLInputPage = observer(function NLInputPage() {
       <div className="p-4">
         {/* LLM Status */}
         {llmStatus.state !== "checking" && (
-          <LlmStatusBanner llmStatus={llmStatus} hasAnthropicKey={hasAnthropicKey} />
+          <LlmStatusBanner llmStatus={llmStatus} useAnthropic={useAnthropic} />
         )}
 
         {/* Input Form */}
@@ -452,80 +492,97 @@ export const NLInputPage = observer(function NLInputPage() {
       {/* Staged Rows Review */}
       {selectedInputId && (
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold m-0">
-              Review Extracted Data
-            </h2>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedInputId(null)}
-              >
-                Close
-              </Button>
-              <Button onClick={handleCommit} disabled={isCommitting}>
-                {isCommitting
-                  ? "Committing..."
-                  : "Commit to Database"}
-              </Button>
-            </div>
-          </div>
+          {(() => {
+            const committedCount = stagedRows.filter((r) => r.status === "committed").length;
+            const isFullyCommitted = committedCount > 0 && stagedRows.every((r) => r.status === "committed" || r.status === "rejected");
+            const hasProposed = stagedRows.some((r) => r.status === "proposed");
+            const canCommit = stagedRows.some((r) => r.status !== "committed" && r.status !== "rejected");
 
-          {result && (
-            <ResolutionReview
-              resolutions={result.resolutions}
-              clarifications={result.clarifications}
-            />
-          )}
+            return (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold m-0">
+                    {isFullyCommitted ? "Committed Data" : "Review Extracted Data"}
+                  </h2>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSelectedInputId(null)}
+                    >
+                      Close
+                    </Button>
+                    {canCommit && (
+                      <Button onClick={handleCommit} disabled={isCommitting}>
+                        {isCommitting
+                          ? "Committing..."
+                          : "Commit to Database"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-xs text-muted-foreground">
-              {
-                stagedRows.filter(
-                  (r) =>
-                    r.status === "accepted" || r.status === "edited"
-                ).length
-              }{" "}
-              of {stagedRows.length} rows accepted
-            </div>
-            {stagedRows.some((r) => r.status === "proposed") && (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="h-7 text-xs"
-                  onClick={async () => {
-                    await bulkUpdateStagedStatus(selectedInputId, ["proposed"], "accepted");
-                    loadStagedRows(selectedInputId);
-                  }}
-                >
-                  Accept All
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                  onClick={async () => {
-                    await bulkUpdateStagedStatus(selectedInputId, ["proposed"], "rejected");
-                    loadStagedRows(selectedInputId);
-                  }}
-                >
-                  Reject All
-                </Button>
-              </div>
-            )}
-          </div>
+                {result && (
+                  <ResolutionReview
+                    resolutions={result.resolutions}
+                    clarifications={result.clarifications}
+                  />
+                )}
 
-          {stagedRows.map((staged) => (
-            <StagedRowEditor
-              key={staged.staged_id}
-              staged={staged}
-              idLabels={idLabels}
-              onStatusChange={() =>
-                loadStagedRows(selectedInputId)
-              }
-            />
-          ))}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs text-muted-foreground">
+                    {(() => {
+                      const accepted = stagedRows.filter((r) => r.status === "accepted" || r.status === "edited").length;
+                      const rejected = stagedRows.filter((r) => r.status === "rejected").length;
+                      if (committedCount > 0) {
+                        return `${committedCount} committed${rejected > 0 ? `, ${rejected} rejected` : ""}`;
+                      }
+                      if (stagedRows.length === 0) {
+                        return "No extraction data";
+                      }
+                      return `${accepted} of ${stagedRows.length} rows accepted`;
+                    })()}
+                  </div>
+                  {hasProposed && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-7 text-xs"
+                        onClick={async () => {
+                          await bulkUpdateStagedStatus(selectedInputId, ["proposed"], "accepted");
+                          loadStagedRows(selectedInputId);
+                        }}
+                      >
+                        Accept All
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={async () => {
+                          await bulkUpdateStagedStatus(selectedInputId, ["proposed"], "rejected");
+                          loadStagedRows(selectedInputId);
+                        }}
+                      >
+                        Reject All
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {stagedRows.map((staged) => (
+                  <StagedRowEditor
+                    key={staged.staged_id}
+                    staged={staged}
+                    idLabels={idLabels}
+                    onStatusChange={() =>
+                      loadStagedRows(selectedInputId)
+                    }
+                  />
+                ))}
+              </>
+            );
+          })()}
         </div>
       )}
       </div>

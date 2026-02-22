@@ -113,9 +113,12 @@ export class SupabasePushRemote implements PushRemote {
 const TABLE_PUSH_ORDER: Record<string, number> = {
   sources: 0,
   entities: 0,
+  tags: 0,
   identifiers: 1,
   relations: 1,
   intel: 1,
+  entity_attributes: 1,
+  record_tags: 1,
   intel_entities: 2,
 };
 

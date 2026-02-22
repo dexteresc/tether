@@ -106,7 +106,11 @@ export class LlmClient {
       headers["Authorization"] = `Bearer ${bearerToken}`;
     }
 
-    const anthropicApiKey = localStorage.getItem("tether_anthropic_api_key");
+    const provider = localStorage.getItem("tether_llm_provider") || "local";
+    const anthropicApiKey =
+      provider === "anthropic"
+        ? localStorage.getItem("tether_anthropic_api_key")
+        : null;
 
     const response = await fetch(`${this.baseUrl}/api/extract`, {
       method: "POST",

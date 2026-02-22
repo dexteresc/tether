@@ -13,8 +13,10 @@ var validEntityTypes = map[string]bool{
 	"person":       true,
 	"organization": true,
 	"group":        true,
-	"vehicle":      true,
 	"location":     true,
+	"event":        true,
+	"project":      true,
+	"asset":        true,
 }
 
 func CreateEntity(c *gin.Context) {
@@ -25,7 +27,7 @@ func CreateEntity(c *gin.Context) {
 	}
 
 	if !validEntityTypes[entity.Type] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entity type. Must be one of: person, organization, group, vehicle, location"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entity type. Must be one of: person, organization, group, location, event, project, asset"})
 		return
 	}
 
@@ -75,7 +77,7 @@ func UpdateEntity(c *gin.Context) {
 	}
 
 	if entity.Type != "" && !validEntityTypes[entity.Type] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entity type. Must be one of: person, organization, group, vehicle, location"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entity type. Must be one of: person, organization, group, location, event, project, asset"})
 		return
 	}
 

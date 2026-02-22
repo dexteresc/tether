@@ -251,14 +251,13 @@ class SupabaseSyncService:
             }
 
     def _create_entity(self, entity: EntityExtraction, source_id: str) -> str:
-        """Create a new entity with identifiers."""
+        """Create a new entity with identifiers and attributes."""
         # Prepare entity data
         entity_data = {
             "name": entity.name,
             "user_id": self.user_id,
             "_source": source_id,
             "_confidence": entity.confidence.value,
-            **entity.attributes,
         }
 
         # Create entity
@@ -268,6 +267,7 @@ class SupabaseSyncService:
                 {
                     "type": entity.entity_type.value,
                     "data": entity_data,
+                    "created_by": self.user_id,
                 }
             )
             .execute()
@@ -280,6 +280,9 @@ class SupabaseSyncService:
 
         # Create all identifiers
         self._create_identifiers(entity_id, entity.identifiers)
+
+        # Write attributes to entity_attributes table
+        self._sync_entity_attributes(entity_id, entity.attributes, source_id, entity.confidence.value)
 
         return entity_id
 
@@ -307,7 +310,6 @@ class SupabaseSyncService:
         # Update with new attributes
         updated_data = {
             **current_data,
-            **entity.attributes,
             "_source": source_id,
             "_confidence": entity.confidence.value,
         }
@@ -319,6 +321,9 @@ class SupabaseSyncService:
 
         # Add new identifiers (skip duplicates)
         self._create_identifiers(entity_id, entity.identifiers, skip_duplicates=True)
+
+        # Write attributes to entity_attributes table
+        self._sync_entity_attributes(entity_id, entity.attributes, source_id, entity.confidence.value)
 
     def _create_identifiers(
         self,
@@ -377,6 +382,46 @@ class SupabaseSyncService:
                 created_ids.append(response.data[0]["id"])
 
         return created_ids
+
+    def _sync_entity_attributes(
+        self, entity_id: str, attributes: dict, source_id: str, confidence: str
+    ):
+        """Write extracted attributes to entity_attributes table."""
+        for key, value in attributes.items():
+            if key.startswith("_"):
+                continue  # Skip internal metadata keys
+
+            str_value = str(value) if value is not None else ""
+            if not str_value:
+                continue
+
+            # Check if attribute already exists with same key and current value
+            existing = (
+                self.supabase.table("entity_attributes")
+                .select("id, value")
+                .eq("entity_id", entity_id)
+                .eq("key", key)
+                .is_("valid_to", "null")
+                .is_("deleted_at", "null")
+                .execute()
+            )
+
+            if existing.data and len(existing.data) > 0:
+                if existing.data[0]["value"] == str_value:
+                    continue  # Same value, skip
+                # Close the old attribute by setting valid_to
+                self.supabase.table("entity_attributes").update(
+                    {"valid_to": "now()"}
+                ).eq("id", existing.data[0]["id"]).execute()
+
+            # Create new attribute record
+            self.supabase.table("entity_attributes").insert({
+                "entity_id": entity_id,
+                "key": key,
+                "value": str_value,
+                "confidence": confidence,
+                "source_id": source_id,
+            }).execute()
 
     def _sync_relation(
         self, relation: RelationExtraction, entity_name_to_id: Dict[str, str], source_id: str
@@ -481,6 +526,7 @@ class SupabaseSyncService:
                     "data": intel_data,
                     "source_id": source_id,
                     "confidence": intel.confidence.value,
+                    "created_by": self.user_id,
                 }
             )
             .execute()

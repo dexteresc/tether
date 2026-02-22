@@ -4,7 +4,6 @@ import anthropic
 import outlines
 from outlines.inputs import Chat
 from ollama import Client as OllamaClient
-from typing import Optional
 from app.config import settings
 from app.models.extraction import IntelligenceExtraction
 
@@ -55,7 +54,7 @@ USER-CENTRIC TEXT HANDLING:
 - Ensure the user entity is properly identified in relationships"""
 
 
-def build_user_prompt(text: str, context: Optional[str] = None, user_name: Optional[str] = None) -> str:
+def build_user_prompt(text: str, context: str | None = None, user_name: str | None = None) -> str:
     """Build user prompt with optional user name and context prepended."""
     prompt = f"Extract structured intelligence from the following text:\n\n{text}"
 
@@ -75,7 +74,7 @@ class LLMProvider:
         self.client = None
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """
         Extract structured intelligence from text.
@@ -95,7 +94,7 @@ class LLMProvider:
 class OpenAIProvider(LLMProvider):
     """OpenAI provider with instructor integration."""
 
-    def __init__(self, model: str = "gpt-4o", api_key: Optional[str] = None):
+    def __init__(self, model: str = "gpt-4o", api_key: str | None = None):
         super().__init__()
         self.model = model
 
@@ -106,7 +105,7 @@ class OpenAIProvider(LLMProvider):
         self.client = instructor.from_openai(openai_client)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using OpenAI with instructor."""
         return self.client.chat.completions.create(
@@ -147,7 +146,7 @@ USER-CENTRIC TEXT HANDLING:
 - Create entities for people mentioned in relation to the user
 - Ensure the user entity is properly identified in relationships"""
 
-    def __init__(self, model: str = "qwen2.5:7b", base_url: Optional[str] = None):
+    def __init__(self, model: str = "qwen2.5:7b", base_url: str | None = None):
         super().__init__()
         self.model_name = model
 
@@ -160,7 +159,7 @@ USER-CENTRIC TEXT HANDLING:
         self.outlines_model = outlines.from_ollama(ollama_client, model)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using Ollama with Outlines.
 
@@ -180,7 +179,7 @@ USER-CENTRIC TEXT HANDLING:
 class AnthropicProvider(LLMProvider):
     """Anthropic provider with instructor integration."""
 
-    def __init__(self, model: str = "claude-sonnet-4-5-20250514", api_key: Optional[str] = None):
+    def __init__(self, model: str = "claude-sonnet-4-5-20250514", api_key: str | None = None):
         super().__init__()
         self.model = model
 
@@ -188,7 +187,7 @@ class AnthropicProvider(LLMProvider):
         self.client = instructor.from_anthropic(anthropic_client)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using Anthropic with instructor."""
         return self.client.chat.completions.create(
@@ -204,7 +203,7 @@ class AnthropicProvider(LLMProvider):
 
 
 def get_llm_provider(
-    provider: Optional[str] = None, model: Optional[str] = None, api_key: Optional[str] = None
+    provider: str | None = None, model: str | None = None, api_key: str | None = None
 ) -> LLMProvider:
     """
     Factory function to get the appropriate LLM provider.

@@ -6,7 +6,6 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 var validEntityTypes = map[string]bool{
@@ -49,9 +48,8 @@ func GetEntities(c *gin.Context) {
 }
 
 func GetEntity(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -64,9 +62,8 @@ func GetEntity(c *gin.Context) {
 }
 
 func UpdateEntity(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -84,12 +81,8 @@ func UpdateEntity(c *gin.Context) {
 	result := config.DB.Model(&models.Entity{}).Where("id = ?", id).
 		Omit("id", "created_at", "deleted_at").Updates(entity)
 
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update entity"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Entity not found"})
+	if err := checkUpdateResult(result, "entity"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 
@@ -97,19 +90,14 @@ func UpdateEntity(c *gin.Context) {
 }
 
 func DeleteEntity(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
 	result := config.DB.Delete(&models.Entity{}, id)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete entity"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Entity not found"})
+	if err := checkUpdateResult(result, "entity"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 

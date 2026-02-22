@@ -1,5 +1,4 @@
 from supabase import Client
-from typing import Dict, List, Optional
 import json
 import logging
 from app.models.extraction import (
@@ -33,7 +32,7 @@ class SupabaseSyncService:
         self.user_id = user_id
 
     def sync_extraction(
-        self, extraction: IntelligenceExtraction, default_source: str = "LLM", entity_resolutions: Optional[List[EntityResolutionResult]] = None
+        self, extraction: IntelligenceExtraction, default_source: str = "LLM", entity_resolutions: list[EntityResolutionResult] | None = None
     ) -> SyncResults:
         """
         Sync entire extraction to database.
@@ -54,7 +53,7 @@ class SupabaseSyncService:
         source_id = self._get_or_create_source(default_source)
 
         # Map entity names to IDs (for relations and intel linking)
-        entity_name_to_id: Dict[str, str] = {}
+        entity_name_to_id: dict[str, str] = {}
 
         # T019: Process entity resolutions first to populate entity_name_to_id
         if entity_resolutions:
@@ -131,8 +130,8 @@ class SupabaseSyncService:
 
     def _process_entity_resolutions(
         self,
-        resolutions: List[EntityResolutionResult],
-        entity_name_to_id: Dict[str, str],
+        resolutions: list[EntityResolutionResult],
+        entity_name_to_id: dict[str, str],
         source_id: str,
         results: SyncResults
     ):
@@ -213,7 +212,7 @@ class SupabaseSyncService:
 
     def _sync_entity(
         self, entity: EntityExtraction, source_id: str
-    ) -> Dict:
+    ) -> dict:
         """
         Sync an entity to the database.
 
@@ -328,9 +327,9 @@ class SupabaseSyncService:
     def _create_identifiers(
         self,
         entity_id: str,
-        identifiers: List[IdentifierExtraction],
+        identifiers: list[IdentifierExtraction],
         skip_duplicates: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         """Create identifiers for an entity."""
         created_ids = []
 
@@ -424,8 +423,8 @@ class SupabaseSyncService:
             }).execute()
 
     def _sync_relation(
-        self, relation: RelationExtraction, entity_name_to_id: Dict[str, str], source_id: str
-    ) -> Dict:
+        self, relation: RelationExtraction, entity_name_to_id: dict[str, str], source_id: str
+    ) -> dict:
         """Sync a relation to the database."""
         # Resolve entity names to IDs
         source_entity_id = entity_name_to_id.get(relation.source_entity_name)
@@ -502,8 +501,8 @@ class SupabaseSyncService:
         }
 
     def _sync_intel(
-        self, intel: IntelExtraction, entity_name_to_id: Dict[str, str], source_id: str
-    ) -> Dict:
+        self, intel: IntelExtraction, entity_name_to_id: dict[str, str], source_id: str
+    ) -> dict:
         """Sync intel to the database."""
         # Parse occurred_at date
         occurred_at = parse_and_format_date(intel.occurred_at)

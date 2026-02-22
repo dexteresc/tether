@@ -17,6 +17,7 @@ import { createRecord } from "@/services/sync/createRecord";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { ENTITY_TYPES, ENTITY_STATUSES } from "@/lib/constants";
+import { capitalize, selectClass } from "@/lib/utils";
 import { LocationPicker } from "@/components/location-picker";
 import type { LatLng } from "@/lib/geo";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
@@ -24,9 +25,6 @@ import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 type Entity = RemoteRow<"entities">;
 type Identifier = RemoteRow<"identifiers">;
 type EntityRow = ReplicaRow<Entity>;
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export const EntitiesPage = observer(function EntitiesPage() {
   const { replica, outbox } = useRootStore();
@@ -224,7 +222,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
             label: "All Types",
             options: ENTITY_TYPES.map((t) => ({
               value: t,
-              label: t.charAt(0).toUpperCase() + t.slice(1),
+              label: capitalize(t),
             })),
           },
           {
@@ -232,7 +230,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
             label: "All Statuses",
             options: ENTITY_STATUSES.map((s) => ({
               value: s,
-              label: s.charAt(0).toUpperCase() + s.slice(1),
+              label: capitalize(s),
             })),
           },
         ]}
@@ -262,7 +260,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
               >
                 {ENTITY_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                    {capitalize(t)}
                   </option>
                 ))}
               </select>
@@ -287,7 +285,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
               >
                 {ENTITY_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                    {capitalize(s)}
                   </option>
                 ))}
               </select>

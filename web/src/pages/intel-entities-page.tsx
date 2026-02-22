@@ -4,6 +4,7 @@ import { useRootStore } from "@/stores/RootStore";
 import { DataTable, type Column } from "@/components/data-table";
 import { EntityLink } from "@/components/entity-link";
 import { useEntityNames } from "@/hooks/use-entity-names";
+import { truncate } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type IntelEntity = RemoteRow<"intel_entities">;
@@ -44,10 +45,10 @@ export const IntelEntitiesPage = observer(
 
     function getIntelLabel(intelId: string): string {
       const intel = intelMap.get(intelId);
-      if (!intel) return intelId.slice(0, 8) + "...";
+      if (!intel) return truncate(intelId, 8);
       const data = intel.data as Record<string, unknown> | null;
       const desc = typeof data?.description === "string" ? data.description : null;
-      if (desc) return desc.length > 40 ? desc.slice(0, 40) + "..." : desc;
+      if (desc) return truncate(desc, 40);
       return `${intel.type} (${new Date(intel.occurred_at).toLocaleDateString()})`;
     }
 
@@ -69,7 +70,7 @@ export const IntelEntitiesPage = observer(
           return (
             <EntityLink
               id={row.entity_id}
-              name={info?.name ?? row.entity_id.slice(0, 8) + "..."}
+              name={info?.name ?? truncate(row.entity_id, 8)}
               type={info?.type}
             />
           );

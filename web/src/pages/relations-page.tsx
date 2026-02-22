@@ -16,13 +16,11 @@ import { createRecord } from "@/services/sync/createRecord";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { RELATION_TYPES } from "@/lib/constants";
+import { formatLabel, selectClass } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Relation = RemoteRow<"relations">;
 type Entity = RemoteRow<"entities">;
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export const RelationsPage = observer(function RelationsPage() {
   const { replica, outbox } = useRootStore();
@@ -185,7 +183,7 @@ export const RelationsPage = observer(function RelationsPage() {
             label: "All Types",
             options: RELATION_TYPES.map((t) => ({
               value: t,
-              label: t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, " "),
+              label: formatLabel(t),
             })),
           },
         ]}
@@ -252,7 +250,7 @@ export const RelationsPage = observer(function RelationsPage() {
               >
                 {RELATION_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, " ")}
+                    {formatLabel(t)}
                   </option>
                 ))}
               </select>

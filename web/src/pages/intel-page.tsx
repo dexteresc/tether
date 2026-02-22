@@ -16,14 +16,12 @@ import { createRecord } from "@/services/sync/createRecord";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { INTEL_TYPES, CONFIDENCE_LEVELS } from "@/lib/constants";
+import { capitalize, truncate, selectClass, CONFIDENCE_COLORS } from "@/lib/utils";
 import { LocationPicker } from "@/components/location-picker";
 import type { LatLng } from "@/lib/geo";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Intel = RemoteRow<"intel">;
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 function getDescription(row: ReplicaRow<Intel>): string {
   const desc =
@@ -129,7 +127,7 @@ export const IntelPage = observer(function IntelPage() {
         if (text) {
           return (
             <span className="truncate block max-w-md" title={text}>
-              {text.length > 80 ? text.slice(0, 80) + "..." : text}
+              {truncate(text, 80)}
             </span>
           );
         }
@@ -140,22 +138,13 @@ export const IntelPage = observer(function IntelPage() {
       key: "confidence",
       label: "Confidence",
       width: "120px",
-      render: (row) => {
-        const colors: Record<string, string> = {
-          confirmed: "text-emerald-600",
-          high: "text-emerald-500",
-          medium: "text-amber-500",
-          low: "text-orange-500",
-          unconfirmed: "text-muted-foreground",
-        };
-        return (
+      render: (row) => (
           <span
-            className={`${colors[row.confidence] || ""} font-medium capitalize`}
+            className={`${CONFIDENCE_COLORS[row.confidence] || ""} font-medium capitalize`}
           >
             {row.confidence}
           </span>
-        );
-      },
+        ),
     },
     {
       key: "sensitivity",
@@ -193,7 +182,7 @@ export const IntelPage = observer(function IntelPage() {
             label: "All Types",
             options: INTEL_TYPES.map((t) => ({
               value: t,
-              label: t.charAt(0).toUpperCase() + t.slice(1),
+              label: capitalize(t),
             })),
           },
           {
@@ -201,7 +190,7 @@ export const IntelPage = observer(function IntelPage() {
             label: "All Confidence",
             options: CONFIDENCE_LEVELS.map((c) => ({
               value: c,
-              label: c.charAt(0).toUpperCase() + c.slice(1),
+              label: capitalize(c),
             })),
           },
         ]}
@@ -231,7 +220,7 @@ export const IntelPage = observer(function IntelPage() {
               >
                 {INTEL_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                    {capitalize(t)}
                   </option>
                 ))}
               </select>
@@ -267,7 +256,7 @@ export const IntelPage = observer(function IntelPage() {
               >
                 {CONFIDENCE_LEVELS.map((c) => (
                   <option key={c} value={c}>
-                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                    {capitalize(c)}
                   </option>
                 ))}
               </select>

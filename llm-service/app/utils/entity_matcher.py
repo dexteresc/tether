@@ -1,5 +1,4 @@
 from supabase import Client
-from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,7 +9,7 @@ def find_entity_by_identifier(
     identifier_type: str,
     identifier_value: str,
     user_id: str,
-) -> Optional[str]:
+) -> str | None:
     """
     Find an entity by searching for a specific identifier.
 

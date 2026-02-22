@@ -1,8 +1,6 @@
 import { SENSITIVITY_LEVELS } from "@/lib/constants";
 import { Label } from "@/components/ui/label";
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+import { capitalize, selectClass } from "@/lib/utils";
 
 export function SensitivityPicker({
   value,
@@ -26,7 +24,7 @@ export function SensitivityPicker({
       >
         {SENSITIVITY_LEVELS.map((s) => (
           <option key={s} value={s}>
-            {s.charAt(0).toUpperCase() + s.slice(1)}
+            {capitalize(s)}
           </option>
         ))}
       </select>

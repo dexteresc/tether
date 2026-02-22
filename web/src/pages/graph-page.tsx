@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useRootStore } from "@/stores/RootStore";
 import { ENTITY_TYPES } from "@/lib/constants";
+import { TYPE_COLORS } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,16 +25,6 @@ interface GraphLink {
   label: string;
   strength?: number;
 }
-
-const TYPE_COLORS: Record<string, string> = {
-  person: "#3b82f6",
-  organization: "#8b5cf6",
-  group: "#6366f1",
-  location: "#10b981",
-  event: "#f97316",
-  project: "#06b6d4",
-  asset: "#ec4899",
-};
 
 export const GraphPage = observer(function GraphPage() {
   const { replica } = useRootStore();

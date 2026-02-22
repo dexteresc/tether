@@ -18,40 +18,37 @@ func NewLLMHandler(processor *services.IntelligenceProcessor) *LLMHandler {
 	}
 }
 
-// ProcessIntelligence handles LLM processing requests
-func (c *LLMHandler) ProcessIntelligence(ctx *gin.Context) {
+func (h *LLMHandler) ProcessIntelligence(c *gin.Context) {
 	var req models.LLMProcessRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Get user ID from context (set by auth middleware)
-	userID := ctx.GetUint("userID")
+	userID := c.GetUint("userID")
 
-	result, err := c.processor.ProcessAndSave(&req, userID)
+	result, err := h.processor.ProcessAndSave(&req, userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, result)
 }
 
-// PreviewExtraction previews what would be extracted without saving
-func (c *LLMHandler) PreviewExtraction(ctx *gin.Context) {
+func (h *LLMHandler) PreviewExtraction(c *gin.Context) {
 	var req models.LLMProcessRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	llmService := services.NewLLMService()
 	result, _, err := llmService.ProcessIntelligence(&req)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, result)
 }

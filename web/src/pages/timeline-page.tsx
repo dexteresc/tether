@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TimelineView, type TimelineEvent } from "@/components/timeline-view";
 import { INTEL_TYPES } from "@/lib/constants";
+import { capitalize, truncate } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Entity = RemoteRow<"entities">;
@@ -87,7 +88,7 @@ export const TimelinePage = observer(function TimelinePage() {
           id: `intel-${intel.id}`,
           date: intel.occurred_at,
           kind: "intel",
-          title: `${intel.type}: ${desc.length > 80 ? desc.slice(0, 80) + "..." : desc || "No description"}`,
+          title: `${intel.type}: ${desc ? truncate(desc, 80) : "No description"}`,
           confidence: intel.confidence,
           sensitivity: intel.sensitivity,
         });
@@ -211,7 +212,7 @@ export const TimelinePage = observer(function TimelinePage() {
             >
               <option value="">All</option>
               {INTEL_TYPES.map((t) => (
-                <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                <option key={t} value={t}>{capitalize(t)}</option>
               ))}
             </select>
           </div>

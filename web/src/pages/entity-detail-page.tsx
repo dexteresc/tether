@@ -35,6 +35,7 @@ import { MiniMap, type MapMarker } from "@/components/mini-map";
 import { TimelineView, type TimelineEvent } from "@/components/timeline-view";
 import { getLatLngFromData, formatLatLng, formatDistance } from "@/lib/geo";
 import type { LatLng } from "@/lib/geo";
+import { capitalize, formatLabel, truncate, selectClass, CONFIDENCE_COLORS } from "@/lib/utils";
 import { findEntitiesNear, findIntelNear } from "@/lib/supabase-helpers";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
@@ -46,9 +47,6 @@ type IntelEntity = RemoteRow<"intel_entities">;
 type Intel = RemoteRow<"intel">;
 type Tag = RemoteRow<"tags">;
 type RecordTag = RemoteRow<"record_tags">;
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 function getEntityName(entity: ReplicaRow<Entity>, identifiers: Identifier[]): string {
   const data = entity.data as Record<string, unknown> | null;
@@ -472,7 +470,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
         const desc = typeof data?.description === "string" ? data.description : "";
         return (
           <span className="truncate block max-w-sm" title={desc}>
-            {desc.length > 60 ? desc.slice(0, 60) + "..." : desc || "-"}
+            {desc ? truncate(desc, 60) : "-"}
           </span>
         );
       },
@@ -532,20 +530,11 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
       key: "confidence",
       label: "Confidence",
       width: "100px",
-      render: (row) => {
-        const colors: Record<string, string> = {
-          confirmed: "text-emerald-600",
-          high: "text-emerald-500",
-          medium: "text-amber-500",
-          low: "text-orange-500",
-          unconfirmed: "text-muted-foreground",
-        };
-        return (
-          <span className={`capitalize ${colors[row.confidence] ?? ""}`}>
+      render: (row) => (
+          <span className={`capitalize ${CONFIDENCE_COLORS[row.confidence] ?? ""}`}>
             {row.confidence}
           </span>
-        );
-      },
+        ),
     },
     {
       key: "notes",
@@ -826,7 +815,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
               <Label htmlFor="editType">Type</Label>
               <select id="editType" className={selectClass} value={editType} onChange={(e) => setEditType(e.target.value)}>
                 {ENTITY_TYPES.map((t) => (
-                  <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                  <option key={t} value={t}>{capitalize(t)}</option>
                 ))}
               </select>
             </div>
@@ -834,7 +823,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
               <Label htmlFor="editStatus">Status</Label>
               <select id="editStatus" className={selectClass} value={editStatus} onChange={(e) => setEditStatus(e.target.value)}>
                 {ENTITY_STATUSES.map((s) => (
-                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                  <option key={s} value={s}>{capitalize(s)}</option>
                 ))}
               </select>
             </div>
@@ -862,7 +851,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
               <Label htmlFor="idType">Type</Label>
               <select id="idType" className={selectClass} value={idType} onChange={(e) => setIdType(e.target.value)}>
                 {IDENTIFIER_TYPES.map((t) => (
-                  <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, " ")}</option>
+                  <option key={t} value={t}>{formatLabel(t)}</option>
                 ))}
               </select>
             </div>
@@ -919,7 +908,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
               <Label htmlFor="attrConfidence">Confidence</Label>
               <select id="attrConfidence" className={selectClass} value={attrConfidence} onChange={(e) => setAttrConfidence(e.target.value)}>
                 {CONFIDENCE_LEVELS.map((c) => (
-                  <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                  <option key={c} value={c}>{capitalize(c)}</option>
                 ))}
               </select>
             </div>
@@ -967,7 +956,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
               <Label htmlFor="relType">Type</Label>
               <select id="relType" className={selectClass} value={relType} onChange={(e) => setRelType(e.target.value)}>
                 {RELATION_TYPES.map((t) => (
-                  <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, " ")}</option>
+                  <option key={t} value={t}>{formatLabel(t)}</option>
                 ))}
               </select>
             </div>
@@ -1021,7 +1010,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
                   <Label htmlFor="newTagCategory">Category</Label>
                   <select id="newTagCategory" className={selectClass} value={newTagCategory} onChange={(e) => setNewTagCategory(e.target.value)}>
                     {TAG_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                      <option key={c} value={c}>{capitalize(c)}</option>
                     ))}
                   </select>
                 </div>
@@ -1131,7 +1120,7 @@ function LocationTab({
       render: (row) => {
         const d = row.intel_data as Record<string, unknown> | null;
         const desc = typeof d?.description === "string" ? d.description : "-";
-        return <span className="truncate block max-w-sm">{desc.length > 60 ? desc.slice(0, 60) + "..." : desc}</span>;
+        return <span className="truncate block max-w-sm">{truncate(desc, 60)}</span>;
       },
     },
     { key: "occurred_at", label: "Occurred", width: "130px", render: (row) => new Date(row.occurred_at).toLocaleDateString() },
@@ -1259,7 +1248,7 @@ function EntityTimeline({
       id: `intel-${intel.id}`,
       date: intel.occurred_at,
       kind: "intel",
-      title: `${intel.type}: ${desc.length > 60 ? desc.slice(0, 60) + "..." : desc || "No description"}`,
+      title: `${intel.type}: ${desc ? truncate(desc, 60) : "No description"}`,
       confidence: intel.confidence,
       sensitivity: intel.sensitivity,
     });

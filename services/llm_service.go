@@ -41,28 +41,26 @@ func (s *LLMService) ProcessIntelligence(req *models.LLMProcessRequest) (*models
 }
 
 func (s *LLMService) getSystemPrompt() string {
-	basePrompt := `You are an intelligence analyst assistant. Extract structured information from the provided text.
-    
+	return `You are an intelligence analyst assistant. Extract structured information from the provided text.
+
     For entities, identify:
     - Type: person, organization, vehicle, location, or group
     - Name: The primary name/identifier
     - Description: Brief description if available
     - Identifiers: emails, phones, documents, licenses, etc.
-    
+
     For relations, identify connections between entities:
     - RelationType: parent, child, colleague, associate, member, owns, other
     - Include metadata about the nature of the relationship
-    
+
     For intel, extract:
     - Type: event, sighting, communication, document, other
     - Classification: public, confidential, secret, top-secret
     - Related entities
-    
-    Return valid JSON only. Include confidence scores (0-1) for each extraction.
-	
-	Extract all types of information.`
 
-	return basePrompt
+    Return valid JSON only. Include confidence scores (0-1) for each extraction.
+
+	Extract all types of information.`
 }
 
 func (s *LLMService) buildPrompt(req *models.LLMProcessRequest) string {
@@ -108,6 +106,8 @@ func (s *LLMService) callLLM(prompt, systemPrompt string) (string, *models.Token
 				"temperature": s.config.Temperature,
 			},
 		}
+	default:
+		return "", nil, fmt.Errorf("unsupported LLM provider: %q", s.config.Provider)
 	}
 
 	jsonBody, err := json.Marshal(requestBody)
@@ -173,7 +173,6 @@ func (s *LLMService) extractContentAndUsage(body io.Reader) (string, *models.Tok
 
 	switch s.config.Provider {
 	case "openai":
-		// Extract content
 		if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
 			if choice, ok := choices[0].(map[string]interface{}); ok {
 				if message, ok := choice["message"].(map[string]interface{}); ok {
@@ -184,7 +183,6 @@ func (s *LLMService) extractContentAndUsage(body io.Reader) (string, *models.Tok
 			}
 		}
 
-		// Extract token usage
 		if usage, ok := response["usage"].(map[string]interface{}); ok {
 			if prompt, ok := usage["prompt_tokens"].(float64); ok {
 				tokenUsage.Prompt = int(prompt)
@@ -198,7 +196,6 @@ func (s *LLMService) extractContentAndUsage(body io.Reader) (string, *models.Tok
 		}
 
 	case "anthropic":
-		// Extract content
 		if c, ok := response["content"].([]interface{}); ok && len(c) > 0 {
 			if text, ok := c[0].(map[string]interface{}); ok {
 				if textContent, ok := text["text"].(string); ok {
@@ -207,7 +204,6 @@ func (s *LLMService) extractContentAndUsage(body io.Reader) (string, *models.Tok
 			}
 		}
 
-		// Extract token usage
 		if usage, ok := response["usage"].(map[string]interface{}); ok {
 			if input, ok := usage["input_tokens"].(float64); ok {
 				tokenUsage.Prompt = int(input)

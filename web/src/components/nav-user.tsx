@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import {
   ChevronsUpDown,
@@ -39,6 +37,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/contexts/auth-context"
+import { selectClass } from "@/lib/utils"
 
 function getInitials(name: string, email: string): string {
   if (name && name !== "User") {
@@ -151,7 +150,7 @@ export function NavUser({
               <Label htmlFor="llm-provider">LLM Provider</Label>
               <select
                 id="llm-provider"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className={selectClass}
                 value={llmProvider}
                 onChange={(e) => setLlmProvider(e.target.value as "anthropic" | "local")}
               >

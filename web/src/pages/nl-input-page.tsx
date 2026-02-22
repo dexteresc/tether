@@ -11,6 +11,7 @@ import type {
   EntityResolution,
   ClarificationRequest,
 } from "@/services/llm/types";
+import { truncate } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -172,7 +173,7 @@ export const NLInputPage = observer(function NLInputPage() {
       } else if (row.table === "intel" && data?.description) {
         const desc = data.description as string;
         labels.set(proposed.id as string, {
-          label: desc.length > 50 ? desc.slice(0, 50) + "..." : desc,
+          label: truncate(desc, 50),
           type: proposed.type as string,
         });
       }
@@ -219,7 +220,7 @@ export const NLInputPage = observer(function NLInputPage() {
         const iData = intel.data as Record<string, unknown> | undefined;
         const desc = (iData?.description as string) ?? intel.type;
         labels.set(id, {
-          label: desc.length > 50 ? desc.slice(0, 50) + "..." : desc,
+          label: truncate(desc, 50),
           type: intel.type,
         });
       }

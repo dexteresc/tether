@@ -5,7 +5,6 @@ This service handles the core logic for resolving person references in natural l
 to existing entities in the database.
 """
 
-from typing import Optional
 from uuid import UUID
 from supabase import Client
 from app.models.resolution import (
@@ -29,7 +28,7 @@ class EntityResolverService:
         self.supabase = supabase_client
         self.config = settings
 
-    async def query_persons_from_database(self, user_id: Optional[str] = None) -> list[PersonEntity]:
+    async def query_persons_from_database(self, user_id: str | None = None) -> list[PersonEntity]:
         """
         Fetch all person entities and their identifiers from Supabase.
 
@@ -85,7 +84,7 @@ class EntityResolverService:
 
     async def build_resolution_context(
         self,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> ResolutionContext:
         """
         Build a ResolutionContext from database query results.
@@ -357,8 +356,8 @@ class EntityResolverService:
     def calculate_confidence_score(
         self,
         exact_match: bool,
-        fuzzy_score: Optional[float],
-        context_match: Optional[str]
+        fuzzy_score: float | None,
+        context_match: str | None
     ) -> float:
         """
         Calculate weighted confidence score for entity resolution.

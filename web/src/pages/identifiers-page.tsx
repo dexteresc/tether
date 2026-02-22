@@ -4,6 +4,7 @@ import { useRootStore } from "@/stores/RootStore";
 import { DataTable, type Column } from "@/components/data-table";
 import { EntityLink } from "@/components/entity-link";
 import { useEntityNames } from "@/hooks/use-entity-names";
+import { truncate } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Identifier = RemoteRow<"identifiers">;
@@ -41,7 +42,7 @@ export const IdentifiersPage = observer(function IdentifiersPage() {
         return (
           <EntityLink
             id={row.entity_id}
-            name={info?.name ?? row.entity_id.slice(0, 8) + "..."}
+            name={info?.name ?? truncate(row.entity_id, 8)}
             type={info?.type}
           />
         );

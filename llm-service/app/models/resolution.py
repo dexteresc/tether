@@ -4,10 +4,13 @@ Entity Resolution Models for Context-Aware Entity Resolution (Feature 003)
 This module defines Pydantic models for entity resolution functionality.
 """
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal
-from uuid import UUID
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class EntityResolutionResult(BaseModel):
@@ -25,7 +28,7 @@ class EntityResolutionResult(BaseModel):
         description="Whether the reference was successfully resolved to an existing entity"
     )
 
-    resolved_entity_id: Optional[UUID] = Field(
+    resolved_entity_id: UUID | None = Field(
         None,
         description="UUID of the resolved entity in the entities table (null if not resolved)"
     )
@@ -67,7 +70,7 @@ class EntityResolutionResult(BaseModel):
     )
 
     # Matching details
-    match_details: Optional[dict] = Field(
+    match_details: dict | None = Field(
         None,
         description="Detailed matching scores (exact_match, fuzzy_scores, context_match)"
     )
@@ -131,13 +134,13 @@ class PersonEntity(BaseModel):
     )
 
     # Attributes from entity.data JSONB
-    company: Optional[str] = Field(None, description="Company attribute if present")
-    location: Optional[str] = Field(None, description="Location attribute if present")
+    company: str | None = Field(None, description="Company attribute if present")
+    location: str | None = Field(None, description="Location attribute if present")
 
     # Metadata
     updated_at: datetime = Field(..., description="Last update timestamp")
 
-    def get_primary_name(self) -> Optional[str]:
+    def get_primary_name(self) -> str | None:
         """Get the first name (assumed primary)."""
         return self.names[0] if self.names else None
 

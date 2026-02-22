@@ -8,6 +8,7 @@ import { ENTITY_TYPES } from "@/lib/constants";
 import { EntityLink } from "@/components/entity-link";
 import { MiniMap, type MapMarker } from "@/components/mini-map";
 import { getLatLngFromData, DEFAULT_CENTER } from "@/lib/geo";
+import { truncate } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Entity = RemoteRow<"entities">;
@@ -43,7 +44,7 @@ function getIntelDescription(intel: ReplicaRow<Intel>): string {
   const data = intel.data as Record<string, unknown> | null;
   const desc = data?.description;
   if (typeof desc === "string") {
-    return desc.length > 100 ? desc.slice(0, 100) + "..." : desc;
+    return truncate(desc, 100);
   }
   return "-";
 }

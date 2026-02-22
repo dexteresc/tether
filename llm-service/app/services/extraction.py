@@ -1,4 +1,3 @@
-from typing import Optional, List
 from supabase import Client
 from app.services.llm import get_llm_provider
 from app.services.entity_resolver import EntityResolverService
@@ -69,7 +68,7 @@ def build_chain_of_thought(extraction: IntelligenceExtraction, classification: E
 class ExtractionService:
     """Service for orchestrating intelligence extraction from text."""
 
-    def __init__(self, provider: Optional[str] = None, model: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, provider: str | None = None, model: str | None = None, api_key: str | None = None):
         """
         Initialize extraction service.
 
@@ -81,7 +80,7 @@ class ExtractionService:
         self.llm_provider = get_llm_provider(provider, model, api_key=api_key)
 
     def extract_intelligence(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """
         Extract structured intelligence from text.
@@ -98,7 +97,7 @@ class ExtractionService:
         return self.llm_provider.extract(text, context, max_retries=max_retries, user_name=user_name)
 
     def extract_and_classify(
-        self, text: str, context: Optional[str] = None, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, user_name: str | None = None
     ) -> ClassifiedExtraction:
         """
         Extract structured intelligence and classify the result.
@@ -126,9 +125,9 @@ class ExtractionService:
         self,
         text: str,
         supabase_client: Client,
-        user_id: Optional[str] = None,
-        context: Optional[str] = None,
-        user_name: Optional[str] = None
+        user_id: str | None = None,
+        context: str | None = None,
+        user_name: str | None = None
     ) -> ClassifiedExtraction:
         """
         Extract structured intelligence, perform entity resolution, and classify the result.
@@ -149,8 +148,8 @@ class ExtractionService:
         extraction = self.extract_intelligence(text, context, user_name=user_name)
 
         # Step 2: Perform entity resolution on person references
-        entity_resolutions: List[EntityResolutionResult] = []
-        clarification_requests: List[ClarificationRequest] = []
+        entity_resolutions: list[EntityResolutionResult] = []
+        clarification_requests: list[ClarificationRequest] = []
         needs_clarification = False
 
         # Initialize entity resolver
@@ -235,7 +234,7 @@ class ExtractionService:
 
 
 # Global extraction service instance
-_extraction_service: Optional[ExtractionService] = None
+_extraction_service: ExtractionService | None = None
 
 
 def get_extraction_service() -> ExtractionService:

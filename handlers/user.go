@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/middleware"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -20,7 +20,6 @@ func GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	// Reload with full associations
 	var fullUser models.User
 	if err := config.DB.Preload("Entity.Identifiers").First(&fullUser, user.ID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
@@ -31,15 +30,13 @@ func GetCurrentUser(c *gin.Context) {
 }
 
 func GetUser(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
-	// Authorization: only allow users to view their own record
-	currentUser, ok := middleware.GetUserFromContext(c)
-	if !ok {
+	currentUser, authOk := middleware.GetUserFromContext(c)
+	if !authOk {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -58,15 +55,13 @@ func GetUser(c *gin.Context) {
 }
 
 func UpdateUser(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
-	// Authorization: only allow users to update their own record
-	currentUser, ok := middleware.GetUserFromContext(c)
-	if !ok {
+	currentUser, authOk := middleware.GetUserFromContext(c)
+	if !authOk {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -86,7 +81,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		var user models.User
 		if err := tx.Where("entity_id = ?", id).First(&user).Error; err != nil {
 			return gorm.ErrRecordNotFound
@@ -121,7 +116,6 @@ func UpdateUser(c *gin.Context) {
 				return err
 			}
 
-			// Fix #1: Use json.Marshal instead of fmt.Sprintf to prevent JSON injection
 			dataMap := map[string]interface{}{"user": true, "name": input.Name}
 			dataBytes, err := json.Marshal(dataMap)
 			if err != nil {
@@ -137,7 +131,7 @@ func UpdateUser(c *gin.Context) {
 	})
 
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
@@ -149,15 +143,13 @@ func UpdateUser(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
-	// Authorization: only allow users to delete their own record
-	currentUser, ok := middleware.GetUserFromContext(c)
-	if !ok {
+	currentUser, authOk := middleware.GetUserFromContext(c)
+	if !authOk {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -166,7 +158,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		result := tx.Where("entity_id = ?", id).Delete(&models.User{})
 		if result.Error != nil {
 			return result.Error
@@ -179,7 +171,7 @@ func DeleteUser(c *gin.Context) {
 	})
 
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})

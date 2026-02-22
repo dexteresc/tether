@@ -6,7 +6,6 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func CreateRelation(c *gin.Context) {
@@ -39,9 +38,8 @@ func GetRelations(c *gin.Context) {
 }
 
 func GetRelation(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -54,9 +52,8 @@ func GetRelation(c *gin.Context) {
 }
 
 func UpdateRelation(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -69,12 +66,8 @@ func UpdateRelation(c *gin.Context) {
 	result := config.DB.Model(&models.Relation{}).Where("id = ?", id).
 		Omit("id", "created_at", "deleted_at", "source_id", "target_id").Updates(relation)
 
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update relation"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Relation not found"})
+	if err := checkUpdateResult(result, "relation"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 
@@ -82,19 +75,14 @@ func UpdateRelation(c *gin.Context) {
 }
 
 func DeleteRelation(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
 	result := config.DB.Delete(&models.Relation{}, id)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete relation"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Relation not found"})
+	if err := checkUpdateResult(result, "relation"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 

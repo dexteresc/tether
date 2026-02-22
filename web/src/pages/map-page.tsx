@@ -10,6 +10,7 @@ import { createTypeIcon } from "@/lib/leaflet-setup";
 import { getLatLngFromData, formatDistance, DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/geo";
 import { findEntitiesNear, findIntelNear } from "@/lib/supabase-helpers";
 import { ENTITY_TYPES } from "@/lib/constants";
+import { truncate, TYPE_COLORS } from "@/lib/utils";
 import { EntityLink } from "@/components/entity-link";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
@@ -254,7 +255,7 @@ export const MapPage = observer(function MapPage() {
                     <div>
                       <span className="capitalize font-medium">{item.type}</span>
                       <br />
-                      <span className="text-xs">{desc.length > 60 ? desc.slice(0, 60) + "..." : desc || "No description"}</span>
+                      <span className="text-xs">{desc ? truncate(desc, 60) : "No description"}</span>
                       <br />
                       <span className="text-xs text-muted-foreground">{new Date(item.occurred_at).toLocaleDateString()}</span>
                     </div>
@@ -268,16 +269,6 @@ export const MapPage = observer(function MapPage() {
     </div>
   );
 });
-
-const TYPE_COLORS: Record<string, string> = {
-  person: "#3b82f6",
-  organization: "#8b5cf6",
-  group: "#6366f1",
-  location: "#10b981",
-  event: "#f97316",
-  project: "#06b6d4",
-  asset: "#ec4899",
-};
 
 function getTypeColor(type: string): string {
   return TYPE_COLORS[type] ?? "#888";

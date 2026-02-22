@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { createRecord } from "@/services/sync/createRecord";
 import { SOURCE_TYPES } from "@/lib/constants";
+import { selectClass } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Source = RemoteRow<"sources">;
@@ -183,7 +184,7 @@ export const SourcesPage = observer(function SourcesPage() {
               <Label htmlFor="type">Type</Label>
               <select
                 id="type"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className={selectClass}
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               >
@@ -198,7 +199,7 @@ export const SourcesPage = observer(function SourcesPage() {
               <Label htmlFor="reliability">Reliability</Label>
               <select
                 id="reliability"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className={selectClass}
                 value={reliability}
                 onChange={(e) => setReliability(e.target.value)}
               >

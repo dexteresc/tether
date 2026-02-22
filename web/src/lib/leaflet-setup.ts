@@ -5,24 +5,14 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+import { TYPE_COLORS } from "@/lib/utils";
+
 delete (L.Icon.Default.prototype as Record<string, unknown>)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 });
-
-/** Color palette matching graph page TYPE_COLORS. */
-const TYPE_COLORS: Record<string, string> = {
-  person: "#3b82f6",
-  organization: "#8b5cf6",
-  group: "#6366f1",
-  location: "#10b981",
-  event: "#f97316",
-  project: "#06b6d4",
-  asset: "#ec4899",
-  intel: "#ef4444",
-};
 
 /** Create a colored circle DivIcon for a given entity/intel type. */
 export function createTypeIcon(type: string): L.DivIcon {

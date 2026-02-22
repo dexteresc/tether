@@ -14,12 +14,10 @@ import {
 } from "@/components/ui/sheet";
 import { createRecord } from "@/services/sync/createRecord";
 import { TAG_CATEGORIES } from "@/lib/constants";
+import { capitalize, selectClass } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Tag = RemoteRow<"tags">;
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export const TagsPage = observer(function TagsPage() {
   const { replica, outbox } = useRootStore();
@@ -129,7 +127,7 @@ export const TagsPage = observer(function TagsPage() {
             label: "All Categories",
             options: TAG_CATEGORIES.map((c) => ({
               value: c,
-              label: c.charAt(0).toUpperCase() + c.slice(1),
+              label: capitalize(c),
             })),
           },
         ]}
@@ -166,7 +164,7 @@ export const TagsPage = observer(function TagsPage() {
               >
                 {TAG_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
-                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                    {capitalize(c)}
                   </option>
                 ))}
               </select>

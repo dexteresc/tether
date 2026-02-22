@@ -2,11 +2,15 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useRootStore } from "@/stores/RootStore";
 import { DataTable, type Column } from "@/components/data-table";
-import type { Identifier } from "@/types/database";
-import type { ReplicaRow } from "@/lib/sync/types";
+import { EntityLink } from "@/components/entity-link";
+import { useEntityNames } from "@/hooks/use-entity-names";
+import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
+
+type Identifier = RemoteRow<"identifiers">;
 
 export const IdentifiersPage = observer(function IdentifiersPage() {
   const { replica } = useRootStore();
+  const entityNames = useEntityNames();
   const [identifiers, setIdentifiers] = useState<
     Array<ReplicaRow<Identifier>>
   >([]);
@@ -31,12 +35,17 @@ export const IdentifiersPage = observer(function IdentifiersPage() {
     {
       key: "entity_id",
       label: "Entity",
-      width: "160px",
-      render: (row) => (
-        <span className="font-mono text-xs">
-          {row.entity_id.slice(0, 8)}...
-        </span>
-      ),
+      width: "200px",
+      render: (row) => {
+        const info = entityNames.get(row.entity_id);
+        return (
+          <EntityLink
+            id={row.entity_id}
+            name={info?.name ?? row.entity_id.slice(0, 8) + "..."}
+            type={info?.type}
+          />
+        );
+      },
     },
     {
       key: "type",

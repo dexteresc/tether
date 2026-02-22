@@ -1,6 +1,14 @@
 import type { SyncOrchestrator } from "./index";
 import type { SyncStatusStore } from "@/stores/SyncStatusStore";
 
+function toErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null && "message" in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return String(err);
+}
+
 export class SyncEngine {
   private intervalId: number | null = null;
   private running = false;
@@ -66,13 +74,7 @@ export class SyncEngine {
       }
       this.syncStatus.setLastError(null);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "object" && err !== null && "message" in err
-            ? String((err as { message: unknown }).message)
-            : String(err);
-      this.syncStatus.setLastError(message);
+      this.syncStatus.setLastError(toErrorMessage(err));
     } finally {
       this.syncStatus.setProgress("idle");
     }

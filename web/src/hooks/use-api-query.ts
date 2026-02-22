@@ -22,17 +22,10 @@ export function useApiQuery<T = any>(
 ): UseApiQueryResult<T> {
   const { enabled = true, refetchInterval = null } = options;
   const { data, error, loading, execute, reset } = useApi(apiFunction);
-  const paramsRef = useRef(params);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
-
-    const paramsChanged =
-      JSON.stringify(params) !== JSON.stringify(paramsRef.current);
-    if (paramsChanged) {
-      paramsRef.current = params;
-    }
 
     execute(...params);
 

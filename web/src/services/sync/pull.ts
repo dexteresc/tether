@@ -1,7 +1,17 @@
 import { supabase } from "@/lib/supabase";
 import { getTetherDb } from "@/lib/idb/db";
-import type { SyncLogBatch, SyncLogEntry, TableName } from "@/lib/sync/types";
+import type { ReplicaMeta, SyncLogBatch, SyncLogEntry, TableName } from "@/lib/sync/types";
 import { TABLES } from "@/lib/sync/types";
+
+function buildPulledMeta(isDeleted: boolean, now: string): ReplicaMeta {
+  return {
+    local_last_accessed_at: now,
+    local_dirty: false,
+    local_deleted: isDeleted,
+    base_updated_at: null,
+    last_pulled_at: now,
+  };
+}
 
 const LAST_SEQ_KEY = "sync_log.last_seq";
 
@@ -91,17 +101,7 @@ export async function applySyncLogBatch(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const rowData = entry.row_data as any;
         const isDeleted = !!rowData?.deleted_at;
-        const next = {
-          ...rowData,
-          __meta: {
-            local_last_accessed_at: now,
-            local_dirty: false,
-            local_deleted: isDeleted,
-            base_updated_at: null,
-            last_pulled_at: now,
-          },
-        };
-        await tx.store.put(next);
+        await tx.store.put({ ...rowData, __meta: buildPulledMeta(isDeleted, now) });
       }
     }
     await tx.done;
@@ -132,18 +132,8 @@ export async function bootstrapFullSync(): Promise<void> {
       if (existing?.__meta?.local_dirty) continue;
 
       const isDeleted = !!row.deleted_at;
-      const next = {
-        ...row,
-        __meta: {
-          local_last_accessed_at: now,
-          local_dirty: false,
-          local_deleted: isDeleted,
-          base_updated_at: null,
-          last_pulled_at: now,
-        },
-      };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await tx.store.put(next as any);
+      await tx.store.put({ ...row, __meta: buildPulledMeta(isDeleted, now) } as any);
     }
     await tx.done;
   }

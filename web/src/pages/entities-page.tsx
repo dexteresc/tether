@@ -14,18 +14,19 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { createRecord } from "@/services/sync/createRecord";
-import type { Entity, Identifier } from "@/types/database";
-import type { ReplicaRow } from "@/lib/sync/types";
+import { SensitivityBadge } from "@/components/sensitivity-badge";
+import { SensitivityPicker } from "@/components/sensitivity-picker";
+import { ENTITY_TYPES, ENTITY_STATUSES } from "@/lib/constants";
+import { LocationPicker } from "@/components/location-picker";
+import type { LatLng } from "@/lib/geo";
+import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
-type EntityRow = ReplicaRow<Entity> & { identifiers?: Identifier[] };
+type Entity = RemoteRow<"entities">;
+type Identifier = RemoteRow<"identifiers">;
+type EntityRow = ReplicaRow<Entity>;
 
-const ENTITY_TYPES = [
-  "person",
-  "organization",
-  "group",
-  "vehicle",
-  "location",
-] as const;
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export const EntitiesPage = observer(function EntitiesPage() {
   const { replica, outbox } = useRootStore();
@@ -40,6 +41,9 @@ export const EntitiesPage = observer(function EntitiesPage() {
 
   const [entityType, setEntityType] = useState<string>(ENTITY_TYPES[0]);
   const [name, setName] = useState("");
+  const [status, setStatus] = useState<string>("active");
+  const [sensitivity, setSensitivity] = useState<string>("internal");
+  const [location, setLocation] = useState<LatLng | null>(null);
 
   async function load() {
     setLoading(true);
@@ -79,6 +83,22 @@ export const EntitiesPage = observer(function EntitiesPage() {
   function resetForm() {
     setEntityType(ENTITY_TYPES[0]);
     setName("");
+    setStatus("active");
+    setSensitivity("internal");
+    setLocation(null);
+  }
+
+  function getEntityName(row: EntityRow): string {
+    const dataName =
+      row.data &&
+      typeof row.data === "object" &&
+      !Array.isArray(row.data)
+        ? (row.data as Record<string, unknown>).name
+        : null;
+    if (typeof dataName === "string" && dataName) return dataName;
+    const ids = identifiersMap[row.id] || [];
+    const nameId = ids.find((i) => i.type === "name");
+    return nameId?.value ?? "Unnamed";
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -87,11 +107,17 @@ export const EntitiesPage = observer(function EntitiesPage() {
 
     setSaving(true);
     try {
+      const data: Record<string, unknown> = { name: name.trim() };
+      if (location) {
+        data.lat = location.lat;
+        data.lng = location.lng;
+      }
       const entityId = await createRecord("entities", {
         type: entityType,
-        data: { name: name.trim() },
+        status,
+        sensitivity,
+        data,
       });
-      // Also create a "name" identifier for the entity
       await createRecord("identifiers", {
         entity_id: entityId,
         type: "name",
@@ -121,21 +147,23 @@ export const EntitiesPage = observer(function EntitiesPage() {
     {
       key: "name",
       label: "Name",
-      render: (row) => {
-        const dataName =
-          row.data &&
-          typeof row.data === "object" &&
-          !Array.isArray(row.data)
-            ? (row.data as Record<string, unknown>).name
-            : null;
-        if (dataName) {
-          return <span className="font-medium">{String(dataName)}</span>;
-        }
-        const ids = identifiersMap[row.id] || [];
-        const nameId = ids.find((i) => i.type === "name");
-        if (nameId) return <span className="font-medium">{nameId.value}</span>;
-        return <span className="text-muted-foreground">Unnamed</span>;
-      },
+      render: (row) => (
+        <span className="font-medium">{getEntityName(row)}</span>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      width: "100px",
+      render: (row) => (
+        <span className="capitalize text-sm">{row.status}</span>
+      ),
+    },
+    {
+      key: "sensitivity",
+      label: "Sensitivity",
+      width: "120px",
+      render: (row) => <SensitivityBadge level={row.sensitivity} />,
     },
     {
       key: "identifiers",
@@ -187,6 +215,32 @@ export const EntitiesPage = observer(function EntitiesPage() {
         loading={loading}
         onRowClick={(row) => navigate(`/entities/${row.id}`)}
         emptyMessage="No entities found."
+        searchable
+        searchPlaceholder="Search by name..."
+        searchFn={(row, q) => getEntityName(row).toLowerCase().includes(q)}
+        filters={[
+          {
+            key: "type",
+            label: "All Types",
+            options: ENTITY_TYPES.map((t) => ({
+              value: t,
+              label: t.charAt(0).toUpperCase() + t.slice(1),
+            })),
+          },
+          {
+            key: "status",
+            label: "All Statuses",
+            options: ENTITY_STATUSES.map((s) => ({
+              value: s,
+              label: s.charAt(0).toUpperCase() + s.slice(1),
+            })),
+          },
+        ]}
+        filterFn={(row, filters) => {
+          if (filters.type && row.type !== filters.type) return false;
+          if (filters.status && row.status !== filters.status) return false;
+          return true;
+        }}
       />
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -202,7 +256,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
               <Label htmlFor="entityType">Type</Label>
               <select
                 id="entityType"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className={selectClass}
                 value={entityType}
                 onChange={(e) => setEntityType(e.target.value)}
               >
@@ -222,6 +276,26 @@ export const EntitiesPage = observer(function EntitiesPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
               />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="entityStatus">Status</Label>
+              <select
+                id="entityStatus"
+                className={selectClass}
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                {ENTITY_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <SensitivityPicker value={sensitivity} onChange={setSensitivity} />
+            <div className="flex flex-col gap-2">
+              <Label>Location (optional)</Label>
+              <LocationPicker value={location} onChange={setLocation} />
             </div>
             <Button type="submit" disabled={saving || !name.trim()}>
               {saving ? "Creating..." : "Create Entity"}

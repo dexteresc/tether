@@ -10,6 +10,31 @@ import type { Database } from "@/types/database";
 type RemoteRow<T extends TableName> =
   Database["public"]["Tables"][T]["Row"];
 
+function buildOutboxTx(
+  staged: StagedExtraction,
+  now: string
+): OutboxTransaction | null {
+  const proposedRow = staged.proposed_row as Partial<RemoteRow<TableName>>;
+  if (!proposedRow || typeof proposedRow !== "object") return null;
+
+  const recordId = (proposedRow as { id?: string }).id || crypto.randomUUID();
+
+  return {
+    tx_id: crypto.randomUUID(),
+    created_at: now,
+    table: staged.table,
+    op: "insert",
+    record_id: recordId,
+    payload: { ...proposedRow, id: recordId },
+    base_updated_at: null,
+    status: "pending",
+    attempt_count: 0,
+    last_error: null,
+    next_retry_at: null,
+    synced_at: null,
+  };
+}
+
 export async function commitStagedToOutbox(): Promise<{
   committed: number;
   failed: number;
@@ -39,11 +64,8 @@ export async function commitStagedToOutbox(): Promise<{
       const outboxTxs: OutboxTransaction[] = [];
 
       for (const staged of inputStagedRows) {
-        const proposedRow = staged.proposed_row as Partial<
-          RemoteRow<TableName>
-        >;
-
-        if (!proposedRow || typeof proposedRow !== "object") {
+        const tx = buildOutboxTx(staged, now);
+        if (!tx) {
           errors.push({
             stagedId: staged.staged_id,
             error: "Invalid proposed row data",
@@ -51,28 +73,6 @@ export async function commitStagedToOutbox(): Promise<{
           failed++;
           continue;
         }
-
-        const recordId =
-          (proposedRow as { id?: string }).id || crypto.randomUUID();
-
-        const tx: OutboxTransaction = {
-          tx_id: crypto.randomUUID(),
-          created_at: now,
-          table: staged.table,
-          op: "insert",
-          record_id: recordId,
-          payload: {
-            ...proposedRow,
-            id: recordId,
-          },
-          base_updated_at: null,
-          status: "pending",
-          attempt_count: 0,
-          last_error: null,
-          next_retry_at: null,
-          synced_at: null,
-        };
-
         outboxTxs.push(tx);
       }
 
@@ -130,35 +130,8 @@ export async function commitStagedForInput(
   const outboxTxs: OutboxTransaction[] = [];
 
   for (const staged of acceptedRows) {
-    const proposedRow = staged.proposed_row as Partial<
-      RemoteRow<TableName>
-    >;
-
-    if (!proposedRow || typeof proposedRow !== "object") {
-      continue;
-    }
-
-    const recordId =
-      (proposedRow as { id?: string }).id || crypto.randomUUID();
-
-    const tx: OutboxTransaction = {
-      tx_id: crypto.randomUUID(),
-      created_at: now,
-      table: staged.table,
-      op: "insert",
-      record_id: recordId,
-      payload: {
-        ...proposedRow,
-        id: recordId,
-      },
-      base_updated_at: null,
-      status: "pending",
-      attempt_count: 0,
-      last_error: null,
-      next_retry_at: null,
-      synced_at: null,
-    };
-
+    const tx = buildOutboxTx(staged, now);
+    if (!tx) continue;
     outboxTxs.push(tx);
   }
 

@@ -108,19 +108,20 @@ export class NLQueueStore {
     }
   }
 
+  private get averageDuration(): number | null {
+    if (this.processingDurations.length === 0) return null;
+    return (
+      this.processingDurations.reduce((sum, d) => sum + d, 0) /
+      this.processingDurations.length
+    );
+  }
+
   getEstimatedWaitTime(): number | null {
-    if (this.processingDurations.length === 0) {
-      return null;
-    }
-
-    const avg =
-      this.processingDurations.reduce((sum, duration) => sum + duration, 0) /
-      this.processingDurations.length;
-
+    const avg = this.averageDuration;
+    if (avg === null) return null;
     const pendingAhead = this.items.filter(
       (i) => i.status === "pending"
     ).length;
-
     return Math.round(avg * (pendingAhead + 1));
   }
 
@@ -246,18 +247,12 @@ export class NLQueueStore {
     }
   > {
     const pending = this.items.filter((i) => i.status === "pending");
-    const avgDuration =
-      this.processingDurations.length > 0
-        ? this.processingDurations.reduce((sum, d) => sum + d, 0) /
-          this.processingDurations.length
-        : null;
+    const avg = this.averageDuration;
 
     return pending.map((item, index) => ({
       ...item,
       queuePosition: index + 1,
-      estimatedWaitSeconds: avgDuration
-        ? Math.round(avgDuration * (index + 1))
-        : null,
+      estimatedWaitSeconds: avg ? Math.round(avg * (index + 1)) : null,
     }));
   }
 

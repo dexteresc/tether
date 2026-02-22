@@ -55,16 +55,12 @@ const data = {
           url: "/relations",
         },
         {
-          title: "Identifiers",
-          url: "/identifiers",
-        },
-        {
           title: "Sources",
           url: "/sources",
         },
         {
-          title: "Intel-Entities",
-          url: "/intel-entities",
+          title: "Tags",
+          url: "/tags",
         },
       ],
     },
@@ -76,6 +72,14 @@ const data = {
         {
           title: "Graph",
           url: "/graph",
+        },
+        {
+          title: "Map",
+          url: "/map",
+        },
+        {
+          title: "Timeline",
+          url: "/timeline",
         },
       ],
     },

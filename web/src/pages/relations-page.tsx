@@ -13,34 +13,16 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { createRecord } from "@/services/sync/createRecord";
-import type { Relation, Entity } from "@/types/database";
-import type { ReplicaRow } from "@/lib/sync/types";
+import { SensitivityBadge } from "@/components/sensitivity-badge";
+import { SensitivityPicker } from "@/components/sensitivity-picker";
+import { RELATION_TYPES } from "@/lib/constants";
+import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
-const RELATION_TYPES = [
-  "parent",
-  "child",
-  "sibling",
-  "spouse",
-  "relative",
-  "colleague",
-  "associate",
-  "friend",
-  "employee",
-  "member",
-  "owner",
-  "founder",
-  "co-founder",
-  "mentor",
-  "client",
-  "partner",
-  "introduced_by",
-  "works_at",
-  "lives_in",
-  "invested_in",
-  "attended",
-  "visited",
-  "knows",
-] as const;
+type Relation = RemoteRow<"relations">;
+type Entity = RemoteRow<"entities">;
+
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export const RelationsPage = observer(function RelationsPage() {
   const { replica, outbox } = useRootStore();
@@ -56,6 +38,7 @@ export const RelationsPage = observer(function RelationsPage() {
   const [targetId, setTargetId] = useState("");
   const [relationType, setRelationType] = useState<string>(RELATION_TYPES[0]);
   const [strength, setStrength] = useState("");
+  const [sensitivity, setSensitivity] = useState<string>("internal");
 
   async function load() {
     setLoading(true);
@@ -94,6 +77,7 @@ export const RelationsPage = observer(function RelationsPage() {
     setTargetId("");
     setRelationType(RELATION_TYPES[0]);
     setStrength("");
+    setSensitivity("internal");
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -107,6 +91,7 @@ export const RelationsPage = observer(function RelationsPage() {
         target_id: targetId,
         type: relationType,
         strength: strength ? Number(strength) : null,
+        sensitivity,
         data: null,
         valid_from: null,
         valid_to: null,
@@ -121,9 +106,6 @@ export const RelationsPage = observer(function RelationsPage() {
       setSaving(false);
     }
   }
-
-  const selectClass =
-    "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
   const columns: Array<Column<ReplicaRow<Relation>>> = [
     {
@@ -161,21 +143,18 @@ export const RelationsPage = observer(function RelationsPage() {
       ),
     },
     {
+      key: "sensitivity",
+      label: "Sensitivity",
+      width: "120px",
+      render: (row) => <SensitivityBadge level={row.sensitivity} />,
+    },
+    {
       key: "valid_from",
       label: "Valid From",
-      width: "180px",
+      width: "140px",
       render: (row) =>
         row.valid_from
           ? new Date(row.valid_from).toLocaleDateString()
-          : "N/A",
-    },
-    {
-      key: "valid_to",
-      label: "Valid To",
-      width: "180px",
-      render: (row) =>
-        row.valid_to
-          ? new Date(row.valid_to).toLocaleDateString()
           : "N/A",
     },
   ];
@@ -193,6 +172,27 @@ export const RelationsPage = observer(function RelationsPage() {
         data={relations}
         loading={loading}
         emptyMessage="No relations found."
+        searchable
+        searchPlaceholder="Search by entity name..."
+        searchFn={(row, q) => {
+          const src = getEntityLabel(row.source_id).toLowerCase();
+          const tgt = getEntityLabel(row.target_id).toLowerCase();
+          return src.includes(q) || tgt.includes(q);
+        }}
+        filters={[
+          {
+            key: "type",
+            label: "All Types",
+            options: RELATION_TYPES.map((t) => ({
+              value: t,
+              label: t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, " "),
+            })),
+          },
+        ]}
+        filterFn={(row, filters) => {
+          if (filters.type && row.type !== filters.type) return false;
+          return true;
+        }}
       />
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -252,7 +252,7 @@ export const RelationsPage = observer(function RelationsPage() {
               >
                 {RELATION_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t.charAt(0).toUpperCase() + t.slice(1).replace("-", " ")}
+                    {t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, " ")}
                   </option>
                 ))}
               </select>
@@ -270,6 +270,7 @@ export const RelationsPage = observer(function RelationsPage() {
                 onChange={(e) => setStrength(e.target.value)}
               />
             </div>
+            <SensitivityPicker value={sensitivity} onChange={setSensitivity} />
             <Button
               type="submit"
               disabled={saving || !sourceId || !targetId}

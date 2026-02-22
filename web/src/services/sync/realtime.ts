@@ -17,17 +17,16 @@ export async function applyRealtimeRowChange(params: {
   replica: ReplicaStore;
   outbox: OutboxStore;
 }): Promise<void> {
-  await params.replica.upsertMany(params.table, [params.row]);
+  const { table, row, replica, outbox } = params;
 
-  const candidates = await params.outbox.findByTableRecord(
-    params.table,
-    params.row.id
-  );
+  await replica.upsertMany(table, [row]);
+
+  const candidates = await outbox.findByTableRecord(table, row.id);
   for (const tx of candidates) {
     if (tx.status === "synced") continue;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (shouldAck(tx as any, params.row as any)) {
-      await params.outbox.updateStatus(tx.tx_id, "synced", {
+    if (shouldAck(tx as any, row as any)) {
+      await outbox.updateStatus(tx.tx_id, "synced", {
         synced_at: new Date().toISOString(),
       });
     }

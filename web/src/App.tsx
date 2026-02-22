@@ -21,6 +21,9 @@ import { IdentifiersPage } from "./pages/identifiers-page";
 import { SourcesPage } from "./pages/sources-page";
 import { IntelEntitiesPage } from "./pages/intel-entities-page";
 import { GraphPage } from "./pages/graph-page";
+import { MapPage } from "./pages/map-page";
+import { TimelinePage } from "./pages/timeline-page";
+import { TagsPage } from "./pages/tags-page";
 
 function AppWithStore() {
   const store = useMemo(() => new RootStore(), []);
@@ -43,7 +46,10 @@ function AppWithStore() {
             <Route path="identifiers" element={<IdentifiersPage />} />
             <Route path="sources" element={<SourcesPage />} />
             <Route path="intel-entities" element={<IntelEntitiesPage />} />
+            <Route path="tags" element={<TagsPage />} />
             <Route path="graph" element={<GraphPage />} />
+            <Route path="map" element={<MapPage />} />
+            <Route path="timeline" element={<TimelinePage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFound />} />

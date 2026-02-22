@@ -13,26 +13,27 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { createRecord } from "@/services/sync/createRecord";
-import type { Intel } from "@/types/database";
-import type { ReplicaRow } from "@/lib/sync/types";
+import { SensitivityBadge } from "@/components/sensitivity-badge";
+import { SensitivityPicker } from "@/components/sensitivity-picker";
+import { INTEL_TYPES, CONFIDENCE_LEVELS } from "@/lib/constants";
+import { LocationPicker } from "@/components/location-picker";
+import type { LatLng } from "@/lib/geo";
+import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
-const INTEL_TYPES = [
-  "event",
-  "communication",
-  "sighting",
-  "report",
-  "document",
-  "media",
-  "financial",
-] as const;
+type Intel = RemoteRow<"intel">;
 
-const CONFIDENCE_LEVELS = [
-  "confirmed",
-  "high",
-  "medium",
-  "low",
-  "unconfirmed",
-] as const;
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
+function getDescription(row: ReplicaRow<Intel>): string {
+  const desc =
+    row.data &&
+    typeof row.data === "object" &&
+    !Array.isArray(row.data)
+      ? (row.data as Record<string, unknown>).description
+      : null;
+  return typeof desc === "string" ? desc : "";
+}
 
 export const IntelPage = observer(function IntelPage() {
   const { replica, outbox } = useRootStore();
@@ -47,6 +48,8 @@ export const IntelPage = observer(function IntelPage() {
     new Date().toISOString().slice(0, 16)
   );
   const [confidence, setConfidence] = useState<string>("medium");
+  const [sensitivity, setSensitivity] = useState<string>("internal");
+  const [location, setLocation] = useState<LatLng | null>(null);
 
   async function load() {
     setLoading(true);
@@ -69,6 +72,8 @@ export const IntelPage = observer(function IntelPage() {
     setDescription("");
     setOccurredAt(new Date().toISOString().slice(0, 16));
     setConfidence("medium");
+    setSensitivity("internal");
+    setLocation(null);
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -77,11 +82,17 @@ export const IntelPage = observer(function IntelPage() {
 
     setSaving(true);
     try {
+      const intelData: Record<string, unknown> = { description: description.trim() };
+      if (location) {
+        intelData.lat = location.lat;
+        intelData.lng = location.lng;
+      }
       await createRecord("intel", {
         type: intelType,
         occurred_at: new Date(occurredAt).toISOString(),
-        data: { description: description.trim() },
+        data: intelData,
         confidence,
+        sensitivity,
         source_id: null,
       });
       await outbox.refresh();
@@ -114,14 +125,8 @@ export const IntelPage = observer(function IntelPage() {
       key: "description",
       label: "Description",
       render: (row) => {
-        const desc =
-          row.data &&
-          typeof row.data === "object" &&
-          !Array.isArray(row.data)
-            ? (row.data as Record<string, unknown>).description
-            : null;
-        if (desc) {
-          const text = String(desc);
+        const text = getDescription(row);
+        if (text) {
           return (
             <span className="truncate block max-w-md" title={text}>
               {text.length > 80 ? text.slice(0, 80) + "..." : text}
@@ -153,6 +158,12 @@ export const IntelPage = observer(function IntelPage() {
       },
     },
     {
+      key: "sensitivity",
+      label: "Sensitivity",
+      width: "120px",
+      render: (row) => <SensitivityBadge level={row.sensitivity} />,
+    },
+    {
       key: "created_at",
       label: "Created",
       width: "180px",
@@ -173,6 +184,32 @@ export const IntelPage = observer(function IntelPage() {
         data={intel}
         loading={loading}
         emptyMessage="No intel records found."
+        searchable
+        searchPlaceholder="Search by description..."
+        searchFn={(row, q) => getDescription(row).toLowerCase().includes(q)}
+        filters={[
+          {
+            key: "type",
+            label: "All Types",
+            options: INTEL_TYPES.map((t) => ({
+              value: t,
+              label: t.charAt(0).toUpperCase() + t.slice(1),
+            })),
+          },
+          {
+            key: "confidence",
+            label: "All Confidence",
+            options: CONFIDENCE_LEVELS.map((c) => ({
+              value: c,
+              label: c.charAt(0).toUpperCase() + c.slice(1),
+            })),
+          },
+        ]}
+        filterFn={(row, filters) => {
+          if (filters.type && row.type !== filters.type) return false;
+          if (filters.confidence && row.confidence !== filters.confidence) return false;
+          return true;
+        }}
       />
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -188,7 +225,7 @@ export const IntelPage = observer(function IntelPage() {
               <Label htmlFor="intelType">Type</Label>
               <select
                 id="intelType"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className={selectClass}
                 value={intelType}
                 onChange={(e) => setIntelType(e.target.value)}
               >
@@ -224,7 +261,7 @@ export const IntelPage = observer(function IntelPage() {
               <Label htmlFor="confidence">Confidence</Label>
               <select
                 id="confidence"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className={selectClass}
                 value={confidence}
                 onChange={(e) => setConfidence(e.target.value)}
               >
@@ -234,6 +271,11 @@ export const IntelPage = observer(function IntelPage() {
                   </option>
                 ))}
               </select>
+            </div>
+            <SensitivityPicker value={sensitivity} onChange={setSensitivity} />
+            <div className="flex flex-col gap-2">
+              <Label>Location (optional)</Label>
+              <LocationPicker value={location} onChange={setLocation} />
             </div>
             <Button
               type="submit"

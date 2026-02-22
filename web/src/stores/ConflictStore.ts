@@ -59,12 +59,11 @@ export class ConflictStore {
     recordId: string
   ): Promise<ConflictEntry[]> {
     const db = await getTetherDb();
-    const rows = await db.getAllFromIndex(
+    return db.getAllFromIndex(
       "conflict_log",
       CONFLICT_INDEXES.byTableRecord,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       [table, recordId] as any
     );
-    return rows;
   }
 }

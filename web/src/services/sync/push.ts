@@ -25,6 +25,26 @@ export interface PushRemote {
 }
 
 export class SupabasePushRemote implements PushRemote {
+  private async fetchConflictRow<T extends TableName>(
+    tx: OutboxTransaction<T>,
+    localRow: unknown,
+    reason: ConflictReason
+  ): Promise<PushResult<T>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: serverRow, error } = await (supabase.from(tx.table) as any)
+      .select("*")
+      .eq("id", tx.record_id)
+      .maybeSingle();
+    if (error) throw error;
+
+    return {
+      status: "conflict",
+      serverRow: serverRow as unknown as RemoteRow<T>,
+      localRow,
+      reason,
+    };
+  }
+
   async apply<T extends TableName>(
     tx: OutboxTransaction<T>
   ): Promise<PushResult<T>> {
@@ -53,21 +73,7 @@ export class SupabasePushRemote implements PushRemote {
       if (error) throw error;
 
       if (!data) {
-        const { data: serverRow, error: fetchError } = await (
-          supabase.from(tx.table) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-        )
-          .select("*")
-          .eq("id", tx.record_id)
-          .maybeSingle();
-        if (fetchError) throw fetchError;
-
-        return {
-          status: "conflict",
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          serverRow: serverRow as any as RemoteRow<T>,
-          localRow: tx.payload,
-          reason: "update_precondition_failed",
-        };
+        return this.fetchConflictRow(tx, tx.payload, "update_precondition_failed");
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,21 +93,7 @@ export class SupabasePushRemote implements PushRemote {
     if (error) throw error;
 
     if (!data) {
-      const { data: serverRow, error: fetchError } = await (
-        supabase.from(tx.table) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-      )
-        .select("*")
-        .eq("id", tx.record_id)
-        .maybeSingle();
-      if (fetchError) throw fetchError;
-
-      return {
-        status: "conflict",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        serverRow: serverRow as any as RemoteRow<T>,
-        localRow: { deleted_at: deletedAt },
-        reason: "update_precondition_failed",
-      };
+      return this.fetchConflictRow(tx, { deleted_at: deletedAt }, "update_precondition_failed");
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

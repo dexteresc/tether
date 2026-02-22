@@ -13,8 +13,10 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { createRecord } from "@/services/sync/createRecord";
-import type { Source } from "@/types/database";
-import type { ReplicaRow } from "@/lib/sync/types";
+import { SOURCE_TYPES } from "@/lib/constants";
+import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
+
+type Source = RemoteRow<"sources">;
 
 const RELIABILITY_OPTIONS = [
   { value: "A", label: "A - Completely reliable" },
@@ -24,8 +26,6 @@ const RELIABILITY_OPTIONS = [
   { value: "E", label: "E - Unreliable" },
   { value: "F", label: "F - Cannot be judged" },
 ] as const;
-
-const SOURCE_TYPES = ["humint", "sigint", "osint", "document", "media", "other"] as const;
 
 export const SourcesPage = observer(function SourcesPage() {
   const { replica, outbox } = useRootStore();

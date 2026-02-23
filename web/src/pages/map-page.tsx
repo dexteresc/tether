@@ -45,7 +45,7 @@ export const MapPage = observer(function MapPage() {
   const [placeSuggestions, setPlaceSuggestions] = useState<NominatimResult[]>([]);
   const [placeLoading, setPlaceLoading] = useState(false);
   const [flyTarget, setFlyTarget] = useState<LatLng | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const skipSearchRef = useRef(false);
   const [searchResults, setSearchResults] = useState<{
     entities: Array<{ entity_id: string; entity_type: string; entity_data: unknown; distance_m: number }>;

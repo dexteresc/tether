@@ -39,3 +39,61 @@ export function formatDistance(meters: number): string {
   }
   return `${Math.round(meters)} m`;
 }
+
+/** Extract location_name from a record's data JSON field. */
+export function getLocationName(data: unknown): string | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const d = data as Record<string, unknown>;
+  return typeof d.location_name === "string" ? d.location_name : null;
+}
+
+// --- Nominatim Geocoding ---
+
+export interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  type: string;
+}
+
+let lastNominatimCall = 0;
+
+async function rateLimit(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - lastNominatimCall;
+  if (elapsed < 1000) {
+    await new Promise((r) => setTimeout(r, 1000 - elapsed));
+  }
+  lastNominatimCall = Date.now();
+}
+
+export async function nominatimSearch(query: string, limit = 5): Promise<NominatimResult[]> {
+  await rateLimit();
+  const params = new URLSearchParams({
+    q: query,
+    format: "json",
+    limit: String(limit),
+    addressdetails: "0",
+  });
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+    headers: { "User-Agent": "Tether/1.0" },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function nominatimReverse(lat: number, lng: number): Promise<string | null> {
+  await rateLimit();
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lng),
+    format: "json",
+  });
+  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, {
+    headers: { "User-Agent": "Tether/1.0" },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return typeof data?.display_name === "string" ? data.display_name : null;
+}

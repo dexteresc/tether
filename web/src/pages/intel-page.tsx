@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { useRootStore } from "@/stores/RootStore";
 import { DataTable, type Column } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,8 @@ import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { INTEL_TYPES, CONFIDENCE_LEVELS } from "@/lib/constants";
 import { capitalize, truncate, selectClass, CONFIDENCE_COLORS } from "@/lib/utils";
-import { LocationPicker } from "@/components/location-picker";
-import type { LatLng } from "@/lib/geo";
+import { FileText, Plus, Brain } from "lucide-react";
+import { LocationSearch, type LocationValue } from "@/components/location-search";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Intel = RemoteRow<"intel">;
@@ -35,6 +36,7 @@ function getDescription(row: ReplicaRow<Intel>): string {
 
 export const IntelPage = observer(function IntelPage() {
   const { replica, outbox } = useRootStore();
+  const navigate = useNavigate();
   const [intel, setIntel] = useState<Array<ReplicaRow<Intel>>>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -47,7 +49,7 @@ export const IntelPage = observer(function IntelPage() {
   );
   const [confidence, setConfidence] = useState<string>("medium");
   const [sensitivity, setSensitivity] = useState<string>("internal");
-  const [location, setLocation] = useState<LatLng | null>(null);
+  const [location, setLocation] = useState<LocationValue | null>(null);
 
   async function load() {
     setLoading(true);
@@ -84,6 +86,7 @@ export const IntelPage = observer(function IntelPage() {
       if (location) {
         intelData.lat = location.lat;
         intelData.lng = location.lng;
+        intelData.location_name = location.display_name;
       }
       await createRecord("intel", {
         type: intelType,
@@ -159,6 +162,34 @@ export const IntelPage = observer(function IntelPage() {
       render: (row) => new Date(row.created_at).toLocaleString(),
     },
   ];
+
+  if (!loading && intel.length === 0) {
+    return (
+      <div>
+        <div className="p-4 border-b flex items-center justify-between">
+          <h2 className="text-xl font-bold">Intel</h2>
+          <Button size="sm" onClick={() => setSheetOpen(true)}>Add Intel</Button>
+        </div>
+        <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+          <h3 className="text-lg font-semibold mb-1">No intel yet</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+            Intel records capture observations, communications, and events. Create one manually or use NL Input to extract from text.
+          </p>
+          <div className="flex gap-3">
+            <Button size="sm" onClick={() => setSheetOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Create Intel
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => navigate("/nl-input")}>
+              <Brain className="h-4 w-4 mr-1" />
+              NL Input
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -264,7 +295,7 @@ export const IntelPage = observer(function IntelPage() {
             <SensitivityPicker value={sensitivity} onChange={setSensitivity} />
             <div className="flex flex-col gap-2">
               <Label>Location (optional)</Label>
-              <LocationPicker value={location} onChange={setLocation} />
+              <LocationSearch value={location} onChange={setLocation} />
             </div>
             <Button
               type="submit"

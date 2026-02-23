@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useRootStore } from "@/stores/RootStore";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
@@ -8,7 +8,6 @@ import { EntityLink } from "@/components/entity-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sheet,
@@ -30,13 +29,19 @@ import {
   RELATION_TYPES,
   TAG_CATEGORIES,
 } from "@/lib/constants";
-import { LocationPicker } from "@/components/location-picker";
-import { MiniMap, type MapMarker } from "@/components/mini-map";
+import { LocationSearch, type LocationValue } from "@/components/location-search";
 import { TimelineView, type TimelineEvent } from "@/components/timeline-view";
-import { getLatLngFromData, formatLatLng, formatDistance } from "@/lib/geo";
-import type { LatLng } from "@/lib/geo";
-import { capitalize, formatLabel, truncate, selectClass, CONFIDENCE_COLORS } from "@/lib/utils";
-import { findEntitiesNear, findIntelNear } from "@/lib/supabase-helpers";
+import { getLatLngFromData, getLocationName, nominatimReverse } from "@/lib/geo";
+import { capitalize, formatLabel, truncate, selectClass, CONFIDENCE_COLORS, CONFIDENCE_DOT_COLORS } from "@/lib/utils";
+import { EntityBriefing } from "@/components/entity-briefing";
+import { MiniGraph } from "@/components/mini-graph";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MapPin, Plus, Trash2 } from "lucide-react";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Entity = RemoteRow<"entities">;
@@ -93,6 +98,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
   const [relOtherId, setRelOtherId] = useState("");
   const [relType, setRelType] = useState(RELATION_TYPES[0] as string);
   const [relStrength, setRelStrength] = useState("");
+  const [relSensitivity, setRelSensitivity] = useState("internal");
   const [relValidFrom, setRelValidFrom] = useState("");
   const [relValidTo, setRelValidTo] = useState("");
 
@@ -108,13 +114,15 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
   const [newTagCategory, setNewTagCategory] = useState("topic");
   const [newTagColor, setNewTagColor] = useState("#6366f1");
 
-  // Edit location
-  const [editLocation, setEditLocation] = useState<LatLng | null>(null);
+  // Inline attribute editing
+  const [editingAttrId, setEditingAttrId] = useState<string | null>(null);
+  const [editingAttrValue, setEditingAttrValue] = useState("");
 
-  // Location tab state
-  const [nearbyEntities, setNearbyEntities] = useState<Array<{ entity_id: string; entity_type: string; entity_data: unknown; distance_m: number }>>([]);
-  const [nearbyIntel, setNearbyIntel] = useState<Array<{ intel_id: string; intel_type: string; intel_data: unknown; occurred_at: string; distance_m: number }>>([]);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
+  // Briefing
+  const [briefingOpen, setBriefingOpen] = useState(false);
+
+  // Edit location
+  const [editLocation, setEditLocation] = useState<LocationValue | null>(null);
 
   const [saving, setSaving] = useState(false);
 
@@ -184,7 +192,9 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
     setEditSensitivity(entity.sensitivity);
     const data = entity.data as Record<string, unknown> | null;
     setEditName(typeof data?.name === "string" ? data.name : "");
-    setEditLocation(getLatLngFromData(entity.data));
+    const coords = getLatLngFromData(entity.data);
+    const locName = getLocationName(entity.data);
+    setEditLocation(coords ? { lat: coords.lat, lng: coords.lng, display_name: locName ?? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` } : null);
     setEditOpen(true);
   }
 
@@ -198,9 +208,11 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
       if (editLocation) {
         updatedData.lat = editLocation.lat;
         updatedData.lng = editLocation.lng;
+        updatedData.location_name = editLocation.display_name;
       } else {
         delete updatedData.lat;
         delete updatedData.lng;
+        delete updatedData.location_name;
       }
       await updateRecord("entities", entity.id, {
         type: editType,
@@ -296,7 +308,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
         target_id: targetId,
         type: relType,
         strength: relStrength ? Number(relStrength) : null,
-        sensitivity: "internal",
+        sensitivity: relSensitivity,
         data: null,
         valid_from: relValidFrom || null,
         valid_to: relValidTo || null,
@@ -306,6 +318,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
       setRelSheetOpen(false);
       setRelOtherId("");
       setRelStrength("");
+      setRelSensitivity("internal");
       setRelValidFrom("");
       setRelValidTo("");
     } catch (error) {
@@ -354,6 +367,34 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
       await load();
     } catch (error) {
       console.error("Failed to remove tag:", error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleInlineAttrSave(attrId: string, newValue: string) {
+    if (!newValue.trim()) return;
+    setSaving(true);
+    try {
+      await updateRecord("entity_attributes", attrId, { value: newValue.trim() } as Partial<EntityAttribute>);
+      await outbox.refresh();
+      await load();
+    } catch (error) {
+      console.error("Failed to update attribute:", error);
+    } finally {
+      setSaving(false);
+      setEditingAttrId(null);
+    }
+  }
+
+  async function handleDeleteAttribute(attrId: string) {
+    setSaving(true);
+    try {
+      await softDeleteRecord("entity_attributes", attrId);
+      await outbox.refresh();
+      await load();
+    } catch (error) {
+      console.error("Failed to delete attribute:", error);
     } finally {
       setSaving(false);
     }
@@ -512,7 +553,35 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
     {
       key: "value",
       label: "Value",
-      render: (row) => <span>{row.value}</span>,
+      render: (row) => {
+        if (editingAttrId === row.id) {
+          return (
+            <Input
+              autoFocus
+              value={editingAttrValue}
+              onChange={(e) => setEditingAttrValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleInlineAttrSave(row.id, editingAttrValue);
+                if (e.key === "Escape") setEditingAttrId(null);
+              }}
+              onBlur={() => setEditingAttrId(null)}
+              className="h-7 text-sm"
+            />
+          );
+        }
+        return (
+          <button
+            type="button"
+            className="text-left hover:underline cursor-pointer"
+            onClick={() => {
+              setEditingAttrId(row.id);
+              setEditingAttrValue(row.value);
+            }}
+          >
+            {row.value}
+          </button>
+        );
+      },
     },
     {
       key: "valid_from",
@@ -531,10 +600,11 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
       label: "Confidence",
       width: "100px",
       render: (row) => (
-          <span className={`capitalize ${CONFIDENCE_COLORS[row.confidence] ?? ""}`}>
-            {row.confidence}
-          </span>
-        ),
+        <span className="inline-flex items-center gap-1.5 capitalize">
+          <span className={`inline-block w-2 h-2 rounded-full ${CONFIDENCE_DOT_COLORS[row.confidence] ?? "bg-gray-400"}`} />
+          <span className={CONFIDENCE_COLORS[row.confidence] ?? ""}>{row.confidence}</span>
+        </span>
+      ),
     },
     {
       key: "notes",
@@ -546,7 +616,32 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
         </span>
       ),
     },
+    {
+      key: "actions",
+      label: "",
+      width: "40px",
+      render: (row) => (
+        <button
+          type="button"
+          onClick={() => handleDeleteAttribute(row.id)}
+          className="text-muted-foreground hover:text-destructive"
+          disabled={saving}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      ),
+    },
   ];
+
+  // Key attribute chips — priority-ordered
+  const keyAttrKeys = ["job_title", "employer", "city", "country", "industry", "headquarters"];
+  const keyAttrChips = keyAttrKeys
+    .map((k) => {
+      const attr = currentAttrs.find((a) => a.key === k);
+      return attr ? { key: k, value: attr.value } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 4) as Array<{ key: string; value: string }>;
 
   return (
     <div>
@@ -556,7 +651,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
           &larr; Back to Entities
         </Link>
         <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-xl font-bold">{entityName}</h2>
             <span className="capitalize px-2 py-0.5 bg-muted rounded text-xs font-medium">
               {entity.type}
@@ -565,10 +660,50 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
               {entity.status}
             </span>
             <SensitivityBadge level={entity.sensitivity} />
+            {keyAttrChips.map((chip) => (
+              <span key={chip.key} className="bg-muted px-2 py-0.5 rounded text-xs">
+                {chip.value}
+              </span>
+            ))}
+            {recordTags.map((rt) => {
+              const tag = tagMap.get(rt.tag_id);
+              return (
+                <span
+                  key={rt.id}
+                  className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  style={{
+                    backgroundColor: tag?.color ? tag.color + "20" : undefined,
+                    color: tag?.color || undefined,
+                    border: `1px solid ${tag?.color || "#888"}`,
+                  }}
+                >
+                  {tag?.name ?? "Unknown"}
+                </span>
+              );
+            })}
           </div>
-          <Button size="sm" variant="outline" onClick={openEditSheet}>
-            Edit
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => setBriefingOpen(true)}>
+              Briefing
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIdSheetOpen(true)}>Identifier</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAttrSheetOpen(true)}>Attribute</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRelSheetOpen(true)}>Relation</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTagSheetOpen(true)}>Tag</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button size="sm" variant="outline" onClick={openEditSheet}>
+              Edit
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -580,7 +715,6 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
             <TabsTrigger value="attributes">Attributes ({attributes.length})</TabsTrigger>
             <TabsTrigger value="relations">Relations ({relations.length})</TabsTrigger>
             <TabsTrigger value="intel">Intel ({intelLinks.length})</TabsTrigger>
-            <TabsTrigger value="location">Location</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="tags">Tags ({recordTags.length})</TabsTrigger>
           </TabsList>
@@ -588,86 +722,68 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
           {/* Overview */}
           <TabsContent value="overview">
             <div className="space-y-6 pt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Info</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="text-muted-foreground">ID</span>
-                    <span className="font-mono text-xs">{entity.id}</span>
-                    <span className="text-muted-foreground">Created</span>
-                    <span>{new Date(entity.created_at).toLocaleString()}</span>
-                    <span className="text-muted-foreground">Updated</span>
-                    <span>{new Date(entity.updated_at).toLocaleString()}</span>
-                    {entity.created_by && (
-                      <>
-                        <span className="text-muted-foreground">Created By</span>
-                        <span className="font-mono text-xs">{entity.created_by}</span>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Stat bar */}
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{attributes.length}</span> attributes
+                {" · "}
+                <span className="font-medium text-foreground">{relations.length}</span> relations
+                {" · "}
+                <span className="font-medium text-foreground">{intelLinks.length}</span> intel
+                {" · "}
+                <span className="font-medium text-foreground">{recordTags.length}</span> tags
+              </p>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-sm font-medium">Identifiers</CardTitle>
-                  <Button size="sm" variant="outline" onClick={() => setIdSheetOpen(true)}>
-                    Add
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {identifiers.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No identifiers</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {identifiers.map((ident) => (
-                        <div key={ident.id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="capitalize text-xs text-muted-foreground w-20">{ident.type}</span>
-                            <span className="font-mono text-sm">{ident.value}</span>
-                          </div>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            onClick={() => handleDeleteIdentifier(ident.id)}
-                            disabled={saving}
-                          >
-                            &times;
-                          </Button>
+              {/* About */}
+              <div>
+                <h3 className="text-sm font-medium mb-2">About</h3>
+                <AboutField entityId={entity.id} attributes={attributes} onSave={async () => { await outbox.refresh(); await load(); }} />
+              </div>
+
+              {/* Identifiers — simplified inline list */}
+              <div>
+                <h3 className="text-sm font-medium mb-2">Identifiers</h3>
+                {identifiers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No identifiers</p>
+                ) : (
+                  <div className="space-y-1">
+                    {identifiers.map((ident) => (
+                      <div key={ident.id} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize text-xs text-muted-foreground w-20">{ident.type}</span>
+                          <span className="font-mono">{ident.value}</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        <button
+                          onClick={() => handleDeleteIdentifier(ident.id)}
+                          className="text-muted-foreground hover:text-destructive text-xs"
+                          disabled={saving}
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="text-2xl font-bold">{attributes.length}</div>
-                    <p className="text-xs text-muted-foreground">Attributes</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="text-2xl font-bold">{relations.length}</div>
-                    <p className="text-xs text-muted-foreground">Relations</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="text-2xl font-bold">{intelLinks.length}</div>
-                    <p className="text-xs text-muted-foreground">Intel Links</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="text-2xl font-bold">{recordTags.length}</div>
-                    <p className="text-xs text-muted-foreground">Tags</p>
-                  </CardContent>
-                </Card>
+              {/* Location */}
+              <EntityLocationDisplay entity={entity} onUpdate={async () => { await outbox.refresh(); await load(); }} />
+
+              {/* Recent Activity + Mini Graph side by side */}
+              <div className="grid lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2">
+                  <h3 className="text-sm font-medium mb-2">Recent Activity</h3>
+                  <RecentActivity
+                    entityId={id!}
+                    relations={relations}
+                    intelLinks={intelLinks}
+                    intelRecords={intelRecords}
+                    entityNameMap={entityNameMap}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Network</h3>
+                  <MiniGraph entityId={id!} height={250} />
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -675,12 +791,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
           {/* Attributes */}
           <TabsContent value="attributes">
             <div className="pt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Current Attributes</h3>
-                <Button size="sm" onClick={() => setAttrSheetOpen(true)}>
-                  Add Attribute
-                </Button>
-              </div>
+              <h3 className="font-medium">Current Attributes</h3>
               {currentAttrs.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No current attributes.</p>
               ) : (
@@ -699,12 +810,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
           {/* Relations */}
           <TabsContent value="relations">
             <div className="pt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Relations</h3>
-                <Button size="sm" onClick={() => setRelSheetOpen(true)}>
-                  Add Relation
-                </Button>
-              </div>
+              <h3 className="font-medium">Relations</h3>
               <DataTable
                 columns={relationColumns}
                 data={relations}
@@ -729,21 +835,6 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
             </div>
           </TabsContent>
 
-          {/* Location */}
-          <TabsContent value="location">
-            <LocationTab
-              entity={entity}
-              entityNameMap={entityNameMap}
-              nearbyEntities={nearbyEntities}
-              nearbyIntel={nearbyIntel}
-              nearbyLoading={nearbyLoading}
-              setNearbyEntities={setNearbyEntities}
-              setNearbyIntel={setNearbyIntel}
-              setNearbyLoading={setNearbyLoading}
-              onEditClick={openEditSheet}
-            />
-          </TabsContent>
-
           {/* Timeline */}
           <TabsContent value="timeline">
             <EntityTimeline
@@ -759,12 +850,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
           {/* Tags */}
           <TabsContent value="tags">
             <div className="pt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Tags</h3>
-                <Button size="sm" onClick={() => setTagSheetOpen(true)}>
-                  Add Tag
-                </Button>
-              </div>
+              <h3 className="font-medium">Tags</h3>
               {recordTags.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No tags assigned.</p>
               ) : (
@@ -799,6 +885,14 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
         </Tabs>
       </div>
 
+      {/* Briefing Sheet */}
+      <EntityBriefing
+        entityId={id!}
+        entityName={entityName}
+        open={briefingOpen}
+        onOpenChange={setBriefingOpen}
+      />
+
       {/* Edit Entity Sheet */}
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
         <SheetContent>
@@ -830,7 +924,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
             <SensitivityPicker value={editSensitivity} onChange={setEditSensitivity} />
             <div className="flex flex-col gap-2">
               <Label>Location</Label>
-              <LocationPicker value={editLocation} onChange={setEditLocation} />
+              <LocationSearch value={editLocation} onChange={setEditLocation} />
             </div>
             <Button type="submit" disabled={saving}>
               {saving ? "Saving..." : "Save"}
@@ -974,6 +1068,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
                 <Input id="relValidTo" type="date" value={relValidTo} onChange={(e) => setRelValidTo(e.target.value)} />
               </div>
             </div>
+            <SensitivityPicker value={relSensitivity} onChange={setRelSensitivity} />
             <Button type="submit" disabled={saving || !relOtherId}>
               {saving ? "Adding..." : "Add Relation"}
             </Button>
@@ -1030,133 +1125,39 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
   );
 });
 
-// --- Location Tab ---
+// --- Entity Location Display (Overview tab) ---
 
-function LocationTab({
+function EntityLocationDisplay({
   entity,
-  entityNameMap,
-  nearbyEntities,
-  nearbyIntel,
-  nearbyLoading,
-  setNearbyEntities,
-  setNearbyIntel,
-  setNearbyLoading,
-  onEditClick,
+  onUpdate,
 }: {
   entity: ReplicaRow<Entity>;
-  entityNameMap: Map<string, { name: string; type: string }>;
-  nearbyEntities: Array<{ entity_id: string; entity_type: string; entity_data: unknown; distance_m: number }>;
-  nearbyIntel: Array<{ intel_id: string; intel_type: string; intel_data: unknown; occurred_at: string; distance_m: number }>;
-  nearbyLoading: boolean;
-  setNearbyEntities: (v: Array<{ entity_id: string; entity_type: string; entity_data: unknown; distance_m: number }>) => void;
-  setNearbyIntel: (v: Array<{ intel_id: string; intel_type: string; intel_data: unknown; occurred_at: string; distance_m: number }>) => void;
-  setNearbyLoading: (v: boolean) => void;
-  onEditClick: () => void;
+  onUpdate: () => Promise<void>;
 }) {
   const coords = getLatLngFromData(entity.data);
+  const locationName = getLocationName(entity.data);
+  const backfillDone = useRef(false);
 
   useEffect(() => {
-    if (!coords) return;
-    let cancelled = false;
-    setNearbyLoading(true);
-    Promise.all([
-      findEntitiesNear(coords.lat, coords.lng, 50000).catch(() => []),
-      findIntelNear(coords.lat, coords.lng, 50000).catch(() => []),
-    ]).then(([entities, intel]) => {
-      if (cancelled) return;
-      setNearbyEntities(entities.filter((e: { entity_id: string }) => e.entity_id !== entity.id));
-      setNearbyIntel(intel);
-      setNearbyLoading(false);
-    });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coords?.lat, coords?.lng, entity.id]);
+    if (!coords || locationName || backfillDone.current) return;
+    backfillDone.current = true;
+    nominatimReverse(coords.lat, coords.lng).then(async (name) => {
+      if (!name) return;
+      const existingData = (entity.data as Record<string, unknown>) || {};
+      await updateRecord("entities", entity.id, {
+        data: { ...existingData, location_name: name },
+      } as Partial<Entity>);
+      await onUpdate();
+    }).catch(() => {});
+  }, [coords?.lat, coords?.lng, locationName, entity.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!coords) {
-    return (
-      <div className="pt-4">
-        <p className="text-sm text-muted-foreground">
-          No location set.{" "}
-          <button className="text-primary hover:underline" onClick={onEditClick}>
-            Edit entity
-          </button>{" "}
-          to add coordinates.
-        </p>
-      </div>
-    );
-  }
-
-  const markers: MapMarker[] = [
-    { id: entity.id, position: coords, label: "This entity", type: entity.type },
-    ...nearbyEntities.map((e) => {
-      const info = entityNameMap.get(e.entity_id);
-      return {
-        id: e.entity_id,
-        position: getLatLngFromData(e.entity_data) ?? coords,
-        label: info?.name ?? e.entity_id.slice(0, 8),
-        type: e.entity_type,
-      };
-    }),
-  ];
-
-  const nearbyEntityColumns: Array<Column<{ entity_id: string; entity_type: string; entity_data: unknown; distance_m: number }>> = [
-    {
-      key: "name",
-      label: "Name",
-      render: (row) => {
-        const info = entityNameMap.get(row.entity_id);
-        return <EntityLink id={row.entity_id} name={info?.name ?? row.entity_id.slice(0, 8)} type={row.entity_type} />;
-      },
-    },
-    { key: "entity_type", label: "Type", width: "100px", render: (row) => <span className="capitalize">{row.entity_type}</span> },
-    { key: "distance_m", label: "Distance", width: "100px", render: (row) => formatDistance(row.distance_m) },
-  ];
-
-  const nearbyIntelColumns: Array<Column<{ intel_id: string; intel_type: string; intel_data: unknown; occurred_at: string; distance_m: number }>> = [
-    { key: "intel_type", label: "Type", width: "100px", render: (row) => <span className="capitalize">{row.intel_type}</span> },
-    {
-      key: "description",
-      label: "Description",
-      render: (row) => {
-        const d = row.intel_data as Record<string, unknown> | null;
-        const desc = typeof d?.description === "string" ? d.description : "-";
-        return <span className="truncate block max-w-sm">{truncate(desc, 60)}</span>;
-      },
-    },
-    { key: "occurred_at", label: "Occurred", width: "130px", render: (row) => new Date(row.occurred_at).toLocaleDateString() },
-    { key: "distance_m", label: "Distance", width: "100px", render: (row) => formatDistance(row.distance_m) },
-  ];
+  const displayName = locationName ?? (coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : null);
+  if (!displayName) return null;
 
   return (
-    <div className="pt-4 space-y-4">
-      <MiniMap center={coords} zoom={12} markers={markers} interactive />
-      <p className="text-sm text-muted-foreground">{formatLatLng(coords)}</p>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Nearby Entities</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {nearbyLoading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : (
-            <DataTable columns={nearbyEntityColumns} data={nearbyEntities} emptyMessage="No nearby entities found." pageSize={10} />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Nearby Intel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {nearbyLoading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : (
-            <DataTable columns={nearbyIntelColumns} data={nearbyIntel} emptyMessage="No nearby intel found." pageSize={10} />
-          )}
-        </CardContent>
-      </Card>
+    <div className="flex items-center gap-2 text-sm">
+      <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+      <span>{displayName}</span>
     </div>
   );
 }
@@ -1257,6 +1258,147 @@ function EntityTimeline({
   return (
     <div className="pt-4">
       <TimelineView events={events} emptyMessage="No timeline events for this entity." />
+    </div>
+  );
+}
+
+// --- About Field ---
+
+function AboutField({
+  entityId,
+  attributes,
+  onSave,
+}: {
+  entityId: string;
+  attributes: Array<ReplicaRow<EntityAttribute>>;
+  onSave: () => Promise<void>;
+}) {
+  const aboutAttr = attributes.find((a) => a.key === "about");
+  const [value, setValue] = useState(aboutAttr?.value ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(aboutAttr?.value ?? "");
+  }, [aboutAttr?.value]);
+
+  async function handleBlur() {
+    const trimmed = value.trim();
+    if (trimmed === (aboutAttr?.value ?? "")) return;
+    setSaving(true);
+    try {
+      if (aboutAttr) {
+        await updateRecord("entity_attributes", aboutAttr.id, { value: trimmed } as Partial<EntityAttribute>);
+      } else if (trimmed) {
+        await createRecord("entity_attributes", {
+          entity_id: entityId,
+          key: "about",
+          value: trimmed,
+          valid_from: null,
+          valid_to: null,
+          confidence: "medium",
+          notes: null,
+          source_id: null,
+        });
+      }
+      await onSave();
+    } catch (error) {
+      console.error("Failed to save about:", error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <textarea
+      className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+      placeholder="Add a description about this entity..."
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={handleBlur}
+      disabled={saving}
+    />
+  );
+}
+
+// --- Recent Activity ---
+
+function RecentActivity({
+  entityId,
+  relations,
+  intelLinks,
+  intelRecords,
+  entityNameMap,
+}: {
+  entityId: string;
+  relations: Array<ReplicaRow<Relation>>;
+  intelLinks: Array<ReplicaRow<IntelEntity>>;
+  intelRecords: Map<string, ReplicaRow<Intel>>;
+  entityNameMap: Map<string, { name: string; type: string }>;
+}) {
+  interface ActivityRow {
+    id: string;
+    date: string;
+    type: "relation" | "intel";
+    description: string;
+    entityId?: string;
+    entityName?: string;
+  }
+
+  const items: ActivityRow[] = [];
+
+  for (const rel of relations.slice(0, 5)) {
+    const otherId = rel.source_id === entityId ? rel.target_id : rel.source_id;
+    const info = entityNameMap.get(otherId);
+    const dir = rel.source_id === entityId ? "to" : "from";
+    items.push({
+      id: `rel-${rel.id}`,
+      date: rel.created_at,
+      type: "relation",
+      description: `${rel.type.replace(/_/g, " ")} ${dir} ${info?.name ?? otherId.slice(0, 8)}`,
+      entityId: otherId,
+      entityName: info?.name,
+    });
+  }
+
+  for (const link of intelLinks.slice(0, 5)) {
+    const intel = intelRecords.get(link.intel_id);
+    if (!intel) continue;
+    const data = intel.data as Record<string, unknown> | null;
+    const desc = typeof data?.description === "string" ? truncate(data.description, 50) : intel.type;
+    items.push({
+      id: `intel-${intel.id}`,
+      date: intel.occurred_at,
+      type: "intel",
+      description: desc,
+    });
+  }
+
+  items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const display = items.slice(0, 8);
+
+  if (display.length === 0) {
+    return <p className="text-sm text-muted-foreground">No activity yet.</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {display.map((item) => (
+        <div key={item.id} className="flex items-start gap-3 text-sm">
+          <span className="text-xs text-muted-foreground w-16 shrink-0 pt-0.5">
+            {new Date(item.date).toLocaleDateString()}
+          </span>
+          <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${item.type === "relation" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
+            {item.type === "relation" ? "rel" : "intel"}
+          </span>
+          <span className="truncate">
+            {item.entityId ? (
+              <EntityLink id={item.entityId} name={item.description} type={entityNameMap.get(item.entityId)?.type} />
+            ) : (
+              item.description
+            )}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

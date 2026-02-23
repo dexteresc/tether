@@ -83,8 +83,7 @@ export class OutboxStore {
     const rows = await db.getAllFromIndex(
       "outbox_transactions",
       OUTBOX_INDEXES.byTableRecord,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [table, recordId] as any
+      [table, recordId] as [string, string]
     );
     return rows;
   }

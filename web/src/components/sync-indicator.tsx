@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import {
   SidebarMenu,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
+import { useSidebar } from "@/hooks/use-sidebar";
 import {
   Tooltip,
   TooltipContent,

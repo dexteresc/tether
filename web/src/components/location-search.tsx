@@ -9,8 +9,8 @@ export interface LocationValue {
 }
 
 interface LocationSearchProps {
-  value: LocationValue | null;
-  onChange: (value: LocationValue | null) => void;
+  value: LocationValue | undefined;
+  onChange: (value: LocationValue | undefined) => void;
 }
 
 export function LocationSearch({ value, onChange }: LocationSearchProps) {
@@ -49,7 +49,11 @@ export function LocationSearch({ value, onChange }: LocationSearchProps) {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        e.target instanceof Node &&
+        !containerRef.current.contains(e.target)
+      ) {
         setOpen(false);
       }
     }
@@ -69,7 +73,7 @@ export function LocationSearch({ value, onChange }: LocationSearchProps) {
   }
 
   function handleClear() {
-    onChange(null);
+    onChange(undefined);
     setQuery("");
     setResults([]);
   }

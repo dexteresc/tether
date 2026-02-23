@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState, useCallback } from "react";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { StagedRowEditor, type IdLabel } from "@/components/staged-row-editor";
 import { ResolutionReview } from "@/components/resolution-review";
 import { getStagedExtractionsByInputId, bulkUpdateStagedStatus } from "@/lib/idb/staged";
@@ -75,8 +75,8 @@ function LlmStatusBanner({ llmStatus, useAnthropic }: LlmStatusBannerProps) {
 export const NLInputPage = observer(function NLInputPage() {
   const { nlQueue, replica } = useRootStore();
   const [inputText, setInputText] = useState("");
-  const [selectedInputId, setSelectedInputId] = useState<string | null>(
-    null
+  const [selectedInputId, setSelectedInputId] = useState<string | undefined>(
+    undefined
   );
   const [stagedRows, setStagedRows] = useState<StagedExtraction[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
@@ -109,15 +109,7 @@ export const NLInputPage = observer(function NLInputPage() {
     (i) => i.input_id === selectedInputId
   )?.status;
 
-  useEffect(() => {
-    if (selectedInputId) {
-      loadStagedRows(selectedInputId);
-    } else {
-      setStagedRows([]);
-    }
-  }, [selectedInputId, selectedItemStatus]);
-
-  const loadStagedRows = async (inputId: string) => {
+  const loadStagedRows = useCallback(async (inputId: string) => {
     let rows = await getStagedExtractionsByInputId(inputId);
 
     // If IDB has no staged rows, reconstruct from the snapshot saved in the result
@@ -227,7 +219,15 @@ export const NLInputPage = observer(function NLInputPage() {
     }
 
     setIdLabels(labels);
-  };
+  }, [nlQueue.items, replica]);
+
+  useEffect(() => {
+    if (selectedInputId) {
+      loadStagedRows(selectedInputId);
+    } else {
+      setStagedRows([]);
+    }
+  }, [selectedInputId, selectedItemStatus, loadStagedRows]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,7 +246,7 @@ export const NLInputPage = observer(function NLInputPage() {
       onConfirm: async () => {
         await nlQueue.cancel(inputId);
         if (selectedInputId === inputId) {
-          setSelectedInputId(null);
+          setSelectedInputId(undefined);
         }
         setDialog({ type: "closed" });
       },
@@ -302,8 +302,8 @@ export const NLInputPage = observer(function NLInputPage() {
     });
   };
 
-  const formatDuration = (seconds: number | null): string => {
-    if (seconds === null) return "?";
+  const formatDuration = (seconds: number | undefined): string => {
+    if (seconds == null) return "?";
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -508,7 +508,7 @@ export const NLInputPage = observer(function NLInputPage() {
                   <div className="flex gap-2">
                     <Button
                       variant="secondary"
-                      onClick={() => setSelectedInputId(null)}
+                      onClick={() => setSelectedInputId(undefined)}
                     >
                       Close
                     </Button>

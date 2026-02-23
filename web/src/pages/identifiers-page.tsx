@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { DataTable, type Column } from "@/components/data-table";
 import { EntityLink } from "@/components/entity-link";
 import { useEntityNames } from "@/hooks/use-entity-names";

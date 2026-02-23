@@ -22,13 +22,11 @@ export class ReplicaStore {
     id: string
   ): Promise<ReplicaRow<RemoteRow<T>> | undefined> {
     const db = await getTetherDb();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const row = (await db.get(table as T & string, id)) as any;
+    const row = await db.get(table, id);
     if (!row) return undefined;
 
     row.__meta.local_last_accessed_at = nowIso();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await db.put(table as T & string, row as any);
+    await db.put(table, row);
 
     return row;
   }
@@ -38,15 +36,15 @@ export class ReplicaStore {
     rows: Array<RemoteRow<T>>
   ): Promise<void> {
     const db = await getTetherDb();
-    const tx = db.transaction(table as T & string, "readwrite");
+    const tx = db.transaction(table, "readwrite");
 
     for (const row of rows) {
       const existing = await tx.store.get(row.id);
       const existingMeta = existing?.__meta;
       if (existingMeta?.local_dirty) continue;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const isDeleted = !!(row as any).deleted_at;
+      const rowRecord = row as Record<string, unknown>;
+      const isDeleted = !!rowRecord.deleted_at;
 
       const meta: ReplicaMeta = existingMeta ?? {
         local_last_accessed_at: nowIso(),
@@ -58,8 +56,7 @@ export class ReplicaStore {
 
       meta.local_deleted = isDeleted;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tx.store.put({ ...row, __meta: meta } as any);
+      tx.store.put({ ...row, __meta: meta } as ReplicaRow<RemoteRow<T>>);
     }
 
     await tx.done;
@@ -70,17 +67,16 @@ export class ReplicaStore {
     limit: number
   ): Promise<Array<ReplicaRow<RemoteRow<T>>>> {
     const db = await getTetherDb();
-    const tx = db.transaction(table as T & string, "readonly");
+    const tx = db.transaction(table, "readonly");
     const index = tx.store.index(REPLICA_INDEXES.byUpdatedAt);
 
     const results: Array<ReplicaRow<RemoteRow<T>>> = [];
     let cursor = await index.openCursor(null, "prev");
     while (cursor && results.length < limit) {
       const row = cursor.value;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (!row.__meta.local_deleted && !(row as any).deleted_at) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        results.push(row as any);
+      const rowRecord = row as Record<string, unknown>;
+      if (!row.__meta.local_deleted && !rowRecord.deleted_at) {
+        results.push(row);
       }
       cursor = await cursor.continue();
     }

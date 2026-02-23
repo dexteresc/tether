@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { DataTable, type Column } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import { createRecord } from "@/services/sync/createRecord";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { INTEL_TYPES, CONFIDENCE_LEVELS } from "@/lib/constants";
-import { capitalize, truncate, selectClass, CONFIDENCE_COLORS } from "@/lib/utils";
+import { capitalize, truncate, selectClass, CONFIDENCE_COLORS, isRecord } from "@/lib/utils";
 import { FileText, Plus, Brain } from "lucide-react";
 import { LocationSearch, type LocationValue } from "@/components/location-search";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
@@ -25,12 +25,8 @@ import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 type Intel = RemoteRow<"intel">;
 
 function getDescription(row: ReplicaRow<Intel>): string {
-  const desc =
-    row.data &&
-    typeof row.data === "object" &&
-    !Array.isArray(row.data)
-      ? (row.data as Record<string, unknown>).description
-      : null;
+  const data = isRecord(row.data) ? row.data : undefined;
+  const desc = data?.description;
   return typeof desc === "string" ? desc : "";
 }
 
@@ -49,9 +45,9 @@ export const IntelPage = observer(function IntelPage() {
   );
   const [confidence, setConfidence] = useState<string>("medium");
   const [sensitivity, setSensitivity] = useState<string>("internal");
-  const [location, setLocation] = useState<LocationValue | null>(null);
+  const [location, setLocation] = useState<LocationValue | undefined>(undefined);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await replica.listByUpdatedAt("intel", 1000);
@@ -61,11 +57,11 @@ export const IntelPage = observer(function IntelPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [replica]);
 
   useEffect(() => {
     load();
-  }, [replica]);
+  }, [load]);
 
   function resetForm() {
     setIntelType(INTEL_TYPES[0]);
@@ -73,7 +69,7 @@ export const IntelPage = observer(function IntelPage() {
     setOccurredAt(new Date().toISOString().slice(0, 16));
     setConfidence("medium");
     setSensitivity("internal");
-    setLocation(null);
+    setLocation(undefined);
   }
 
   async function handleCreate(e: React.FormEvent) {

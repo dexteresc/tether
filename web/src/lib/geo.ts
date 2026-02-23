@@ -1,3 +1,5 @@
+import { isRecord } from "./utils";
+
 export interface LatLng {
   lat: number;
   lng: number;
@@ -6,24 +8,28 @@ export interface LatLng {
 export const DEFAULT_CENTER: LatLng = { lat: 51.5074, lng: -0.1278 };
 export const DEFAULT_ZOOM = 4;
 
-/** Parse a PostGIS GeoJSON Point into { lat, lng } or null. */
-export function parseGeom(geom: unknown): LatLng | null {
-  if (!geom || typeof geom !== "object") return null;
-  const g = geom as { type?: string; coordinates?: number[] };
-  if (g.type === "Point" && Array.isArray(g.coordinates) && g.coordinates.length >= 2) {
-    return { lat: g.coordinates[1], lng: g.coordinates[0] };
-  }
-  return null;
+function isGeoJsonPoint(geom: unknown): geom is { type: "Point"; coordinates: number[] } {
+  if (!isRecord(geom)) return false;
+  return (
+    geom.type === "Point" &&
+    Array.isArray(geom.coordinates) &&
+    geom.coordinates.length >= 2
+  );
+}
+
+/** Parse a PostGIS GeoJSON Point into { lat, lng } or undefined. */
+export function parseGeom(geom: unknown): LatLng | undefined {
+  if (!isGeoJsonPoint(geom)) return undefined;
+  return { lat: geom.coordinates[1], lng: geom.coordinates[0] };
 }
 
 /** Extract lat/lng from a record's data JSON field. */
-export function getLatLngFromData(data: unknown): LatLng | null {
-  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
-  const d = data as Record<string, unknown>;
-  const lat = Number(d.lat);
-  const lng = Number(d.lng);
-  if (!isFinite(lat) || !isFinite(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+export function getLatLngFromData(data: unknown): LatLng | undefined {
+  if (!isRecord(data)) return undefined;
+  const lat = Number(data.lat);
+  const lng = Number(data.lng);
+  if (!isFinite(lat) || !isFinite(lng)) return undefined;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return undefined;
   return { lat, lng };
 }
 
@@ -41,10 +47,9 @@ export function formatDistance(meters: number): string {
 }
 
 /** Extract location_name from a record's data JSON field. */
-export function getLocationName(data: unknown): string | null {
-  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
-  const d = data as Record<string, unknown>;
-  return typeof d.location_name === "string" ? d.location_name : null;
+export function getLocationName(data: unknown): string | undefined {
+  if (!isRecord(data)) return undefined;
+  return typeof data.location_name === "string" ? data.location_name : undefined;
 }
 
 // --- Nominatim Geocoding ---
@@ -83,7 +88,7 @@ export async function nominatimSearch(query: string, limit = 5): Promise<Nominat
   return res.json();
 }
 
-export async function nominatimReverse(lat: number, lng: number): Promise<string | null> {
+export async function nominatimReverse(lat: number, lng: number): Promise<string | undefined> {
   await rateLimit();
   const params = new URLSearchParams({
     lat: String(lat),
@@ -93,7 +98,7 @@ export async function nominatimReverse(lat: number, lng: number): Promise<string
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, {
     headers: { "User-Agent": "Tether/1.0" },
   });
-  if (!res.ok) return null;
+  if (!res.ok) return undefined;
   const data = await res.json();
-  return typeof data?.display_name === "string" ? data.display_name : null;
+  return typeof data?.display_name === "string" ? data.display_name : undefined;
 }

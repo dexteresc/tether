@@ -64,7 +64,7 @@ export async function localCommit<T extends TableName>(
     deleted_at:
       params.op === "delete"
         ? now
-        : ((params.payload as { deleted_at?: string | null }).deleted_at ??
+        : ((params.payload as Record<string, unknown>).deleted_at as string | null ??
           null),
   };
 
@@ -76,14 +76,12 @@ export async function localCommit<T extends TableName>(
     base_updated_at: existingMeta?.base_updated_at ?? baseUpdatedAt,
   };
 
-  const replicaRow: ReplicaRow<RemoteRow<T>> = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(mergedRow as any),
+  const replicaRow = {
+    ...mergedRow,
     __meta: nextMeta,
-  };
+  } as ReplicaRow<RemoteRow<T>>;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  idbTx.objectStore(params.table).put(replicaRow as any);
+  idbTx.objectStore(params.table).put(replicaRow);
 
   const outboxTx: OutboxTransaction<T> = {
     tx_id: txId,

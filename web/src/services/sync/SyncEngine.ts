@@ -10,7 +10,7 @@ function toErrorMessage(err: unknown): string {
 }
 
 export class SyncEngine {
-  private intervalId: number | null = null;
+  private intervalId: number | undefined;
   private running = false;
   private readonly syncStatus: SyncStatusStore;
   private readonly orchestrator: SyncOrchestrator;
@@ -52,7 +52,7 @@ export class SyncEngine {
 
     if (this.intervalId != null) {
       window.clearInterval(this.intervalId);
-      this.intervalId = null;
+      this.intervalId = undefined;
     }
     this.orchestrator.stop();
   }
@@ -72,7 +72,7 @@ export class SyncEngine {
       if (result.pushed > 0 || result.pulled) {
         this.syncStatus.setLastSyncAt(new Date().toISOString());
       }
-      this.syncStatus.setLastError(null);
+      this.syncStatus.setLastError();
     } catch (err: unknown) {
       this.syncStatus.setLastError(toErrorMessage(err));
     } finally {

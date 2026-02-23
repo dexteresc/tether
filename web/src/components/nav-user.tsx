@@ -34,9 +34,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
-import { useAuth } from "@/contexts/auth-context"
+import { useSidebar } from "@/hooks/use-sidebar"
+import { useAuth } from "@/hooks/use-auth"
 import { selectClass } from "@/lib/utils"
 
 function getInitials(name: string, email: string): string {

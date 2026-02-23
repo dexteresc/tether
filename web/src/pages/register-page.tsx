@@ -1,4 +1,4 @@
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router";
 import { Button } from "@/components/ui/button";

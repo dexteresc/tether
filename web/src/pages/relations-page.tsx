@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { useRootStore } from "@/stores/RootStore";
+import { useCallback, useEffect, useState } from "react";
+import { useRootStore } from "@/hooks/use-root-store";
 import { DataTable, type Column } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,9 @@ import { createRecord } from "@/services/sync/createRecord";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { RELATION_TYPES } from "@/lib/constants";
-import { formatLabel, selectClass } from "@/lib/utils";
+import { formatLabel, selectClass, isRecord, str } from "@/lib/utils";
+import { GitFork, Plus, Brain } from "lucide-react";
+import { useNavigate } from "react-router";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Relation = RemoteRow<"relations">;
@@ -24,6 +26,7 @@ type Entity = RemoteRow<"entities">;
 
 export const RelationsPage = observer(function RelationsPage() {
   const { replica, outbox } = useRootStore();
+  const navigate = useNavigate();
   const [relations, setRelations] = useState<
     Array<ReplicaRow<Relation>>
   >([]);
@@ -38,7 +41,7 @@ export const RelationsPage = observer(function RelationsPage() {
   const [strength, setStrength] = useState("");
   const [sensitivity, setSensitivity] = useState<string>("internal");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [relationsData, entitiesData] = await Promise.all([
@@ -52,18 +55,17 @@ export const RelationsPage = observer(function RelationsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [replica]);
 
   useEffect(() => {
     load();
-  }, [replica]);
+  }, [load]);
 
   // Build entity name lookup
   const entityNameMap = new Map<string, string>();
   for (const e of entities) {
-    const data = e.data as Record<string, unknown> | undefined;
-    const name = data?.name as string | undefined;
-    entityNameMap.set(e.id, name ?? "Unnamed");
+    const data = isRecord(e.data) ? e.data : undefined;
+    entityNameMap.set(e.id, str(data?.name, "Unnamed"));
   }
 
   function getEntityLabel(id: string): string {
@@ -136,7 +138,7 @@ export const RelationsPage = observer(function RelationsPage() {
       width: "100px",
       render: (row) => (
         <span className="font-medium">
-          {row.strength !== null ? row.strength : "N/A"}
+          {row.strength != null ? row.strength : "N/A"}
         </span>
       ),
     },
@@ -156,6 +158,34 @@ export const RelationsPage = observer(function RelationsPage() {
           : "N/A",
     },
   ];
+
+  if (!loading && relations.length === 0) {
+    return (
+      <div>
+        <div className="p-4 border-b flex items-center justify-between">
+          <h2 className="text-xl font-bold">Relations</h2>
+          <Button size="sm" onClick={() => setSheetOpen(true)}>Add Relation</Button>
+        </div>
+        <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+          <GitFork className="h-12 w-12 text-muted-foreground/50 mb-4" />
+          <h3 className="text-lg font-semibold mb-1">No relations yet</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+            Relations connect entities together. Create one manually or use NL Input to extract them from text.
+          </p>
+          <div className="flex gap-3">
+            <Button size="sm" onClick={() => setSheetOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Create Relation
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => navigate("/nl-input")}>
+              <Brain className="h-4 w-4 mr-1" />
+              NL Input
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

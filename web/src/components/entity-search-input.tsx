@@ -10,8 +10,8 @@ interface SearchResult {
 }
 
 interface EntitySearchInputProps {
-  value: string | null;
-  onChange: (entityId: string | null, label: string) => void;
+  value: string | undefined;
+  onChange: (entityId: string | undefined, label: string) => void;
   placeholder?: string;
   className?: string;
 }
@@ -37,7 +37,7 @@ export function EntitySearchInput({
     }
     setLoading(true);
     try {
-      const data = await fuzzySearchIdentifiers(q, 10) as unknown[];
+      const data = await fuzzySearchIdentifiers(q, 10);
       // Deduplicate by entity_id, keep first (best) match
       const seen = new Set<string>();
       const deduped: SearchResult[] = [];
@@ -72,7 +72,11 @@ export function EntitySearchInput({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        e.target instanceof Node &&
+        !containerRef.current.contains(e.target)
+      ) {
         setOpen(false);
       }
     }
@@ -91,7 +95,7 @@ export function EntitySearchInput({
   function handleClear() {
     setQuery("");
     setSelectedLabel("");
-    onChange(null, "");
+    onChange(undefined, "");
   }
 
   return (

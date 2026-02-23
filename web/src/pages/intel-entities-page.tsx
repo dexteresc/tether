@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { DataTable, type Column } from "@/components/data-table";
 import { EntityLink } from "@/components/entity-link";
 import { useEntityNames } from "@/hooks/use-entity-names";
-import { truncate } from "@/lib/utils";
+import { truncate, isRecord } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type IntelEntity = RemoteRow<"intel_entities">;
@@ -46,8 +46,8 @@ export const IntelEntitiesPage = observer(
     function getIntelLabel(intelId: string): string {
       const intel = intelMap.get(intelId);
       if (!intel) return truncate(intelId, 8);
-      const data = intel.data as Record<string, unknown> | null;
-      const desc = typeof data?.description === "string" ? data.description : null;
+      const data = isRecord(intel.data) ? intel.data : undefined;
+      const desc = typeof data?.description === "string" ? data.description : undefined;
       if (desc) return truncate(desc, 40);
       return `${intel.type} (${new Date(intel.occurred_at).toLocaleDateString()})`;
     }

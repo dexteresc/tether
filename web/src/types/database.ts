@@ -687,6 +687,14 @@ export type Database = {
           relation_type: string
         }[]
       }
+      fuzzy_search_identifiers: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: {
+          entity_id: string
+          entity_type: string
+          identifier_value: string
+        }[]
+      }
       get_entity_with_details: { Args: { p_entity_id: string }; Returns: Json }
       search_entities_by_identifier: {
         Args: { p_identifier_type?: string; p_search_value: string }

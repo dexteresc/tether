@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { DataTable, type Column } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { getEntityConnectionCounts } from "@/lib/supabase-helpers";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { ENTITY_TYPES, ENTITY_STATUSES } from "@/lib/constants";
-import { capitalize, selectClass } from "@/lib/utils";
+import { capitalize, selectClass, isRecord } from "@/lib/utils";
 import { Users, Plus, Brain } from "lucide-react";
 import { LocationSearch, type LocationValue } from "@/components/location-search";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
@@ -43,9 +43,9 @@ export const EntitiesPage = observer(function EntitiesPage() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<string>("active");
   const [sensitivity, setSensitivity] = useState<string>("internal");
-  const [location, setLocation] = useState<LocationValue | null>(null);
+  const [location, setLocation] = useState<LocationValue | undefined>(undefined);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const entitiesData = await replica.listByUpdatedAt("entities", 1000);
@@ -76,8 +76,9 @@ export const EntitiesPage = observer(function EntitiesPage() {
           const counts = await getEntityConnectionCounts(activeEntities.map((e) => e.id));
           const countMap = new Map<string, number>();
           for (const c of counts) {
-            const row = c as { id: string; connections: number };
-            countMap.set(row.id, row.connections);
+            if (typeof c === "object" && c !== null && "id" in c && "connections" in c) {
+              countMap.set(String(c.id), Number(c.connections));
+            }
           }
           setConnectionCounts(countMap);
         } catch {
@@ -89,27 +90,23 @@ export const EntitiesPage = observer(function EntitiesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [replica]);
 
   useEffect(() => {
     load();
-  }, [replica]);
+  }, [load]);
 
   function resetForm() {
     setEntityType(ENTITY_TYPES[0]);
     setName("");
     setStatus("active");
     setSensitivity("internal");
-    setLocation(null);
+    setLocation(undefined);
   }
 
   function getEntityName(row: EntityRow): string {
-    const dataName =
-      row.data &&
-      typeof row.data === "object" &&
-      !Array.isArray(row.data)
-        ? (row.data as Record<string, unknown>).name
-        : null;
+    const data = isRecord(row.data) ? row.data : undefined;
+    const dataName = data?.name;
     if (typeof dataName === "string" && dataName) return dataName;
     const ids = identifiersMap[row.id] || [];
     const nameId = ids.find((i) => i.type === "name");

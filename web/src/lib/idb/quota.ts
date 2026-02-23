@@ -3,24 +3,24 @@ import type { ReplicaTableName } from "./schema";
 import type { TetherDbSchema } from "./db";
 
 export interface StorageEstimate {
-  quota: number | null;
-  usage: number | null;
-  usageRatio: number | null;
+  quota?: number;
+  usage?: number;
+  usageRatio?: number;
 }
 
 export async function getStorageEstimate(): Promise<StorageEstimate> {
   if (typeof navigator === "undefined" || !navigator.storage?.estimate) {
-    return { quota: null, usage: null, usageRatio: null };
+    return {};
   }
 
   const { quota, usage } = await navigator.storage.estimate();
-  const safeQuota = typeof quota === "number" ? quota : null;
-  const safeUsage = typeof usage === "number" ? usage : null;
+  const safeQuota = typeof quota === "number" ? quota : undefined;
+  const safeUsage = typeof usage === "number" ? usage : undefined;
 
   return {
     quota: safeQuota,
     usage: safeUsage,
-    usageRatio: safeQuota && safeUsage ? safeUsage / safeQuota : null,
+    usageRatio: safeQuota && safeUsage ? safeUsage / safeQuota : undefined,
   };
 }
 

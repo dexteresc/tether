@@ -4,7 +4,7 @@ export interface UserEntity {
   data: Record<string, string>;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
+  deletedAt?: string;
 }
 
 export interface User {

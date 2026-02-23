@@ -146,13 +146,12 @@ export async function findShortestPath(
 }
 
 export async function fuzzySearchIdentifiers(query: string, limit: number = 20) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)("fuzzy_search_identifiers", {
+  const { data, error } = await supabase.rpc("fuzzy_search_identifiers", {
     p_query: query,
     p_limit: limit,
   });
   if (error) throw error;
-  return (data ?? []) as Array<{ entity_id: string; entity_type: string; identifier_value: string }>;
+  return data ?? [];
 }
 
 export async function searchIntelFullText(query: string, limit: number = 20) {

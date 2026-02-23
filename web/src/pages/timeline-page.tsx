@@ -1,11 +1,11 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TimelineView, type TimelineEvent } from "@/components/timeline-view";
 import { INTEL_TYPES } from "@/lib/constants";
-import { capitalize, truncate } from "@/lib/utils";
+import { capitalize, truncate, isRecord } from "@/lib/utils";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
 type Entity = RemoteRow<"entities">;
@@ -15,7 +15,7 @@ type Relation = RemoteRow<"relations">;
 type Identifier = RemoteRow<"identifiers">;
 
 function getEntityName(entity: ReplicaRow<Entity>, identifiers: Identifier[]): string {
-  const data = entity.data as Record<string, unknown> | null;
+  const data = isRecord(entity.data) ? entity.data : undefined;
   if (typeof data?.name === "string" && data.name) return data.name;
   const nameId = identifiers.find((i) => i.entity_id === entity.id && i.type === "name");
   return nameId?.value ?? entity.id.slice(0, 8) + "...";
@@ -82,7 +82,7 @@ export const TimelinePage = observer(function TimelinePage() {
     if (showIntel) {
       for (const intel of intelRecords) {
         if (intelTypeFilter && intel.type !== intelTypeFilter) continue;
-        const data = intel.data as Record<string, unknown> | null;
+        const data = isRecord(intel.data) ? intel.data : undefined;
         const desc = typeof data?.description === "string" ? data.description : "";
         events.push({
           id: `intel-${intel.id}`,

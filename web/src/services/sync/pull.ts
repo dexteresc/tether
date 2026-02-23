@@ -98,10 +98,10 @@ export async function applySyncLogBatch(
         if (existing?.__meta?.local_dirty) continue;
 
         const now = new Date().toISOString();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rowData = entry.row_data as any;
-        const isDeleted = !!rowData?.deleted_at;
-        await tx.store.put({ ...rowData, __meta: buildPulledMeta(isDeleted, now) });
+        const rowData = entry.row_data;
+        if (!rowData) continue;
+        const isDeleted = !!rowData.deleted_at;
+        await tx.store.put({ ...rowData, __meta: buildPulledMeta(isDeleted, now) } as typeof existing & { __meta: ReplicaMeta });
       }
     }
     await tx.done;
@@ -118,8 +118,7 @@ export async function bootstrapFullSync(): Promise<void> {
   const now = new Date().toISOString();
 
   for (const table of TABLES) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from(table) as any).select("*");
+    const { data, error } = await supabase.from(table).select("*");
     if (error) throw error;
 
     const rows = (data ?? []) as Array<Record<string, unknown>>;
@@ -127,13 +126,13 @@ export async function bootstrapFullSync(): Promise<void> {
 
     const tx = db.transaction(table, "readwrite");
     for (const row of rows) {
-      const id = row.id as string;
+      const id = row.id;
+      if (typeof id !== "string") continue;
       const existing = await tx.store.get(id);
       if (existing?.__meta?.local_dirty) continue;
 
       const isDeleted = !!row.deleted_at;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await tx.store.put({ ...row, __meta: buildPulledMeta(isDeleted, now) } as any);
+      await tx.store.put({ ...row, __meta: buildPulledMeta(isDeleted, now) } as typeof existing & { __meta: ReplicaMeta });
     }
     await tx.done;
   }

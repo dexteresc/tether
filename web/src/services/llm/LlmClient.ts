@@ -94,6 +94,67 @@ export class LlmClient {
     return response.json();
   }
 
+  async query(
+    question: string,
+    context?: string,
+    bearerToken?: string
+  ): Promise<{
+    question: string;
+    intent: string;
+    answer: string;
+    data: Array<Record<string, unknown>>;
+    data_type: string;
+  }> {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (bearerToken) {
+      headers["Authorization"] = `Bearer ${bearerToken}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/query`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ question, context: context ?? null }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Query failed (${response.status}): ${errorText}`);
+    }
+
+    return response.json();
+  }
+
+  async getBriefing(
+    entityId: string,
+    bearerToken?: string
+  ): Promise<{
+    entity_id: string;
+    summary: string;
+    sections: Record<string, unknown>;
+    briefing_text: string;
+  }> {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (bearerToken) {
+      headers["Authorization"] = `Bearer ${bearerToken}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/briefing/${entityId}`, {
+      method: "POST",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Briefing failed (${response.status}): ${errorText}`);
+    }
+
+    return response.json();
+  }
+
   async extract(
     request: ExtractionRequest,
     bearerToken?: string
@@ -138,7 +199,7 @@ export class LlmClient {
   }
 }
 
-let llmClient: LlmClient | null = null;
+let llmClient: LlmClient | undefined;
 
 export function getLlmClient(): LlmClient {
   if (!llmClient) {

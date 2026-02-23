@@ -14,7 +14,7 @@ export class NLQueueStore {
   isProcessing = false;
   processingDurations: number[] = [];
 
-  private processorAbortController: AbortController | null = null;
+  private processorAbortController?: AbortController = undefined;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -108,8 +108,8 @@ export class NLQueueStore {
     }
   }
 
-  private get averageDuration(): number | null {
-    if (this.processingDurations.length === 0) return null;
+  private get averageDuration(): number | undefined {
+    if (this.processingDurations.length === 0) return undefined;
     return (
       this.processingDurations.reduce((sum, d) => sum + d, 0) /
       this.processingDurations.length
@@ -118,7 +118,7 @@ export class NLQueueStore {
 
   getEstimatedWaitTime(): number | null {
     const avg = this.averageDuration;
-    if (avg === null) return null;
+    if (avg === undefined) return null;
     const pendingAhead = this.items.filter(
       (i) => i.status === "pending"
     ).length;
@@ -243,7 +243,7 @@ export class NLQueueStore {
   get pendingQueue(): Array<
     NlQueueItem & {
       queuePosition: number;
-      estimatedWaitSeconds: number | null;
+      estimatedWaitSeconds?: number;
     }
   > {
     const pending = this.items.filter((i) => i.status === "pending");
@@ -252,14 +252,12 @@ export class NLQueueStore {
     return pending.map((item, index) => ({
       ...item,
       queuePosition: index + 1,
-      estimatedWaitSeconds: avg ? Math.round(avg * (index + 1)) : null,
+      estimatedWaitSeconds: avg ? Math.round(avg * (index + 1)) : undefined,
     }));
   }
 
-  get currentlyProcessing(): NlQueueItem | null {
-    return (
-      this.items.find((i) => i.status === "processing") ?? null
-    );
+  get currentlyProcessing(): NlQueueItem | undefined {
+    return this.items.find((i) => i.status === "processing");
   }
 
   get completed(): NlQueueItem[] {

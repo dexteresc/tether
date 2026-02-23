@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { SensitivityBadge } from "@/components/sensitivity-badge";
 import { SensitivityPicker } from "@/components/sensitivity-picker";
 import { EntityLink } from "@/components/entity-link";
@@ -32,7 +32,7 @@ import {
 import { LocationSearch, type LocationValue } from "@/components/location-search";
 import { TimelineView, type TimelineEvent } from "@/components/timeline-view";
 import { getLatLngFromData, getLocationName, nominatimReverse } from "@/lib/geo";
-import { capitalize, formatLabel, truncate, selectClass, CONFIDENCE_COLORS, CONFIDENCE_DOT_COLORS } from "@/lib/utils";
+import { capitalize, formatLabel, truncate, selectClass, CONFIDENCE_COLORS, CONFIDENCE_DOT_COLORS, isRecord } from "@/lib/utils";
 import { EntityBriefing } from "@/components/entity-briefing";
 import { MiniGraph } from "@/components/mini-graph";
 import {
@@ -54,7 +54,7 @@ type Tag = RemoteRow<"tags">;
 type RecordTag = RemoteRow<"record_tags">;
 
 function getEntityName(entity: ReplicaRow<Entity>, identifiers: Identifier[]): string {
-  const data = entity.data as Record<string, unknown> | null;
+  const data = isRecord(entity.data) ? entity.data : undefined;
   if (typeof data?.name === "string" && data.name) return data.name;
   const nameId = identifiers.find((i) => i.entity_id === entity.id && i.type === "name");
   return nameId?.value ?? entity.id.slice(0, 8) + "...";
@@ -64,7 +64,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { replica, outbox } = useRootStore();
   const navigate = useNavigate();
-  const [entity, setEntity] = useState<ReplicaRow<Entity> | null>(null);
+  const [entity, setEntity] = useState<ReplicaRow<Entity> | undefined>(undefined);
   const [identifiers, setIdentifiers] = useState<Identifier[]>([]);
   const [attributes, setAttributes] = useState<Array<ReplicaRow<EntityAttribute>>>([]);
   const [relations, setRelations] = useState<Array<ReplicaRow<Relation>>>([]);
@@ -96,7 +96,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
   const [relSheetOpen, setRelSheetOpen] = useState(false);
   const [relDirection, setRelDirection] = useState<"outgoing" | "incoming">("outgoing");
   const [relOtherId, setRelOtherId] = useState("");
-  const [relType, setRelType] = useState(RELATION_TYPES[0] as string);
+  const [relType, setRelType] = useState<string>(RELATION_TYPES[0]);
   const [relStrength, setRelStrength] = useState("");
   const [relSensitivity, setRelSensitivity] = useState("internal");
   const [relValidFrom, setRelValidFrom] = useState("");
@@ -115,24 +115,24 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
   const [newTagColor, setNewTagColor] = useState("#6366f1");
 
   // Inline attribute editing
-  const [editingAttrId, setEditingAttrId] = useState<string | null>(null);
+  const [editingAttrId, setEditingAttrId] = useState<string | undefined>(undefined);
   const [editingAttrValue, setEditingAttrValue] = useState("");
 
   // Briefing
   const [briefingOpen, setBriefingOpen] = useState(false);
 
   // Edit location
-  const [editLocation, setEditLocation] = useState<LocationValue | null>(null);
+  const [editLocation, setEditLocation] = useState<LocationValue | undefined>(undefined);
 
   const [saving, setSaving] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
       const entityData = await replica.getById("entities", id);
       if (!entityData) {
-        setEntity(null);
+        setEntity(undefined);
         setLoading(false);
         return;
       }
@@ -170,11 +170,11 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id, replica]);
 
   useEffect(() => {
     load();
-  }, [id, replica]);
+  }, [load]);
 
   // Entity name helpers
   const entityNameMap = new Map<string, { name: string; type: string }>();
@@ -190,11 +190,11 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
     setEditType(entity.type);
     setEditStatus(entity.status);
     setEditSensitivity(entity.sensitivity);
-    const data = entity.data as Record<string, unknown> | null;
+    const data = isRecord(entity.data) ? entity.data : undefined;
     setEditName(typeof data?.name === "string" ? data.name : "");
     const coords = getLatLngFromData(entity.data);
     const locName = getLocationName(entity.data);
-    setEditLocation(coords ? { lat: coords.lat, lng: coords.lng, display_name: locName ?? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` } : null);
+    setEditLocation(coords ? { lat: coords.lat, lng: coords.lng, display_name: locName ?? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` } : undefined);
     setEditOpen(true);
   }
 
@@ -203,7 +203,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
     if (!entity) return;
     setSaving(true);
     try {
-      const existingData = (entity.data as Record<string, unknown>) || {};
+      const existingData = isRecord(entity.data) ? entity.data : {};
       const updatedData: Record<string, unknown> = { ...existingData, name: editName.trim() };
       if (editLocation) {
         updatedData.lat = editLocation.lat;
@@ -218,8 +218,8 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
         type: editType,
         status: editStatus,
         sensitivity: editSensitivity,
-        data: updatedData,
-      } as Partial<Entity>);
+        data: updatedData as RemoteRow<"entities">["data"],
+      });
       await outbox.refresh();
       await load();
       setEditOpen(false);
@@ -383,7 +383,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
       console.error("Failed to update attribute:", error);
     } finally {
       setSaving(false);
-      setEditingAttrId(null);
+      setEditingAttrId(undefined);
     }
   }
 
@@ -507,7 +507,7 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
       render: (row) => {
         const intel = intelRecords.get(row.intel_id);
         if (!intel) return <span className="text-muted-foreground">-</span>;
-        const data = intel.data as Record<string, unknown> | null;
+        const data = isRecord(intel.data) ? intel.data : undefined;
         const desc = typeof data?.description === "string" ? data.description : "";
         return (
           <span className="truncate block max-w-sm" title={desc}>
@@ -562,9 +562,9 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
               onChange={(e) => setEditingAttrValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleInlineAttrSave(row.id, editingAttrValue);
-                if (e.key === "Escape") setEditingAttrId(null);
+                if (e.key === "Escape") setEditingAttrId(undefined);
               }}
-              onBlur={() => setEditingAttrId(null)}
+              onBlur={() => setEditingAttrId(undefined)}
               className="h-7 text-sm"
             />
           );
@@ -638,10 +638,10 @@ export const EntityDetailPage = observer(function EntityDetailPage() {
   const keyAttrChips = keyAttrKeys
     .map((k) => {
       const attr = currentAttrs.find((a) => a.key === k);
-      return attr ? { key: k, value: attr.value } : null;
+      return attr ? { key: k, value: attr.value } : undefined;
     })
-    .filter(Boolean)
-    .slice(0, 4) as Array<{ key: string; value: string }>;
+    .filter((x): x is { key: string; value: string } => !!x)
+    .slice(0, 4);
 
   return (
     <div>
@@ -1143,13 +1143,13 @@ function EntityLocationDisplay({
     backfillDone.current = true;
     nominatimReverse(coords.lat, coords.lng).then(async (name) => {
       if (!name) return;
-      const existingData = (entity.data as Record<string, unknown>) || {};
+      const existingData = isRecord(entity.data) ? entity.data : {};
       await updateRecord("entities", entity.id, {
         data: { ...existingData, location_name: name },
-      } as Partial<Entity>);
+      });
       await onUpdate();
     }).catch(() => {});
-  }, [coords?.lat, coords?.lng, locationName, entity.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [coords, locationName, entity, onUpdate]);
 
   const displayName = locationName ?? (coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : null);
   if (!displayName) return null;
@@ -1243,7 +1243,7 @@ function EntityTimeline({
   for (const link of intelLinks) {
     const intel = intelRecords.get(link.intel_id);
     if (!intel) continue;
-    const data = intel.data as Record<string, unknown> | null;
+    const data = isRecord(intel.data) ? intel.data : undefined;
     const desc = typeof data?.description === "string" ? data.description : "";
     events.push({
       id: `intel-${intel.id}`,
@@ -1363,7 +1363,7 @@ function RecentActivity({
   for (const link of intelLinks.slice(0, 5)) {
     const intel = intelRecords.get(link.intel_id);
     if (!intel) continue;
-    const data = intel.data as Record<string, unknown> | null;
+    const data = isRecord(intel.data) ? intel.data : undefined;
     const desc = typeof data?.description === "string" ? truncate(data.description, 50) : intel.type;
     items.push({
       id: `intel-${intel.id}`,

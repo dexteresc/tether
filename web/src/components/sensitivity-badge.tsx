@@ -1,4 +1,4 @@
-import type { SensitivityLevel } from "@/lib/constants";
+import { SENSITIVITY_LEVELS, type SensitivityLevel } from "@/lib/constants";
 
 const styles: Record<SensitivityLevel, string> = {
   open: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
@@ -7,8 +7,12 @@ const styles: Record<SensitivityLevel, string> = {
   restricted: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
+function isSensitivityLevel(val: string): val is SensitivityLevel {
+  return (SENSITIVITY_LEVELS as readonly string[]).includes(val);
+}
+
 export function SensitivityBadge({ level }: { level: string }) {
-  const cls = styles[level as SensitivityLevel] ?? styles.open;
+  const cls = isSensitivityLevel(level) ? styles[level] : styles.open;
   return (
     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium capitalize ${cls}`}>
       {level}

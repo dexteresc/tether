@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createTypeIcon } from "@/lib/leaflet-setup";
@@ -10,7 +10,7 @@ import { getLatLngFromData, formatDistance, DEFAULT_CENTER, DEFAULT_ZOOM, nomina
 import type { LatLng } from "@/lib/geo";
 import { findEntitiesNear, findIntelNear } from "@/lib/supabase-helpers";
 import { ENTITY_TYPES } from "@/lib/constants";
-import { truncate, TYPE_COLORS } from "@/lib/utils";
+import { truncate, TYPE_COLORS, isRecord } from "@/lib/utils";
 import { EntityLink } from "@/components/entity-link";
 import type { RemoteRow, ReplicaRow } from "@/lib/sync/types";
 
@@ -18,12 +18,12 @@ type Entity = RemoteRow<"entities">;
 type Intel = RemoteRow<"intel">;
 
 function getEntityName(entity: ReplicaRow<Entity>): string {
-  const data = entity.data as Record<string, unknown> | null;
+  const data = isRecord(entity.data) ? entity.data : undefined;
   return typeof data?.name === "string" && data.name ? data.name : entity.id.slice(0, 8) + "...";
 }
 
 function getIntelDescription(intel: ReplicaRow<Intel>): string {
-  const data = intel.data as Record<string, unknown> | null;
+  const data = isRecord(intel.data) ? intel.data : undefined;
   const desc = data?.description;
   return typeof desc === "string" ? desc : "";
 }
@@ -44,13 +44,13 @@ export const MapPage = observer(function MapPage() {
   const [placeQuery, setPlaceQuery] = useState("");
   const [placeSuggestions, setPlaceSuggestions] = useState<NominatimResult[]>([]);
   const [placeLoading, setPlaceLoading] = useState(false);
-  const [flyTarget, setFlyTarget] = useState<LatLng | null>(null);
+  const [flyTarget, setFlyTarget] = useState<LatLng | undefined>(undefined);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const skipSearchRef = useRef(false);
   const [searchResults, setSearchResults] = useState<{
     entities: Array<{ entity_id: string; entity_type: string; entity_data: unknown; distance_m: number }>;
     intel: Array<{ intel_id: string; intel_type: string; intel_data: unknown; occurred_at: string; distance_m: number }>;
-  } | null>(null);
+  }>();
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
@@ -228,7 +228,7 @@ export const MapPage = observer(function MapPage() {
               </h3>
               <div className="space-y-1 max-h-[300px] overflow-y-auto">
                 {searchResults.entities.map((e) => {
-                  const d = e.entity_data as Record<string, unknown> | null;
+                  const d = isRecord(e.entity_data) ? e.entity_data : undefined;
                   const name = typeof d?.name === "string" ? d.name : e.entity_id.slice(0, 8);
                   return (
                     <div key={e.entity_id} className="flex items-center justify-between text-xs p-1 rounded hover:bg-muted">
@@ -238,7 +238,7 @@ export const MapPage = observer(function MapPage() {
                   );
                 })}
                 {searchResults.intel.map((i) => {
-                  const d = i.intel_data as Record<string, unknown> | null;
+                  const d = isRecord(i.intel_data) ? i.intel_data : undefined;
                   const desc = typeof d?.description === "string" ? d.description.slice(0, 30) : i.intel_type;
                   return (
                     <div key={i.intel_id} className="flex items-center justify-between text-xs p-1 rounded hover:bg-muted">
@@ -248,7 +248,7 @@ export const MapPage = observer(function MapPage() {
                   );
                 })}
               </div>
-              <Button size="sm" variant="ghost" className="w-full" onClick={() => { setSearchResults(null); setPlaceQuery(""); setFlyTarget(null); }}>
+              <Button size="sm" variant="ghost" className="w-full" onClick={() => { setSearchResults(undefined); setPlaceQuery(""); setFlyTarget(undefined); }}>
                 Clear results
               </Button>
             </div>
@@ -315,7 +315,7 @@ export const MapPage = observer(function MapPage() {
   );
 });
 
-function FlyToLocation({ center }: { center: LatLng | null }) {
+function FlyToLocation({ center }: { center?: LatLng }) {
   const map = useMap();
   useEffect(() => {
     if (center) map.flyTo([center.lat, center.lng], 12);

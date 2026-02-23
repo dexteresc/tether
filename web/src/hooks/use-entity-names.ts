@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRootStore } from "@/stores/RootStore";
+import { useRootStore } from "@/hooks/use-root-store";
 
 export interface EntityNameEntry {
   name: string;

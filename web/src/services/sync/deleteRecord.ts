@@ -16,20 +16,10 @@ export async function softDeleteRecord(
   const db = await getTetherDb();
   const now = new Date().toISOString();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const existing = await db.get(table as TableName & string, id) as any;
+  const existing = await db.get(table, id);
   if (!existing) {
     throw new Error(`Record not found: ${table}/${id}`);
   }
-
-  const updated = {
-    ...existing,
-    deleted_at: now,
-    updated_at: now,
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { __meta: _meta, ...payload } = updated;
 
   const tx: OutboxTransaction = {
     tx_id: crypto.randomUUID(),
@@ -37,7 +27,7 @@ export async function softDeleteRecord(
     table,
     op: "delete",
     record_id: id,
-    payload: payload as Partial<RemoteRow<typeof table>>,
+    payload: { ...existing, deleted_at: now, updated_at: now } as Partial<RemoteRow<typeof table>>,
     base_updated_at: existing.__meta?.base_updated_at ?? null,
     status: "pending",
     attempt_count: 0,
@@ -53,6 +43,10 @@ export async function softDeleteRecord(
     local_dirty: true,
     local_deleted: true,
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await db.put(table as TableName & string, { ...updated, __meta: meta } as any);
+  await db.put(table, {
+    ...existing,
+    deleted_at: now,
+    updated_at: now,
+    __meta: meta,
+  });
 }

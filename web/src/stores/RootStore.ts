@@ -1,4 +1,3 @@
-import { createContext, useContext, type PropsWithChildren } from "react";
 import { reaction } from "mobx";
 import { AuthStore } from "./AuthStore";
 import { ConflictStore } from "./ConflictStore";
@@ -18,7 +17,7 @@ export class RootStore {
   readonly conflicts: ConflictStore;
   readonly syncEngine: SyncEngine;
 
-  private disposeAuthReaction: (() => void) | null = null;
+  private disposeAuthReaction: (() => void) | undefined = undefined;
 
   constructor() {
     this.syncStatus = new SyncStatusStore();
@@ -57,29 +56,7 @@ export class RootStore {
 
   dispose(): void {
     this.disposeAuthReaction?.();
-    this.disposeAuthReaction = null;
+    this.disposeAuthReaction = undefined;
     this.syncEngine.stop();
   }
-}
-
-const RootStoreContext = createContext<RootStore | null>(null);
-
-export function RootStoreProvider({
-  store,
-  children,
-}: PropsWithChildren<{ store: RootStore }>) {
-  return (
-    <RootStoreContext.Provider value={store}>
-      {children}
-    </RootStoreContext.Provider>
-  );
-}
-
-export function useRootStore(): RootStore {
-  const store = useContext(RootStoreContext);
-  if (!store)
-    throw new Error(
-      "useRootStore must be used within RootStoreProvider"
-    );
-  return store;
 }

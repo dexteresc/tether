@@ -1,39 +1,23 @@
-# Tether Development Guidelines
+# Tether
 
-Auto-generated from all feature plans. Last updated: 2024-12-22
+## Stack
 
-## Active Technologies
-- Python 3.13 + FastAPI 0.109.0, Instructor 1.0.0, Supabase >=2.25.1, Pydantic (via FastAPI), RapidFuzz 3.14.3 (003-context-aware-entity-resolution)
-- PostgreSQL via Supabase (entities, identifiers, intel tables) (003-context-aware-entity-resolution)
+- **Frontend**: React 19 + TypeScript + MobX + Vite + shadcn/ui (Radix)
+- **LLM Service**: Python 3.13 + FastAPI + Instructor + Pydantic
+- **Database**: Supabase (PostgreSQL with RLS)
+- **Data**: IndexedDB (offline-first) + Supabase sync via outbox pattern
 
-- **Python 3.11+**: FastAPI, Instructor 1.0.0, OpenAI SDK, Supabase Python client, Pydantic
-- **Go**: Backend API handlers, models, services
-- **React + TypeScript**: Frontend with Vite
-- **Supabase**: PostgreSQL database with RLS
+## Structure
 
-## Project Structure
-
-```text
-.
-├── llm-service/          # Python NLP extraction service
-│   ├── app/
-│   │   ├── models/       # Pydantic schemas
-│   │   ├── services/     # Business logic (LLM, extraction, sync)
-│   │   └── routes/       # FastAPI endpoints
-│   └── tests/
-├── web/                  # React + TypeScript + Vite (shadcn/ui)
-│   └── src/
-│       ├── components/   # UI components (app-sidebar, data-table, ui/)
-│       ├── pages/        # Page components
-│       ├── stores/       # MobX stores
-│       ├── services/     # LLM client, sync engine
-│       └── lib/          # IDB, config, sync types
-├── handlers/             # Go API handlers
-├── models/               # Go data models
-├── services/             # Go services
-├── supabase/
-│   └── migrations/       # SQL migrations
-└── specs/                # Feature specifications
+```
+llm-service/app/       # FastAPI routes, services, Pydantic models
+web/src/               # React frontend
+  components/          # UI components (shadcn/ui in ui/)
+  pages/               # Page components
+  stores/              # MobX stores
+  services/            # LLM client, sync engine
+  lib/                 # IDB, config, sync types
+supabase/migrations/   # SQL migrations
 ```
 
 ## Commands
@@ -54,16 +38,14 @@ supabase db reset
 supabase migration new <name>
 ```
 
+## TypeScript Rules
+
+- **No type assertions (`as`)**: Never use `as` to cast types. Use type guards, generics, or proper type narrowing instead. Only exception: `as const`.
+- **No `any`**: Never use the `any` type. Use `unknown`, generics, or proper types instead.
+- **No `eslint-disable`**: Never suppress lint errors with eslint-disable comments. Fix the underlying issue.
+- **Prefer `undefined` over `null`**: Use `undefined` for absent values. Exceptions: Supabase schema fields (database convention); `React.createContext`; `JSON.stringify` replacer; Supabase `.is("field", null)` filters.
+
 ## Code Style
 
-- **Python**: Ruff for linting, type hints required, Pydantic for schemas
+- **Python**: Ruff, type hints required, Pydantic for schemas
 - **TypeScript**: ESLint + Prettier, strict mode
-- **Go**: Standard library conventions, minimal dependencies
-
-## Recent Changes
-- 003-context-aware-entity-resolution: Added Python 3.13 + FastAPI 0.109.0, Instructor 1.0.0, Supabase >=2.25.1, Pydantic (via FastAPI), RapidFuzz 3.14.3
-
-- 001-instructor-nlp-extraction: NLP extraction with Instructor, Fact Update vs Event Log classification
-
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->

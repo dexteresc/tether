@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useRootStore } from "@/stores/RootStore";
+import { useCallback, useEffect, useState } from "react";
+import { useRootStore } from "@/hooks/use-root-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createRecord } from "@/services/sync/createRecord";
@@ -27,7 +27,7 @@ export function TagAssigner({
   const [newTagCategory, setNewTagCategory] = useState("topic");
   const [saving, setSaving] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     const [tags, rts] = await Promise.all([
       replica.listByUpdatedAt("tags", 1000),
       replica.listByUpdatedAt("record_tags", 10000),
@@ -41,11 +41,11 @@ export function TagAssigner({
           !rt.deleted_at
       )
     );
-  }
+  }, [recordId, recordTable, replica]);
 
   useEffect(() => {
     load();
-  }, [recordId, recordTable, replica]);
+  }, [load]);
 
   const tagMap = new Map<string, ReplicaRow<Tag>>();
   for (const t of allTags) tagMap.set(t.id, t);

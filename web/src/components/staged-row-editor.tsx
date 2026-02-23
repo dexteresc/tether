@@ -8,6 +8,7 @@ import {
 } from "@/services/validation/dbValidation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { isRecord, str } from "@/lib/utils";
 
 export type IdLabel = { label: string; type?: string };
 
@@ -111,7 +112,7 @@ function ProposedRowDisplay({
   row: Record<string, unknown>;
   idLabels?: Map<string, IdLabel>;
 }) {
-  const data = row.data as Record<string, unknown> | undefined;
+  const data = isRecord(row.data) ? row.data : undefined;
 
   switch (table) {
     case "entities":
@@ -121,14 +122,14 @@ function ProposedRowDisplay({
             label="Name"
             value={
               <span className="font-medium">
-                {(data?.name as string) ?? "—"}
+                {str(data?.name, "—")}
               </span>
             }
           />
           <FieldRow
             label="Type"
             value={
-              <span className="capitalize">{row.type as string}</span>
+              <span className="capitalize">{str(row.type)}</span>
             }
           />
           {typeof data?.confidence === "string" && (
@@ -148,18 +149,18 @@ function ProposedRowDisplay({
           <FieldRow
             label="Type"
             value={
-              <span className="capitalize">{row.type as string}</span>
+              <span className="capitalize">{str(row.type)}</span>
             }
           />
           <FieldRow
             label="Value"
             value={
-              <span className="font-medium">{row.value as string}</span>
+              <span className="font-medium">{str(row.value)}</span>
             }
           />
           <FieldRow
             label="Entity"
-            value={<IdRef id={row.entity_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.entity_id)} idLabels={idLabels} />}
           />
         </div>
       );
@@ -170,7 +171,7 @@ function ProposedRowDisplay({
           <FieldRow
             label="Type"
             value={
-              <span className="capitalize">{row.type as string}</span>
+              <span className="capitalize">{str(row.type)}</span>
             }
           />
           {typeof data?.description === "string" && (
@@ -202,16 +203,16 @@ function ProposedRowDisplay({
           <FieldRow
             label="Type"
             value={
-              <span className="capitalize">{row.type as string}</span>
+              <span className="capitalize">{str(row.type)}</span>
             }
           />
           <FieldRow
             label="Source"
-            value={<IdRef id={row.source_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.source_id)} idLabels={idLabels} />}
           />
           <FieldRow
             label="Target"
-            value={<IdRef id={row.target_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.target_id)} idLabels={idLabels} />}
           />
           {typeof data?.description === "string" && (
             <FieldRow
@@ -227,11 +228,11 @@ function ProposedRowDisplay({
         <div className="flex flex-col gap-1">
           <FieldRow
             label="Intel"
-            value={<IdRef id={row.intel_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.intel_id)} idLabels={idLabels} />}
           />
           <FieldRow
             label="Entity"
-            value={<IdRef id={row.entity_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.entity_id)} idLabels={idLabels} />}
           />
           {typeof row.role === "string" && (
             <FieldRow label="Role" value={row.role} />
@@ -244,15 +245,15 @@ function ProposedRowDisplay({
         <div className="flex flex-col gap-1">
           <FieldRow
             label="Entity"
-            value={<IdRef id={row.entity_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.entity_id)} idLabels={idLabels} />}
           />
           <FieldRow
             label="Key"
-            value={<span className="font-medium">{row.key as string}</span>}
+            value={<span className="font-medium">{str(row.key)}</span>}
           />
           <FieldRow
             label="Value"
-            value={<span className="font-medium">{row.value as string}</span>}
+            value={<span className="font-medium">{str(row.value)}</span>}
           />
           {typeof row.confidence === "string" && (
             <FieldRow
@@ -268,7 +269,7 @@ function ProposedRowDisplay({
         <div className="flex flex-col gap-1">
           <FieldRow
             label="Name"
-            value={<span className="font-medium">{row.name as string}</span>}
+            value={<span className="font-medium">{str(row.name)}</span>}
           />
           {typeof row.category === "string" && (
             <FieldRow
@@ -284,11 +285,11 @@ function ProposedRowDisplay({
         <div className="flex flex-col gap-1">
           <FieldRow
             label="Tag"
-            value={<IdRef id={row.tag_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.tag_id)} idLabels={idLabels} />}
           />
           <FieldRow
             label="Record"
-            value={<IdRef id={row.record_id as string} idLabels={idLabels} />}
+            value={<IdRef id={str(row.record_id)} idLabels={idLabels} />}
           />
           {typeof row.record_table === "string" && (
             <FieldRow label="Table" value={row.record_table} />
@@ -387,7 +388,7 @@ export const StagedRowEditor = observer(function StagedRowEditor({
     committed: "bg-emerald-100 text-emerald-800",
   };
 
-  const row = staged.proposed_row as Record<string, unknown>;
+  const row = isRecord(staged.proposed_row) ? staged.proposed_row : {};
 
   return (
     <Card

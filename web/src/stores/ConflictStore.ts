@@ -62,8 +62,7 @@ export class ConflictStore {
     return db.getAllFromIndex(
       "conflict_log",
       CONFLICT_INDEXES.byTableRecord,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [table, recordId] as any
+      [table, recordId] as [string, string]
     );
   }
 }

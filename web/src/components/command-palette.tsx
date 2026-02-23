@@ -12,7 +12,7 @@ import {
   fuzzySearchIdentifiers,
   searchIntelFullText,
 } from "@/lib/supabase-helpers";
-import { truncate } from "@/lib/utils";
+import { truncate, isRecord, str } from "@/lib/utils";
 
 interface EntityResult {
   entity_id: string;
@@ -57,29 +57,29 @@ export function CommandPalette() {
       const [prefixResults, fuzzyResults, intelData] = await Promise.all([
         searchEntitiesByIdentifier(q).catch(() => [] as unknown[]),
         fuzzySearchIdentifiers(q, 10).catch(() => [] as unknown[]),
-        searchIntelFullText(q, 5).catch(() => [] as Array<{ id: string; type: string; data: Record<string, unknown> | null }>),
+        searchIntelFullText(q, 5).catch(() => [] as IntelResult[]),
       ]);
 
       // Merge entity results: prefix first, then fuzzy, deduplicated
       const seen = new Set<string>();
       const merged: EntityResult[] = [];
       for (const r of [...(prefixResults ?? []), ...(fuzzyResults ?? [])]) {
-        const row = r as { entity_id: string; entity_type: string; identifier_value?: string; identifier_type?: string };
-        if (!seen.has(row.entity_id)) {
-          seen.add(row.entity_id);
-          merged.push({
-            entity_id: row.entity_id,
-            entity_type: row.entity_type ?? "unknown",
-            identifier_value: row.identifier_value ?? row.entity_id.slice(0, 8),
-          });
-        }
+        if (!isRecord(r)) continue;
+        const entityId = str(r.entity_id);
+        if (!entityId || seen.has(entityId)) continue;
+        seen.add(entityId);
+        merged.push({
+          entity_id: entityId,
+          entity_type: str(r.entity_type, "unknown"),
+          identifier_value: str(r.identifier_value) || entityId.slice(0, 8),
+        });
       }
       setEntityResults(merged.slice(0, 10));
       setIntelResults(
         (intelData ?? []).map((i) => ({
           id: i.id,
           type: i.type,
-          data: i.data as Record<string, unknown> | null,
+          data: isRecord(i.data) ? i.data : null,
         }))
       );
     } catch {
@@ -167,8 +167,8 @@ export function CommandPalette() {
               <Command.Group heading="Intel" className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
                 {intelResults.map((r) => {
                   const desc =
-                    (r.data?.description as string) ||
-                    (r.data?.content as string) ||
+                    str(r.data?.description) ||
+                    str(r.data?.content) ||
                     r.type;
                   return (
                     <Command.Item

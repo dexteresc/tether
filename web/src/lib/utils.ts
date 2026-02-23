@@ -18,10 +18,19 @@ export function truncate(str: string, maxLen: number): string {
   return str.slice(0, maxLen) + "...";
 }
 
-export function getDataString(data: unknown, field: string): string | null {
-  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
-  const value = (data as Record<string, unknown>)[field];
-  return typeof value === "string" && value ? value : null;
+export function isRecord(data: unknown): data is Record<string, unknown> {
+  return !!data && typeof data === "object" && !Array.isArray(data);
+}
+
+/** Safely extract a string from an unknown value. */
+export function str(val: unknown, fallback = ""): string {
+  return typeof val === "string" ? val : fallback;
+}
+
+export function getDataString(data: unknown, field: string): string | undefined {
+  if (!isRecord(data)) return undefined;
+  const value = data[field];
+  return typeof value === "string" && value ? value : undefined;
 }
 
 export const selectClass =
@@ -44,4 +53,12 @@ export const CONFIDENCE_COLORS: Record<string, string> = {
   medium: "text-amber-500",
   low: "text-orange-500",
   unconfirmed: "text-muted-foreground",
+};
+
+export const CONFIDENCE_DOT_COLORS: Record<string, string> = {
+  confirmed: "bg-emerald-500",
+  high: "bg-emerald-400",
+  medium: "bg-amber-400",
+  low: "bg-orange-400",
+  unconfirmed: "bg-gray-400",
 };

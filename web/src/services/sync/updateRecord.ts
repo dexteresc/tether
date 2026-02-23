@@ -18,21 +18,10 @@ export async function updateRecord<T extends TableName>(
   const db = await getTetherDb();
   const now = new Date().toISOString();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const existing = await db.get(table as T & string, id) as any;
+  const existing = await db.get(table, id);
   if (!existing) {
     throw new Error(`Record not found: ${table}/${id}`);
   }
-
-  const updated = {
-    ...existing,
-    ...fields,
-    updated_at: now,
-  };
-
-  // Remove __meta for the outbox payload
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { __meta: _meta, ...payload } = updated;
 
   const tx: OutboxTransaction<T> = {
     tx_id: crypto.randomUUID(),
@@ -40,7 +29,7 @@ export async function updateRecord<T extends TableName>(
     table,
     op: "update",
     record_id: id,
-    payload: payload as Partial<RemoteRow<T>>,
+    payload: { ...fields, updated_at: now } as Partial<RemoteRow<T>>,
     base_updated_at: existing.__meta?.base_updated_at ?? null,
     status: "pending",
     attempt_count: 0,
@@ -56,6 +45,10 @@ export async function updateRecord<T extends TableName>(
     local_last_accessed_at: now,
     local_dirty: true,
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await db.put(table as T & string, { ...updated, __meta: meta } as any);
+  await db.put(table, {
+    ...existing,
+    ...fields,
+    updated_at: now,
+    __meta: meta,
+  });
 }

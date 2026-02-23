@@ -82,7 +82,7 @@ export const IntelPage = observer(function IntelPage() {
 
     setSaving(true);
     try {
-      const intelData: Record<string, unknown> = { description: description.trim() };
+      const intelData: Record<string, string | number> = { description: description.trim() };
       if (location) {
         intelData.lat = location.lat;
         intelData.lng = location.lng;

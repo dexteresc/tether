@@ -144,3 +144,33 @@ export async function findShortestPath(
   if (error) throw error;
   return data ?? [];
 }
+
+export async function fuzzySearchIdentifiers(query: string, limit: number = 20) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("fuzzy_search_identifiers", {
+    p_query: query,
+    p_limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []) as Array<{ entity_id: string; entity_type: string; identifier_value: string }>;
+}
+
+export async function searchIntelFullText(query: string, limit: number = 20) {
+  const { data, error } = await supabase
+    .from("intel")
+    .select("*")
+    .textSearch("search_vector", query, { type: "websearch" })
+    .is("deleted_at", null)
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getEntityConnectionCounts(entityIds: string[]) {
+  const { data, error } = await supabase
+    .from("entity_connection_counts")
+    .select("*")
+    .in("id", entityIds);
+  if (error) throw error;
+  return data ?? [];
+}

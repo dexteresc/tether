@@ -122,7 +122,7 @@ export const EntitiesPage = observer(function EntitiesPage() {
 
     setSaving(true);
     try {
-      const data: Record<string, unknown> = { name: name.trim() };
+      const data: Record<string, string | number> = { name: name.trim() };
       if (location) {
         data.lat = location.lat;
         data.lng = location.lng;

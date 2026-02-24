@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routes import extract, stream
+from app.routes import extract, stream, query
 
 
 @asynccontextmanager
@@ -33,6 +33,7 @@ app.add_middleware(
 
 app.include_router(extract.router, prefix="/api", tags=["extract"])
 app.include_router(stream.router, prefix="/api", tags=["stream"])
+app.include_router(query.router, prefix="/api", tags=["query"])
 
 
 @app.get("/health")

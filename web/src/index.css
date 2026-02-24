@@ -118,3 +118,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Constrain Leaflet map z-index so it doesn't overlap dialogs/overlays */
+.leaflet-container {
+  z-index: 0;
+}

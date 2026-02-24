@@ -168,7 +168,7 @@ BEGIN
 
     UNION ALL
 
-    -- Recursive: traverse outgoing relations
+    -- Recursive: traverse both outgoing and incoming relations
     SELECT
       e.id,
       e.type,
@@ -181,32 +181,10 @@ BEGIN
       eg.depth + 1,
       eg.path || e.id
     FROM entity_graph eg
-    INNER JOIN relations r ON r.source_id = eg.entity_id
-    INNER JOIN entities e ON e.id = r.target_id
-    WHERE eg.depth < p_depth
-      AND r.deleted_at IS NULL
-      AND e.deleted_at IS NULL
-      AND NOT (e.id = ANY(eg.path))  -- cycle detection
-      AND (p_relation_types IS NULL OR r.type = ANY(p_relation_types))
-      AND (p_min_strength IS NULL OR r.strength >= p_min_strength)
-
-    UNION ALL
-
-    -- Recursive: traverse incoming relations
-    SELECT
-      e.id,
-      e.type,
-      e.data,
-      r.id,
-      r.type,
-      r.source_id,
-      r.target_id,
-      r.strength,
-      eg.depth + 1,
-      eg.path || e.id
-    FROM entity_graph eg
-    INNER JOIN relations r ON r.target_id = eg.entity_id
-    INNER JOIN entities e ON e.id = r.source_id
+    INNER JOIN relations r
+      ON (r.source_id = eg.entity_id OR r.target_id = eg.entity_id)
+    INNER JOIN entities e
+      ON e.id = CASE WHEN r.source_id = eg.entity_id THEN r.target_id ELSE r.source_id END
     WHERE eg.depth < p_depth
       AND r.deleted_at IS NULL
       AND e.deleted_at IS NULL

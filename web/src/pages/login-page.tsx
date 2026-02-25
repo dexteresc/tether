@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/login-form";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useEffect, type FormEventHandler } from "react";
 import { useNavigate, useLocation } from "react-router";
 
@@ -21,8 +21,8 @@ function LoginPage() {
     e.stopPropagation();
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
 
     try {
       await login(email, password);

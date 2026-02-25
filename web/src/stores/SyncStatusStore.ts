@@ -4,18 +4,16 @@ export type ConnectionStatus = "online" | "offline" | "unknown";
 
 export interface SyncProgress {
   phase: "idle" | "pull" | "push" | "reconcile";
-  startedAt: string | null;
-  lastTickAt: string | null;
+  startedAt?: string;
+  lastTickAt?: string;
 }
 
 export class SyncStatusStore {
   connectionStatus: ConnectionStatus = "unknown";
-  lastSyncAt: string | null = null;
-  lastError: string | null = null;
+  lastSyncAt?: string = undefined;
+  lastError?: string = undefined;
   progress: SyncProgress = {
     phase: "idle",
-    startedAt: null,
-    lastTickAt: null,
   };
   pendingOutboxCount = 0;
 
@@ -31,18 +29,18 @@ export class SyncStatusStore {
     this.pendingOutboxCount = count;
   }
 
-  setLastSyncAt(iso: string | null): void {
+  setLastSyncAt(iso?: string): void {
     this.lastSyncAt = iso;
   }
 
-  setLastError(error: string | null): void {
+  setLastError(error?: string): void {
     this.lastError = error;
   }
 
   setProgress(phase: SyncProgress["phase"]): void {
     const now = new Date().toISOString();
     if (phase === "idle") {
-      this.progress = { phase, startedAt: null, lastTickAt: now };
+      this.progress = { phase, startedAt: undefined, lastTickAt: now };
       return;
     }
     if (this.progress.phase !== phase) {

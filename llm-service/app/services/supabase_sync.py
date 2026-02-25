@@ -1,5 +1,4 @@
 from supabase import Client
-from typing import Dict, List, Optional
 import json
 import logging
 from app.models.extraction import (
@@ -33,7 +32,7 @@ class SupabaseSyncService:
         self.user_id = user_id
 
     def sync_extraction(
-        self, extraction: IntelligenceExtraction, default_source: str = "LLM", entity_resolutions: Optional[List[EntityResolutionResult]] = None
+        self, extraction: IntelligenceExtraction, default_source: str = "LLM", entity_resolutions: list[EntityResolutionResult] | None = None
     ) -> SyncResults:
         """
         Sync entire extraction to database.
@@ -54,7 +53,7 @@ class SupabaseSyncService:
         source_id = self._get_or_create_source(default_source)
 
         # Map entity names to IDs (for relations and intel linking)
-        entity_name_to_id: Dict[str, str] = {}
+        entity_name_to_id: dict[str, str] = {}
 
         # T019: Process entity resolutions first to populate entity_name_to_id
         if entity_resolutions:
@@ -131,8 +130,8 @@ class SupabaseSyncService:
 
     def _process_entity_resolutions(
         self,
-        resolutions: List[EntityResolutionResult],
-        entity_name_to_id: Dict[str, str],
+        resolutions: list[EntityResolutionResult],
+        entity_name_to_id: dict[str, str],
         source_id: str,
         results: SyncResults
     ):
@@ -213,7 +212,7 @@ class SupabaseSyncService:
 
     def _sync_entity(
         self, entity: EntityExtraction, source_id: str
-    ) -> Dict:
+    ) -> dict:
         """
         Sync an entity to the database.
 
@@ -251,14 +250,13 @@ class SupabaseSyncService:
             }
 
     def _create_entity(self, entity: EntityExtraction, source_id: str) -> str:
-        """Create a new entity with identifiers."""
+        """Create a new entity with identifiers and attributes."""
         # Prepare entity data
         entity_data = {
             "name": entity.name,
             "user_id": self.user_id,
             "_source": source_id,
             "_confidence": entity.confidence.value,
-            **entity.attributes,
         }
 
         # Create entity
@@ -268,6 +266,7 @@ class SupabaseSyncService:
                 {
                     "type": entity.entity_type.value,
                     "data": entity_data,
+                    "created_by": self.user_id,
                 }
             )
             .execute()
@@ -280,6 +279,9 @@ class SupabaseSyncService:
 
         # Create all identifiers
         self._create_identifiers(entity_id, entity.identifiers)
+
+        # Write attributes to entity_attributes table
+        self._sync_entity_attributes(entity_id, entity.attributes, source_id, entity.confidence.value)
 
         return entity_id
 
@@ -307,7 +309,6 @@ class SupabaseSyncService:
         # Update with new attributes
         updated_data = {
             **current_data,
-            **entity.attributes,
             "_source": source_id,
             "_confidence": entity.confidence.value,
         }
@@ -320,12 +321,15 @@ class SupabaseSyncService:
         # Add new identifiers (skip duplicates)
         self._create_identifiers(entity_id, entity.identifiers, skip_duplicates=True)
 
+        # Write attributes to entity_attributes table
+        self._sync_entity_attributes(entity_id, entity.attributes, source_id, entity.confidence.value)
+
     def _create_identifiers(
         self,
         entity_id: str,
-        identifiers: List[IdentifierExtraction],
+        identifiers: list[IdentifierExtraction],
         skip_duplicates: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         """Create identifiers for an entity."""
         created_ids = []
 
@@ -378,9 +382,49 @@ class SupabaseSyncService:
 
         return created_ids
 
+    def _sync_entity_attributes(
+        self, entity_id: str, attributes: dict, source_id: str, confidence: str
+    ):
+        """Write extracted attributes to entity_attributes table."""
+        for key, value in attributes.items():
+            if key.startswith("_"):
+                continue  # Skip internal metadata keys
+
+            str_value = str(value) if value is not None else ""
+            if not str_value:
+                continue
+
+            # Check if attribute already exists with same key and current value
+            existing = (
+                self.supabase.table("entity_attributes")
+                .select("id, value")
+                .eq("entity_id", entity_id)
+                .eq("key", key)
+                .is_("valid_to", "null")
+                .is_("deleted_at", "null")
+                .execute()
+            )
+
+            if existing.data and len(existing.data) > 0:
+                if existing.data[0]["value"] == str_value:
+                    continue  # Same value, skip
+                # Close the old attribute by setting valid_to
+                self.supabase.table("entity_attributes").update(
+                    {"valid_to": "now()"}
+                ).eq("id", existing.data[0]["id"]).execute()
+
+            # Create new attribute record
+            self.supabase.table("entity_attributes").insert({
+                "entity_id": entity_id,
+                "key": key,
+                "value": str_value,
+                "confidence": confidence,
+                "source_id": source_id,
+            }).execute()
+
     def _sync_relation(
-        self, relation: RelationExtraction, entity_name_to_id: Dict[str, str], source_id: str
-    ) -> Dict:
+        self, relation: RelationExtraction, entity_name_to_id: dict[str, str], source_id: str
+    ) -> dict:
         """Sync a relation to the database."""
         # Resolve entity names to IDs
         source_entity_id = entity_name_to_id.get(relation.source_entity_name)
@@ -457,8 +501,8 @@ class SupabaseSyncService:
         }
 
     def _sync_intel(
-        self, intel: IntelExtraction, entity_name_to_id: Dict[str, str], source_id: str
-    ) -> Dict:
+        self, intel: IntelExtraction, entity_name_to_id: dict[str, str], source_id: str
+    ) -> dict:
         """Sync intel to the database."""
         # Parse occurred_at date
         occurred_at = parse_and_format_date(intel.occurred_at)
@@ -481,6 +525,7 @@ class SupabaseSyncService:
                     "data": intel_data,
                     "source_id": source_id,
                     "confidence": intel.confidence.value,
+                    "created_by": self.user_id,
                 }
             )
             .execute()

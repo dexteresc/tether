@@ -9,103 +9,106 @@ import type { ConflictStore } from "@/stores/ConflictStore";
 import type { OutboxStore } from "@/stores/OutboxStore";
 import type { ReplicaStore } from "@/stores/ReplicaStore";
 
-export type PushResult<T extends TableName> =
-  | { status: "applied"; appliedRow: RemoteRow<T> }
+export type PushResult =
+  | { status: "applied"; appliedRow: RemoteRow<TableName> }
   | {
       status: "conflict";
-      serverRow: RemoteRow<T>;
+      serverRow: RemoteRow<TableName>;
       localRow: unknown;
       reason: ConflictReason;
     };
 
 export interface PushRemote {
-  apply<T extends TableName>(
-    tx: OutboxTransaction<T>
-  ): Promise<PushResult<T>>;
+  apply(tx: OutboxTransaction): Promise<PushResult>;
+}
+
+/**
+ * Supabase's typed SDK cannot handle dynamic table names at the type level.
+ * When `table` is a `TableName` union, `.insert()` and `.update()` require
+ * a payload that satisfies ALL table Insert/Update types simultaneously,
+ * which is impossible for a single dynamic payload.
+ *
+ * This helper performs the raw PostgREST operations using the REST client
+ * directly, bypassing the per-table type constraints while keeping full
+ * runtime safety (RLS, validation, etc. still apply server-side).
+ */
+function dynamicFrom(table: TableName) {
+  // All TableName values are valid Database table keys.
+  // We use a concrete table type to satisfy TypeScript, but the actual
+  // table used at runtime is determined by the `table` parameter.
+  // This is safe because we only use generic operations (select *, eq, insert, update).
+  return supabase.from(table as "entities");
 }
 
 export class SupabasePushRemote implements PushRemote {
-  async apply<T extends TableName>(
-    tx: OutboxTransaction<T>
-  ): Promise<PushResult<T>> {
+  private async fetchConflictRow(
+    tx: OutboxTransaction,
+    localRow: unknown,
+    reason: ConflictReason
+  ): Promise<PushResult> {
+    const { data: serverRow, error } = await dynamicFrom(tx.table)
+      .select("*")
+      .eq("id", tx.record_id)
+      .maybeSingle();
+    if (error) throw error;
+
+    return {
+      status: "conflict",
+      serverRow: serverRow as RemoteRow<TableName>,
+      localRow,
+      reason,
+    };
+  }
+
+  async apply(tx: OutboxTransaction): Promise<PushResult> {
     if (tx.op === "insert") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from(tx.table) as any)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .insert({ id: tx.record_id, ...(tx.payload as any) })
+      const { data, error } = await dynamicFrom(tx.table)
+        .insert({ id: tx.record_id, ...tx.payload } as RemoteRow<"entities">)
         .select("*")
         .single();
       if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return { status: "applied", appliedRow: data as any as RemoteRow<T> };
+      return { status: "applied", appliedRow: data as RemoteRow<TableName> };
     }
 
     if (tx.op === "update") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from(tx.table) as any)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update(tx.payload as any)
-        .eq("id", tx.record_id)
-        .eq("updated_at", tx.base_updated_at)
-        .select("*")
-        .maybeSingle();
+      const builder = dynamicFrom(tx.table)
+        .update(tx.payload as Record<string, unknown>)
+        .eq("id", tx.record_id);
+
+      const query = tx.base_updated_at
+        ? builder.eq("updated_at", tx.base_updated_at)
+        : builder;
+
+      const { data, error } = await query.select("*").maybeSingle();
 
       if (error) throw error;
 
       if (!data) {
-        const { data: serverRow, error: fetchError } = await (
-          supabase.from(tx.table) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-        )
-          .select("*")
-          .eq("id", tx.record_id)
-          .maybeSingle();
-        if (fetchError) throw fetchError;
-
-        return {
-          status: "conflict",
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          serverRow: serverRow as any as RemoteRow<T>,
-          localRow: tx.payload,
-          reason: "update_precondition_failed",
-        };
+        return this.fetchConflictRow(tx, tx.payload, "update_precondition_failed");
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return { status: "applied", appliedRow: data as any as RemoteRow<T> };
+      return { status: "applied", appliedRow: data as RemoteRow<TableName> };
     }
 
     // delete = soft delete
     const deletedAt = new Date().toISOString();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from(tx.table) as any)
-      .update({ deleted_at: deletedAt })
-      .eq("id", tx.record_id)
-      .eq("updated_at", tx.base_updated_at)
-      .select("*")
-      .maybeSingle();
+    const builder = dynamicFrom(tx.table)
+      .update({ deleted_at: deletedAt } as Record<string, unknown>)
+      .eq("id", tx.record_id);
+
+    const query = tx.base_updated_at
+      ? builder.eq("updated_at", tx.base_updated_at)
+      : builder;
+
+    const { data, error } = await query.select("*").maybeSingle();
 
     if (error) throw error;
 
     if (!data) {
-      const { data: serverRow, error: fetchError } = await (
-        supabase.from(tx.table) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-      )
-        .select("*")
-        .eq("id", tx.record_id)
-        .maybeSingle();
-      if (fetchError) throw fetchError;
-
-      return {
-        status: "conflict",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        serverRow: serverRow as any as RemoteRow<T>,
-        localRow: { deleted_at: deletedAt },
-        reason: "update_precondition_failed",
-      };
+      return this.fetchConflictRow(tx, { deleted_at: deletedAt }, "update_precondition_failed");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return { status: "applied", appliedRow: data as any as RemoteRow<T> };
+    return { status: "applied", appliedRow: data as RemoteRow<TableName> };
   }
 }
 
@@ -113,9 +116,12 @@ export class SupabasePushRemote implements PushRemote {
 const TABLE_PUSH_ORDER: Record<string, number> = {
   sources: 0,
   entities: 0,
+  tags: 0,
   identifiers: 1,
   relations: 1,
   intel: 1,
+  entity_attributes: 1,
+  record_tags: 1,
   intel_entities: 2,
 };
 
@@ -137,8 +143,7 @@ export async function drainOutboxOnce(params: {
   for (const tx of pending) {
     await params.outbox.updateStatus(tx.tx_id, "syncing");
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await params.remote.apply(tx as any);
+      const result = await params.remote.apply(tx);
       if (result.status === "applied") {
         await params.replica.upsertMany(tx.table, [result.appliedRow]);
         await params.outbox.updateStatus(tx.tx_id, "synced", {

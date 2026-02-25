@@ -1,34 +1,8 @@
-/* eslint-disable react-refresh/only-export-components */
 import { supabase } from "@/lib/supabase";
 import type { User } from "@/types/models";
-import {
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  createContext,
-} from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Session } from "@supabase/supabase-js";
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-};
+import { AuthContext } from "@/hooks/use-auth";
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -49,7 +23,7 @@ function userFromSession(s: Session | null): User | null {
       },
       createdAt: su.created_at,
       updatedAt: su.created_at,
-      deletedAt: null,
+      deletedAt: undefined,
     },
   };
 }
@@ -109,15 +83,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
   }, []);
 
-  const value: AuthContextType = {
-    user,
-    session,
-    loading,
-    error,
-    login,
-    register,
-    logout,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, session, loading, error, login, register, logout }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }

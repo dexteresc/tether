@@ -6,7 +6,6 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func CreateIntelEntity(c *gin.Context) {
@@ -34,9 +33,8 @@ func GetIntelEntities(c *gin.Context) {
 }
 
 func GetIntelEntity(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -49,9 +47,8 @@ func GetIntelEntity(c *gin.Context) {
 }
 
 func UpdateIntelEntity(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -64,12 +61,8 @@ func UpdateIntelEntity(c *gin.Context) {
 	result := config.DB.Model(&models.IntelEntity{}).Where("id = ?", id).
 		Omit("id", "created_at", "deleted_at", "intel_id", "entity_id").Updates(intelEntity)
 
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update intel entity"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Intel entity not found"})
+	if err := checkUpdateResult(result, "intel entity"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 
@@ -77,19 +70,14 @@ func UpdateIntelEntity(c *gin.Context) {
 }
 
 func DeleteIntelEntity(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
 	result := config.DB.Delete(&models.IntelEntity{}, id)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete intel entity"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Intel entity not found"})
+	if err := checkUpdateResult(result, "intel entity"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 

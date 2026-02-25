@@ -356,7 +356,8 @@ COMMENT ON FUNCTION "public"."update_updated_at_column"() IS 'Trigger function t
 
 
 CREATE OR REPLACE FUNCTION "public"."write_sync_log"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN

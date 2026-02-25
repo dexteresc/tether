@@ -1,4 +1,5 @@
 import { AppSidebar } from "./components/app-sidebar";
+import { CommandPalette } from "./components/command-palette";
 import {
   SidebarProvider,
   SidebarInset,
@@ -16,6 +17,7 @@ export default function MainLayout() {
         </header>
         <Outlet />
       </SidebarInset>
+      <CommandPalette />
     </SidebarProvider>
   );
 }

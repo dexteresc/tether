@@ -80,6 +80,36 @@ export interface TetherDbSchema {
       by_local_last_accessed_at: string;
     };
   };
+  entity_attributes: {
+    key: string;
+    value: ReplicaRow<Database["public"]["Tables"]["entity_attributes"]["Row"]>;
+    indexes: {
+      by_updated_at: string;
+      by_deleted_at: string;
+      by_local_dirty: boolean;
+      by_local_last_accessed_at: string;
+    };
+  };
+  tags: {
+    key: string;
+    value: ReplicaRow<Database["public"]["Tables"]["tags"]["Row"]>;
+    indexes: {
+      by_updated_at: string;
+      by_deleted_at: string;
+      by_local_dirty: boolean;
+      by_local_last_accessed_at: string;
+    };
+  };
+  record_tags: {
+    key: string;
+    value: ReplicaRow<Database["public"]["Tables"]["record_tags"]["Row"]>;
+    indexes: {
+      by_updated_at: string;
+      by_deleted_at: string;
+      by_local_dirty: boolean;
+      by_local_last_accessed_at: string;
+    };
+  };
 
   outbox_transactions: {
     key: string;

@@ -1,8 +1,16 @@
 import type { SyncOrchestrator } from "./index";
 import type { SyncStatusStore } from "@/stores/SyncStatusStore";
 
+function toErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null && "message" in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return String(err);
+}
+
 export class SyncEngine {
-  private intervalId: number | null = null;
+  private intervalId: number | undefined;
   private running = false;
   private readonly syncStatus: SyncStatusStore;
   private readonly orchestrator: SyncOrchestrator;
@@ -44,7 +52,7 @@ export class SyncEngine {
 
     if (this.intervalId != null) {
       window.clearInterval(this.intervalId);
-      this.intervalId = null;
+      this.intervalId = undefined;
     }
     this.orchestrator.stop();
   }
@@ -64,15 +72,9 @@ export class SyncEngine {
       if (result.pushed > 0 || result.pulled) {
         this.syncStatus.setLastSyncAt(new Date().toISOString());
       }
-      this.syncStatus.setLastError(null);
+      this.syncStatus.setLastError();
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "object" && err !== null && "message" in err
-            ? String((err as { message: unknown }).message)
-            : String(err);
-      this.syncStatus.setLastError(message);
+      this.syncStatus.setLastError(toErrorMessage(err));
     } finally {
       this.syncStatus.setProgress("idle");
     }

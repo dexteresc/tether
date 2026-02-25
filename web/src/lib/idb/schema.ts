@@ -5,6 +5,9 @@ export const REPLICA_TABLES = [
   "relations",
   "intel",
   "intel_entities",
+  "entity_attributes",
+  "tags",
+  "record_tags",
 ] as const;
 
 export type ReplicaTableName = (typeof REPLICA_TABLES)[number];
@@ -22,7 +25,7 @@ export type LocalStoreName = (typeof LOCAL_STORES)[number];
 export type StoreName = ReplicaTableName | LocalStoreName;
 
 export const DB_NAME = "tether";
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export const REPLICA_INDEXES = {
   byUpdatedAt: "by_updated_at",

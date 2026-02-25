@@ -1,7 +1,7 @@
 import {
   Brain,
-  Database,
-  Network,
+  Compass,
+  MoreHorizontal,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -19,17 +19,21 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "react-router";
 import { Logo } from "./logo";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useMemo } from "react";
 
 const data = {
   navMain: [
     {
       title: "Intelligence",
-      url: "/nl-input",
+      url: "/ask",
       icon: Brain,
       isActive: true,
       items: [
+        {
+          title: "Ask",
+          url: "/ask",
+        },
         {
           title: "NL Input",
           url: "/nl-input",
@@ -37,15 +41,31 @@ const data = {
       ],
     },
     {
-      title: "Data",
+      title: "Explore",
       url: "/entities",
-      icon: Database,
+      icon: Compass,
       isActive: true,
       items: [
         {
           title: "Entities",
           url: "/entities",
         },
+        {
+          title: "Graph",
+          url: "/graph",
+        },
+        {
+          title: "Map",
+          url: "/map",
+        },
+      ],
+    },
+    {
+      title: "More",
+      url: "/intel",
+      icon: MoreHorizontal,
+      isActive: false,
+      items: [
         {
           title: "Intel",
           url: "/intel",
@@ -55,27 +75,20 @@ const data = {
           url: "/relations",
         },
         {
-          title: "Identifiers",
-          url: "/identifiers",
+          title: "Path Finder",
+          url: "/path-finder",
+        },
+        {
+          title: "Timeline",
+          url: "/timeline",
         },
         {
           title: "Sources",
           url: "/sources",
         },
         {
-          title: "Intel-Entities",
-          url: "/intel-entities",
-        },
-      ],
-    },
-    {
-      title: "Visualization",
-      url: "/graph",
-      icon: Network,
-      items: [
-        {
-          title: "Graph",
-          url: "/graph",
+          title: "Tags",
+          url: "/tags",
         },
       ],
     },

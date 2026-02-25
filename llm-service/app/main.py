@@ -1,17 +1,28 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.config import settings
-from app.routes import extract, stream
+from app.routes import extract, stream, query
 
 
-# Create FastAPI app
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("=" * 50)
+    print("Tether Intelligence LLM Service")
+    print(f"LLM Provider: {settings.llm_provider}")
+    print("=" * 50)
+    yield
+
+
 app = FastAPI(
     title="Tether Intelligence LLM Service",
     description="Agentic DB Manager - Extract structured intelligence from natural language text",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.cors_origins.split(",")],
@@ -20,9 +31,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(extract.router, prefix="/api", tags=["extract"])
 app.include_router(stream.router, prefix="/api", tags=["stream"])
+app.include_router(query.router, prefix="/api", tags=["query"])
 
 
 @app.get("/health")
@@ -33,15 +44,6 @@ async def health_check():
         "provider": settings.llm_provider,
         "model": settings.llm_model,
     }
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Startup event handler."""
-    print("=" * 50)
-    print("Tether Intelligence LLM Service")
-    print(f"LLM Provider: {settings.llm_provider}")
-    print("=" * 50)
 
 
 if __name__ == "__main__":

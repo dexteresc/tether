@@ -1,25 +1,28 @@
+from __future__ import annotations
+
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
-from typing import Optional
-from app.services.extraction import get_extraction_service
-from app.services.supabase_sync import SupabaseSyncService
-from app.services.auth import verify_supabase_jwt, create_service_role_client, get_user_info
+
 from app.models.extraction import ClassifiedExtraction
+from app.services.auth import verify_supabase_jwt, create_service_role_client, get_user_info
+from app.services.extraction import ExtractionService, get_extraction_service
+from app.services.supabase_sync import SupabaseSyncService
 
 router = APIRouter()
 
 
 class ExtractionRequest(BaseModel):
     text: str
-    context: Optional[str] = None
-    source_code: Optional[str] = "LLM"
+    context: str | None = None
+    source_code: str | None = "LLM"
     sync_to_db: bool = True
+    anthropic_api_key: str | None = None
 
 
 @router.post("/extract", response_model=ClassifiedExtraction)
 async def extract_intelligence(
     request: ExtractionRequest,
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
 ):
     """
     Extract structured intelligence from text with automatic classification.
@@ -37,7 +40,6 @@ async def extract_intelligence(
     Returns:
         ClassifiedExtraction with classification, extraction, entity resolutions, and clarification requests
     """
-    # Verify authentication
     user_id = None
     user_name = None
     if authorization:
@@ -46,17 +48,17 @@ async def extract_intelligence(
         if not user_id and request.sync_to_db:
             raise HTTPException(status_code=401, detail="Invalid authentication token")
 
-        # Get user information for context
         if user_id:
             user_info = get_user_info(user_id)
             if user_info:
                 user_name = user_info.get("name")
 
-    # Create Supabase client for entity resolution and sync
     supabase = create_service_role_client()
 
-    # Always use server-configured provider (never accept client-provided API keys)
-    extraction_service = get_extraction_service()
+    if request.anthropic_api_key:
+        extraction_service = ExtractionService(provider="anthropic", api_key=request.anthropic_api_key)
+    else:
+        extraction_service = get_extraction_service()
     classified_result = await extraction_service.extract_and_classify_with_resolution(
         text=request.text,
         supabase_client=supabase,
@@ -65,7 +67,6 @@ async def extract_intelligence(
         user_name=user_name
     )
 
-    # Sync to database if requested
     sync_results = None
     if request.sync_to_db:
         if not user_id:

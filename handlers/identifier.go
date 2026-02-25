@@ -6,7 +6,6 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func CreateIdentifier(c *gin.Context) {
@@ -34,9 +33,8 @@ func GetIdentifiers(c *gin.Context) {
 }
 
 func GetIdentifier(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -49,9 +47,8 @@ func GetIdentifier(c *gin.Context) {
 }
 
 func UpdateIdentifier(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -64,12 +61,8 @@ func UpdateIdentifier(c *gin.Context) {
 	result := config.DB.Model(&models.Identifier{}).Where("id = ?", id).
 		Omit("id", "created_at", "deleted_at", "entity_id").Updates(identifier)
 
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update identifier"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Identifier not found"})
+	if err := checkUpdateResult(result, "identifier"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 
@@ -77,19 +70,14 @@ func UpdateIdentifier(c *gin.Context) {
 }
 
 func DeleteIdentifier(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
 	result := config.DB.Delete(&models.Identifier{}, id)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete identifier"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Identifier not found"})
+	if err := checkUpdateResult(result, "identifier"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 

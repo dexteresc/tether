@@ -8,7 +8,8 @@ import RegisterPage from "./pages/register-page";
 import MainLayout from "./main-layout";
 import LogoutPage from "./pages/logout-page";
 import NotFound from "./pages/not-found";
-import { RootStore, RootStoreProvider } from "./stores/RootStore";
+import { RootStore } from "./stores/RootStore";
+import { RootStoreProvider } from "./stores/RootStoreProvider";
 import { useAuthBridge } from "./hooks/use-auth-bridge";
 
 // Pages
@@ -21,6 +22,11 @@ import { IdentifiersPage } from "./pages/identifiers-page";
 import { SourcesPage } from "./pages/sources-page";
 import { IntelEntitiesPage } from "./pages/intel-entities-page";
 import { GraphPage } from "./pages/graph-page";
+import { MapPage } from "./pages/map-page";
+import { TimelinePage } from "./pages/timeline-page";
+import { TagsPage } from "./pages/tags-page";
+import { PathFinderPage } from "./pages/path-finder-page";
+import { QueryPage } from "./pages/query-page";
 
 function AppWithStore() {
   const store = useMemo(() => new RootStore(), []);
@@ -43,7 +49,12 @@ function AppWithStore() {
             <Route path="identifiers" element={<IdentifiersPage />} />
             <Route path="sources" element={<SourcesPage />} />
             <Route path="intel-entities" element={<IntelEntitiesPage />} />
+            <Route path="tags" element={<TagsPage />} />
             <Route path="graph" element={<GraphPage />} />
+            <Route path="path-finder" element={<PathFinderPage />} />
+            <Route path="map" element={<MapPage />} />
+            <Route path="timeline" element={<TimelinePage />} />
+            <Route path="ask" element={<QueryPage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFound />} />

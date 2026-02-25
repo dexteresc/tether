@@ -319,7 +319,10 @@ func (p *IntelligenceProcessor) processIntel(tx *gorm.DB, extracted *models.Extr
 	for k, v := range extracted.Metadata {
 		payload[k] = v
 	}
-	dataBytes, _ := json.Marshal(payload)
+	dataBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal intel data: %w", err)
+	}
 
 	// Confidence bucketing
 	confidence := "medium"

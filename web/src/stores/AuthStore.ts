@@ -6,6 +6,7 @@ import type { Session } from "@supabase/supabase-js";
  * via the useAuthBridge hook, rather than managing auth directly.
  */
 export class AuthStore {
+  // Session uses null because Supabase's API returns Session | null
   session: Session | null = null;
 
   constructor() {
@@ -16,8 +17,8 @@ export class AuthStore {
     return !!this.session?.access_token;
   }
 
-  get accessToken(): string | null {
-    return this.session?.access_token ?? null;
+  get accessToken(): string | undefined {
+    return this.session?.access_token;
   }
 
   setSession(session: Session | null): void {

@@ -10,6 +10,31 @@ import type { Database } from "@/types/database";
 type RemoteRow<T extends TableName> =
   Database["public"]["Tables"][T]["Row"];
 
+function buildOutboxTx(
+  staged: StagedExtraction,
+  now: string
+): OutboxTransaction | null {
+  const proposedRow = staged.proposed_row as Partial<RemoteRow<TableName>>;
+  if (!proposedRow || typeof proposedRow !== "object") return null;
+
+  const recordId = (proposedRow as { id?: string }).id || crypto.randomUUID();
+
+  return {
+    tx_id: crypto.randomUUID(),
+    created_at: now,
+    table: staged.table,
+    op: "insert",
+    record_id: recordId,
+    payload: { ...proposedRow, id: recordId },
+    base_updated_at: null,
+    status: "pending",
+    attempt_count: 0,
+    last_error: null,
+    next_retry_at: null,
+    synced_at: null,
+  };
+}
+
 export async function commitStagedToOutbox(): Promise<{
   committed: number;
   failed: number;
@@ -39,11 +64,8 @@ export async function commitStagedToOutbox(): Promise<{
       const outboxTxs: OutboxTransaction[] = [];
 
       for (const staged of inputStagedRows) {
-        const proposedRow = staged.proposed_row as Partial<
-          RemoteRow<TableName>
-        >;
-
-        if (!proposedRow || typeof proposedRow !== "object") {
+        const tx = buildOutboxTx(staged, now);
+        if (!tx) {
           errors.push({
             stagedId: staged.staged_id,
             error: "Invalid proposed row data",
@@ -51,28 +73,6 @@ export async function commitStagedToOutbox(): Promise<{
           failed++;
           continue;
         }
-
-        const recordId =
-          (proposedRow as { id?: string }).id || crypto.randomUUID();
-
-        const tx: OutboxTransaction = {
-          tx_id: crypto.randomUUID(),
-          created_at: now,
-          table: staged.table,
-          op: "insert",
-          record_id: recordId,
-          payload: {
-            ...proposedRow,
-            id: recordId,
-          },
-          base_updated_at: null,
-          status: "pending",
-          attempt_count: 0,
-          last_error: null,
-          next_retry_at: null,
-          synced_at: null,
-        };
-
         outboxTxs.push(tx);
       }
 
@@ -91,7 +91,7 @@ export async function commitStagedToOutbox(): Promise<{
       );
       await Promise.all(
         inputStagedRows.map((staged) =>
-          stagedWriteTx.store.delete(staged.staged_id)
+          stagedWriteTx.store.put({ ...staged, status: "committed" })
         )
       );
       await stagedWriteTx.done;
@@ -130,35 +130,8 @@ export async function commitStagedForInput(
   const outboxTxs: OutboxTransaction[] = [];
 
   for (const staged of acceptedRows) {
-    const proposedRow = staged.proposed_row as Partial<
-      RemoteRow<TableName>
-    >;
-
-    if (!proposedRow || typeof proposedRow !== "object") {
-      continue;
-    }
-
-    const recordId =
-      (proposedRow as { id?: string }).id || crypto.randomUUID();
-
-    const tx: OutboxTransaction = {
-      tx_id: crypto.randomUUID(),
-      created_at: now,
-      table: staged.table,
-      op: "insert",
-      record_id: recordId,
-      payload: {
-        ...proposedRow,
-        id: recordId,
-      },
-      base_updated_at: null,
-      status: "pending",
-      attempt_count: 0,
-      last_error: null,
-      next_retry_at: null,
-      synced_at: null,
-    };
-
+    const tx = buildOutboxTx(staged, now);
+    if (!tx) continue;
     outboxTxs.push(tx);
   }
 
@@ -169,8 +142,31 @@ export async function commitStagedForInput(
   const stagedWriteTx = db.transaction("staged_extractions", "readwrite");
   await Promise.all(
     acceptedRows.map((staged) =>
-      stagedWriteTx.store.delete(staged.staged_id)
+      stagedWriteTx.store.put({ ...staged, status: "committed" })
     )
   );
   await stagedWriteTx.done;
+
+  // Save a snapshot of committed/rejected rows into the NlQueueItem result
+  // so the data survives even if staged rows are later cleared from IDB
+  const queueItem = await db.get("nl_input_queue", inputId);
+  if (queueItem) {
+    const existingResult = (queueItem.result ?? {}) as Record<string, unknown>;
+    const toSnapshot = (row: StagedExtraction) => ({
+      table: row.table,
+      proposed_row: row.proposed_row,
+      origin_label: row.origin_label,
+    });
+    await db.put("nl_input_queue", {
+      ...queueItem,
+      result: {
+        ...existingResult,
+        committed_rows: acceptedRows.map(toSnapshot),
+        rejected_rows: stagedRows
+          .filter((r) => r.status === "rejected")
+          .map(toSnapshot),
+      },
+      updated_at: now,
+    });
+  }
 }

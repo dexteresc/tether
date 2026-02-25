@@ -1,11 +1,13 @@
-import type { Identifier, IdentifierType } from "@/types/database";
+import type { RemoteRow } from "@/lib/sync/types";
+
+type Identifier = RemoteRow<"identifiers">;
 
 interface IdentifierGroupsProps {
   identifiers: Identifier[];
 }
 
 export function IdentifierGroups({ identifiers }: IdentifierGroupsProps) {
-  const grouped = identifiers.reduce(
+  const grouped = identifiers.reduce<Record<string, Identifier[]>>(
     (acc, id) => {
       if (!acc[id.type]) {
         acc[id.type] = [];
@@ -13,10 +15,10 @@ export function IdentifierGroups({ identifiers }: IdentifierGroupsProps) {
       acc[id.type].push(id);
       return acc;
     },
-    {} as Record<IdentifierType, Identifier[]>
+    {}
   );
 
-  const types = Object.keys(grouped).sort() as IdentifierType[];
+  const types = Object.keys(grouped).sort();
 
   if (types.length === 0) {
     return (

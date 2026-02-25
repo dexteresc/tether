@@ -6,7 +6,6 @@ import (
 	"github.com/dexteresc/tether/config"
 	"github.com/dexteresc/tether/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func CreateSource(c *gin.Context) {
@@ -34,9 +33,8 @@ func GetSources(c *gin.Context) {
 }
 
 func GetSource(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -49,9 +47,8 @@ func GetSource(c *gin.Context) {
 }
 
 func UpdateSource(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
@@ -64,12 +61,8 @@ func UpdateSource(c *gin.Context) {
 	result := config.DB.Model(&models.Source{}).Where("id = ?", id).
 		Omit("id", "created_at", "deleted_at").Updates(source)
 
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update source"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Source not found"})
+	if err := checkUpdateResult(result, "source"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 
@@ -77,19 +70,14 @@ func UpdateSource(c *gin.Context) {
 }
 
 func DeleteSource(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	id, ok := parseIDParam(c)
+	if !ok {
 		return
 	}
 
 	result := config.DB.Delete(&models.Source{}, id)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete source"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Source not found"})
+	if err := checkUpdateResult(result, "source"); err != nil {
+		respondWithError(c, err)
 		return
 	}
 

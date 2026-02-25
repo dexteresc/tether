@@ -1,14 +1,15 @@
-from jose import jwt, JWTError, jwk
-from typing import Optional
 import logging
 import time
+
 import httpx
+from jose import jwt, JWTError, jwk
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 # JWKS cache with TTL
-_jwks_keys: Optional[dict] = None
+_jwks_keys: dict | None = None
 _jwks_fetched_at: float = 0.0
 _JWKS_TTL_SECONDS = 3600  # 1 hour
 
@@ -23,7 +24,6 @@ def _load_jwks() -> dict:
     """
     global _jwks_keys, _jwks_fetched_at
 
-    # Return cached keys if still fresh
     if _jwks_keys is not None and (time.monotonic() - _jwks_fetched_at) < _JWKS_TTL_SECONDS:
         return _jwks_keys
 
@@ -52,7 +52,7 @@ def _load_jwks() -> dict:
     return _jwks_keys
 
 
-def verify_supabase_jwt(token: str) -> Optional[str]:
+def verify_supabase_jwt(token: str) -> str | None:
     """
     Verify a Supabase JWT token (ES256 via JWKS) and extract the user_id.
 
@@ -110,7 +110,7 @@ def create_service_role_client():
     return create_client(settings.supabase_url, settings.supabase_service_role_key)
 
 
-def get_user_info(user_id: str) -> Optional[dict]:
+def get_user_info(user_id: str) -> dict | None:
     """
     Get user information from Supabase auth.
 
@@ -122,20 +122,16 @@ def get_user_info(user_id: str) -> Optional[dict]:
     """
     try:
         supabase = create_service_role_client()
-
-        # Try to get user from auth.users
         response = supabase.auth.admin.get_user_by_id(user_id)
 
         if response and response.user:
             user = response.user
-            # Extract user metadata
             user_metadata = user.user_metadata or {}
 
-            # Try to get name from various sources
             name = (
                 user_metadata.get("full_name")
                 or user_metadata.get("name")
-                or user.email.split("@")[0] if user.email else None
+                or (user.email.split("@")[0] if user.email else None)
             )
 
             return {

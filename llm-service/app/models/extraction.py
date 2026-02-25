@@ -1,6 +1,9 @@
-from pydantic import BaseModel, Field, AliasChoices, ConfigDict, model_validator
-from typing import List, Optional, Dict, Any
+from __future__ import annotations
+
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field, AliasChoices, ConfigDict, model_validator
 
 
 # Enum definitions matching database schema
@@ -8,21 +11,25 @@ class EntityType(str, Enum):
     PERSON = "person"
     ORGANIZATION = "organization"
     GROUP = "group"
-    VEHICLE = "vehicle"
     LOCATION = "location"
     EVENT = "event"
+    PROJECT = "project"
+    ASSET = "asset"
 
 
 class IdentifierType(str, Enum):
     NAME = "name"
+    ALIAS = "alias"
     DOCUMENT = "document"
-    BIOMETRIC = "biometric"
     PHONE = "phone"
     EMAIL = "email"
     HANDLE = "handle"
     ADDRESS = "address"
     REGISTRATION = "registration"
     DOMAIN = "domain"
+    WEBSITE = "website"
+    ACCOUNT_ID = "account_id"
+    BIOMETRIC = "biometric"
 
 
 class RelationType(str, Enum):
@@ -30,15 +37,25 @@ class RelationType(str, Enum):
     CHILD = "child"
     SIBLING = "sibling"
     SPOUSE = "spouse"
+    RELATIVE = "relative"
     COLLEAGUE = "colleague"
     ASSOCIATE = "associate"
     FRIEND = "friend"
+    EMPLOYEE = "employee"
     MEMBER = "member"
     OWNER = "owner"
     FOUNDER = "founder"
     CO_FOUNDER = "co-founder"
+    MENTOR = "mentor"
+    CLIENT = "client"
+    PARTNER = "partner"
+    INTRODUCED_BY = "introduced_by"
+    WORKS_AT = "works_at"
+    LIVES_IN = "lives_in"
+    INVESTED_IN = "invested_in"
+    ATTENDED = "attended"
     VISITED = "visited"
-    EMPLOYEE = "employee"
+    KNOWS = "knows"
 
 
 class IntelType(str, Enum):
@@ -49,6 +66,8 @@ class IntelType(str, Enum):
     DOCUMENT = "document"
     MEDIA = "media"
     FINANCIAL = "financial"
+    NOTE = "note"
+    TIP = "tip"
 
 
 class ConfidenceLevel(str, Enum):
@@ -106,7 +125,7 @@ class IdentifierExtraction(BaseModel):
     value: str = Field(
         description="The identifier value (e.g., 'John Smith', 'john@acme.com', '+1-555-0123')"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: dict[str, Any] | None = Field(
         default=None,
         description="Additional metadata about this identifier"
     )
@@ -119,25 +138,25 @@ class EntityExtraction(BaseModel):
         description="Primary name/identifier for the entity"
     )
     entity_type: EntityType = Field(
-        description="Type of entity (person, organization, group, vehicle, location)"
+        description="Type of entity (person, organization, group, location, event, project, asset)"
     )
-    identifiers: List[IdentifierExtraction] = Field(
+    identifiers: list[IdentifierExtraction] = Field(
         description="All identifiers found for this entity (name, email, phone, etc.)"
     )
-    attributes: Dict[str, Any] = Field(
+    attributes: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional attributes (e.g., {'birthday': 'March 31', 'position': 'CEO', 'address': '123 Main St'})"
     )
     confidence: ConfidenceLevel = Field(
         description="Confidence level for this entity extraction"
     )
-    source_reference: Optional[str] = Field(
+    source_reference: str | None = Field(
         default=None,
         description="Who reported this information (e.g., 'Jonas', 'direct observation')"
     )
 
     @model_validator(mode='after')
-    def check_name_identifier(self) -> 'EntityExtraction':
+    def check_name_identifier(self) -> EntityExtraction:
         has_name = any(i.identifier_type == IdentifierType.NAME for i in self.identifiers)
         if not has_name:
             # Auto-add the missing name identifier to improve consistency
@@ -158,30 +177,30 @@ class RelationExtraction(BaseModel):
         description="Name of the target entity in the relationship"
     )
     relation_type: RelationType = Field(
-        description="Type of relationship (parent, child, sibling, spouse, colleague, associate, friend, member, owner)"
+        description="Type of relationship (parent, child, sibling, spouse, relative, colleague, associate, friend, employee, member, owner, founder, co-founder, mentor, client, partner, introduced_by, works_at, lives_in, invested_in, attended, visited, knows)"
     )
-    strength: Optional[int] = Field(
+    strength: int | None = Field(
         default=None,
         ge=1,
         le=10,
         description="Strength of the relationship from 1 (weak) to 10 (strong)"
     )
-    valid_from: Optional[str] = Field(
+    valid_from: str | None = Field(
         default=None,
         description="When the relationship started (natural language date like 'January 2020', 'last year')"
     )
-    valid_to: Optional[str] = Field(
+    valid_to: str | None = Field(
         default=None,
         description="When the relationship ended (natural language date)"
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         description="Additional context about the relationship (e.g., 'CEO of company', 'works as manager')"
     )
     confidence: ConfidenceLevel = Field(
         description="Confidence level for this relationship"
     )
-    source_reference: Optional[str] = Field(
+    source_reference: str | None = Field(
         default=None,
         description="Who reported this relationship"
     )
@@ -191,30 +210,30 @@ class IntelExtraction(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     
     intel_type: IntelType = Field(
-        description="Type of intelligence (event, communication, sighting, report, document, media, financial)"
+        description="Type of intelligence (event, communication, sighting, report, document, media, financial, note, tip)"
     )
     description: str = Field(
         description="Clear description of what happened (e.g., 'Lukas went to the store', 'Conference in New York')"
     )
-    occurred_at: Optional[str] = Field(
+    occurred_at: str | None = Field(
         default=None,
         description="When this happened (natural language date/time like 'today', 'yesterday', 'March 31', 'last Friday')"
     )
-    entities_involved: List[str] = Field(
+    entities_involved: list[str] = Field(
         description="Names of all entities involved in this event/intel"
     )
-    location: Optional[str] = Field(
+    location: str | None = Field(
         default=None,
         description="Where this happened (location name)"
     )
-    details: Dict[str, Any] = Field(
+    details: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional type-specific details (e.g., {'activity': 'went to', 'event': 'conference', 'sighting_type': 'in-person'})"
     )
     confidence: ConfidenceLevel = Field(
         description="Confidence level for this intel"
     )
-    source_reference: Optional[str] = Field(
+    source_reference: str | None = Field(
         default=None,
         description="Who reported this intel"
     )
@@ -228,15 +247,15 @@ class IntelligenceExtraction(BaseModel):
         description="Step-by-step reasoning about the extraction (REQUIRED FIRST - forces LLM to think before extracting)",
         validation_alias=AliasChoices('reasoning', 'Reasoning')
     )
-    entities: List[EntityExtraction] = Field(
+    entities: list[EntityExtraction] = Field(
         default_factory=list,
         description="All entities extracted from the text"
     )
-    relations: List[RelationExtraction] = Field(
+    relations: list[RelationExtraction] = Field(
         default_factory=list,
         description="All relationships extracted from the text"
     )
-    intel: List[IntelExtraction] = Field(
+    intel: list[IntelExtraction] = Field(
         default_factory=list,
         description="All events/intelligence extracted from the text"
     )
@@ -244,23 +263,23 @@ class IntelligenceExtraction(BaseModel):
 
 # Sync results models
 class SyncResults(BaseModel):
-    entities_created: List[Dict[str, Any]] = Field(
+    entities_created: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Entities that were newly created"
     )
-    entities_updated: List[Dict[str, Any]] = Field(
+    entities_updated: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Entities that were updated with new information"
     )
-    relations_created: List[Dict[str, Any]] = Field(
+    relations_created: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Relations that were created"
     )
-    intel_created: List[Dict[str, Any]] = Field(
+    intel_created: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Intel records that were created"
     )
-    errors: List[Dict[str, str]] = Field(
+    errors: list[dict[str, str]] = Field(
         default_factory=list,
         description="Any errors that occurred during sync"
     )
@@ -314,7 +333,7 @@ class ClarificationRequest(BaseModel):
     question: str = Field(
         description="Question to ask the user (e.g., 'Which John do you mean?')"
     )
-    options: List[ClarificationOption] = Field(
+    options: list[ClarificationOption] = Field(
         description="List of candidate options for user to choose from"
     )
     ambiguous_reference: str = Field(
@@ -333,7 +352,7 @@ class ClassifiedExtraction(BaseModel):
     extraction: IntelligenceExtraction = Field(
         description="The full extraction result with entities, relations, and intel"
     )
-    sync_results: Optional[SyncResults] = Field(
+    sync_results: SyncResults | None = Field(
         default=None,
         description="Results of database sync operations (if sync_to_db was true)"
     )
@@ -341,11 +360,11 @@ class ClassifiedExtraction(BaseModel):
         default=False,
         description="Whether entity resolution needs user clarification (ambiguous references)"
     )
-    clarification_requests: List[ClarificationRequest] = Field(
+    clarification_requests: list[ClarificationRequest] = Field(
         default_factory=list,
         description="Clarification requests for ambiguous entity references (T027)"
     )
-    entity_resolutions: List[Any] = Field(
+    entity_resolutions: list[Any] = Field(
         default_factory=list,
         description="Entity resolution results for person references (List[EntityResolutionResult])"
     )

@@ -1,89 +1,78 @@
-import type { IDBPDatabase, IndexNames } from "idb";
+import type { StoreNames, IndexNames, StoreValue, StoreKey } from "idb";
 import { getTetherDb, type TetherDbSchema } from "./db";
 
-export async function getByKey<StoreName extends keyof TetherDbSchema>(
-  storeName: StoreName,
-  key: TetherDbSchema[StoreName]["key"]
-): Promise<TetherDbSchema[StoreName]["value"] | undefined> {
+type DbStore = StoreNames<TetherDbSchema>;
+
+export async function getByKey<S extends DbStore>(
+  storeName: S,
+  key: StoreKey<TetherDbSchema, S>
+): Promise<StoreValue<TetherDbSchema, S> | undefined> {
   const db = await getTetherDb();
-  return db.get(storeName as StoreName & string, key);
+  return db.get(storeName, key);
 }
 
-export async function putValue<StoreName extends keyof TetherDbSchema>(
-  storeName: StoreName,
-  value: TetherDbSchema[StoreName]["value"]
-): Promise<TetherDbSchema[StoreName]["key"]> {
+export async function putValue<S extends DbStore>(
+  storeName: S,
+  value: StoreValue<TetherDbSchema, S>
+): Promise<StoreKey<TetherDbSchema, S>> {
   const db = await getTetherDb();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return db.put(storeName as StoreName & string, value as any) as any;
+  return db.put(storeName, value);
 }
 
-export async function bulkPut<StoreName extends keyof TetherDbSchema>(
-  storeName: StoreName,
-  values: Array<TetherDbSchema[StoreName]["value"]>
+export async function bulkPut<S extends DbStore>(
+  storeName: S,
+  values: Array<StoreValue<TetherDbSchema, S>>
 ): Promise<void> {
   const db = await getTetherDb();
-  const tx = db.transaction(storeName as StoreName & string, "readwrite");
+  const tx = db.transaction(storeName, "readwrite");
   for (const value of values) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tx.store.put(value as any);
+    tx.store.put(value);
   }
   await tx.done;
 }
 
 export async function queryIndex<
-  StoreName extends keyof TetherDbSchema,
-  IndexName extends IndexNames<TetherDbSchema, StoreName>,
+  S extends DbStore,
+  I extends IndexNames<TetherDbSchema, S>,
 >(
-  storeName: StoreName,
-  indexName: IndexName,
-  query: Parameters<IDBPDatabase<TetherDbSchema>["getAllFromIndex"]>[2],
+  storeName: S,
+  indexName: I,
+  query?: IDBKeyRange,
   limit?: number
-): Promise<Array<TetherDbSchema[StoreName]["value"]>> {
+): Promise<Array<StoreValue<TetherDbSchema, S>>> {
   const db = await getTetherDb();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return db.getAllFromIndex(
-    storeName as StoreName & string,
-    indexName as any,
-    query,
-    limit
-  ) as any;
+  return db.getAllFromIndex(storeName, indexName, query, limit);
 }
 
 export interface PaginateOptions<
-  StoreName extends keyof TetherDbSchema,
-  IndexName extends IndexNames<TetherDbSchema, StoreName>,
+  S extends DbStore,
+  I extends IndexNames<TetherDbSchema, S>,
 > {
-  storeName: StoreName;
-  indexName: IndexName;
+  storeName: S;
+  indexName: I;
   direction?: IDBCursorDirection;
   limit: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  range?: any;
+  range?: IDBKeyRange;
 }
 
 export async function paginate<
-  StoreName extends keyof TetherDbSchema,
-  IndexName extends IndexNames<TetherDbSchema, StoreName>,
+  S extends DbStore,
+  I extends IndexNames<TetherDbSchema, S>,
 >({
   storeName,
   indexName,
   direction = "next",
   limit,
   range,
-}: PaginateOptions<StoreName, IndexName>): Promise<
-  Array<TetherDbSchema[StoreName]["value"]>
-> {
+}: PaginateOptions<S, I>): Promise<Array<StoreValue<TetherDbSchema, S>>> {
   const db = await getTetherDb();
-  const tx = db.transaction(storeName as StoreName & string, "readonly");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const index = tx.store.index(indexName as any);
-  const results: Array<TetherDbSchema[StoreName]["value"]> = [];
+  const tx = db.transaction(storeName, "readonly");
+  const index = tx.store.index(indexName);
+  const results: Array<StoreValue<TetherDbSchema, S>> = [];
 
   let cursor = await index.openCursor(range, direction);
   while (cursor && results.length < limit) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    results.push(cursor.value as any);
+    results.push(cursor.value);
     cursor = await cursor.continue();
   }
 

@@ -11,35 +11,49 @@ export type EntityType =
   | "person"
   | "organization"
   | "group"
-  | "vehicle"
   | "location"
-  | "event";
+  | "event"
+  | "project"
+  | "asset";
 
 export type IdentifierType =
   | "name"
+  | "alias"
   | "document"
-  | "biometric"
   | "phone"
   | "email"
   | "handle"
   | "address"
   | "registration"
-  | "domain";
+  | "domain"
+  | "website"
+  | "account_id"
+  | "biometric";
 
 export type RelationType =
   | "parent"
   | "child"
   | "sibling"
   | "spouse"
+  | "relative"
   | "colleague"
   | "associate"
   | "friend"
+  | "employee"
   | "member"
   | "owner"
   | "founder"
   | "co-founder"
+  | "mentor"
+  | "client"
+  | "partner"
+  | "introduced_by"
+  | "works_at"
+  | "lives_in"
+  | "invested_in"
+  | "attended"
   | "visited"
-  | "employee";
+  | "knows";
 
 export type IntelType =
   | "event"
@@ -48,7 +62,9 @@ export type IntelType =
   | "report"
   | "document"
   | "media"
-  | "financial";
+  | "financial"
+  | "note"
+  | "tip";
 
 export interface IdentifierExtraction {
   identifier_type: IdentifierType;

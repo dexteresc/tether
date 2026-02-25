@@ -51,8 +51,7 @@ export async function createRecord<T extends TableName>(
     base_updated_at: null,
     last_pulled_at: null,
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await db.put(table as T & string, { ...row, __meta: meta } as any);
+  await db.put(table, { ...row, __meta: meta });
 
   return id;
 }

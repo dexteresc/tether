@@ -4,28 +4,47 @@ import anthropic
 import outlines
 from outlines.inputs import Chat
 from ollama import Client as OllamaClient
-from typing import Optional
 from app.config import settings
 from app.models.extraction import IntelligenceExtraction
 
 
 # Shared system prompt for cloud providers (OpenAI, Anthropic)
-SYSTEM_PROMPT = """You are an intelligence analyst extracting structured information from text.
+SYSTEM_PROMPT = """You are a personal intelligence analyst extracting structured information from text for a life graph database.
 
 Your task is to:
-1. Identify ALL entities (people, organizations, groups, vehicles, locations)
-2. Extract ALL factual attributes (birthdays, addresses, positions, etc.)
+1. Identify ALL entities (people, organizations, groups, locations, events, projects, assets)
+2. Extract ALL factual attributes (birthdays, employers, cities, job titles, etc.)
 3. Identify ALL relationships between entities
-4. Identify ALL events/intelligence (meetings, communications, sightings, etc.)
+4. Identify ALL events/intelligence (meetings, communications, sightings, notes, tips, etc.)
 5. Track information sources (who reported this?)
 6. Assess confidence levels
 
+ENTITY TYPES:
+- person: anyone you know or know of
+- organization: companies, institutions, communities
+- group: informal groups, friend circles, teams
+- location: cities, venues, neighborhoods, countries
+- event: conferences, parties, trips, meetings
+- project: work projects, ventures, deals
+- asset: vehicles, properties, devices, accounts, valuables
+
+RELATIONSHIP TYPES:
+- Family: parent, child, sibling, spouse, relative
+- Professional: colleague, associate, employee, member, owner, founder, co-founder, mentor, client, partner
+- Social: friend, knows (weak/catch-all), introduced_by (how you met)
+- Contextual: works_at, lives_in, invested_in, attended, visited
+
+INTEL TYPES:
+- event, communication, sighting, report, document, media, financial
+- note: personal observation or quick capture
+- tip: recommendation or warning someone gave you
+
 IMPORTANT:
-- Extract multiple identifiers per entity when possible (name, email, phone, etc.)
-- For relationships, determine the correct type (parent, spouse, colleague, member, owner, etc.)
-- For intel, categorize correctly (event, communication, sighting, report, document, media, financial)
+- Extract multiple identifiers per entity when possible (name, alias, email, phone, handle, website, etc.)
+- For relationships, use the most specific type available (e.g., "works_at" not "associate" for employment)
 - Always provide your reasoning FIRST in the reasoning field
 - Be thorough - extract ALL information present in the text
+- Infer likely relationships even when not explicitly stated. If two people meet, communicate, or are mentioned together, create a relationship with appropriate confidence (e.g., "knows" with low/medium confidence). It's better to extract a low-confidence relationship than to miss one entirely.
 
 USER-CENTRIC TEXT HANDLING:
 - When text uses first-person pronouns (I, me, my, mine), these refer to the authenticated user
@@ -35,7 +54,7 @@ USER-CENTRIC TEXT HANDLING:
 - Ensure the user entity is properly identified in relationships"""
 
 
-def build_user_prompt(text: str, context: Optional[str] = None, user_name: Optional[str] = None) -> str:
+def build_user_prompt(text: str, context: str | None = None, user_name: str | None = None) -> str:
     """Build user prompt with optional user name and context prepended."""
     prompt = f"Extract structured intelligence from the following text:\n\n{text}"
 
@@ -55,7 +74,7 @@ class LLMProvider:
         self.client = None
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """
         Extract structured intelligence from text.
@@ -75,7 +94,7 @@ class LLMProvider:
 class OpenAIProvider(LLMProvider):
     """OpenAI provider with instructor integration."""
 
-    def __init__(self, model: str = "gpt-4o", api_key: Optional[str] = None):
+    def __init__(self, model: str = "gpt-4o", api_key: str | None = None):
         super().__init__()
         self.model = model
 
@@ -86,7 +105,7 @@ class OpenAIProvider(LLMProvider):
         self.client = instructor.from_openai(openai_client)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using OpenAI with instructor."""
         return self.client.chat.completions.create(
@@ -108,16 +127,17 @@ class OllamaProvider(LLMProvider):
     """
 
     # System prompt for Ollama — kept concise since Outlines enforces the schema
-    OLLAMA_SYSTEM_PROMPT = """You are an expert intelligence analyst. Extract structured data from text.
+    OLLAMA_SYSTEM_PROMPT = """You are a personal intelligence analyst. Extract structured data from text for a life graph database.
 
 Your task is to:
-1. Identify ALL entities (people, organizations, groups, vehicles, locations)
-2. Extract ALL factual attributes (birthdays, addresses, positions, etc.)
+1. Identify ALL entities (people, organizations, groups, locations, events, projects, assets)
+2. Extract ALL factual attributes (birthdays, employers, cities, job titles, etc.)
 3. Identify ALL relationships between entities
-4. Identify ALL events/intelligence (meetings, communications, sightings, etc.)
+4. Identify ALL events/intelligence (meetings, communications, sightings, notes, tips, etc.)
 5. Track information sources (who reported this?)
 6. Assess confidence levels
 7. Provide your reasoning FIRST in the reasoning field
+8. Infer likely relationships even when not explicitly stated. If two people meet, communicate, or are mentioned together, create a relationship with appropriate confidence (e.g., "knows" with low/medium confidence). It's better to extract a low-confidence relationship than to miss one entirely.
 
 USER-CENTRIC TEXT HANDLING:
 - When text uses first-person pronouns (I, me, my, mine), these refer to the authenticated user
@@ -126,7 +146,7 @@ USER-CENTRIC TEXT HANDLING:
 - Create entities for people mentioned in relation to the user
 - Ensure the user entity is properly identified in relationships"""
 
-    def __init__(self, model: str = "qwen2.5:7b", base_url: Optional[str] = None):
+    def __init__(self, model: str = "qwen2.5:7b", base_url: str | None = None):
         super().__init__()
         self.model_name = model
 
@@ -139,7 +159,7 @@ USER-CENTRIC TEXT HANDLING:
         self.outlines_model = outlines.from_ollama(ollama_client, model)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using Ollama with Outlines.
 
@@ -159,7 +179,7 @@ USER-CENTRIC TEXT HANDLING:
 class AnthropicProvider(LLMProvider):
     """Anthropic provider with instructor integration."""
 
-    def __init__(self, model: str = "claude-sonnet-4-5-20250514", api_key: Optional[str] = None):
+    def __init__(self, model: str = "claude-sonnet-4-5-20250514", api_key: str | None = None):
         super().__init__()
         self.model = model
 
@@ -167,7 +187,7 @@ class AnthropicProvider(LLMProvider):
         self.client = instructor.from_anthropic(anthropic_client)
 
     def extract(
-        self, text: str, context: Optional[str] = None, max_retries: int = 3, user_name: Optional[str] = None
+        self, text: str, context: str | None = None, max_retries: int = 3, user_name: str | None = None
     ) -> IntelligenceExtraction:
         """Extract structured intelligence using Anthropic with instructor."""
         return self.client.chat.completions.create(
@@ -183,7 +203,7 @@ class AnthropicProvider(LLMProvider):
 
 
 def get_llm_provider(
-    provider: Optional[str] = None, model: Optional[str] = None, api_key: Optional[str] = None
+    provider: str | None = None, model: str | None = None, api_key: str | None = None
 ) -> LLMProvider:
     """
     Factory function to get the appropriate LLM provider.

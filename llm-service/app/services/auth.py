@@ -141,11 +141,8 @@ def get_user_info(user_id: str) -> dict | None:
                 "metadata": user_metadata
             }
 
-    except httpx.HTTPError as e:
-        logger.error(f"HTTP error fetching user info for {user_id}: {e}")
-        return None
-    except (KeyError, AttributeError) as e:
-        logger.error(f"Error parsing user info for {user_id}: {e}")
+    except Exception as e:
+        logger.error(f"Error fetching user info for {user_id}: {e}")
         return None
 
     return None
